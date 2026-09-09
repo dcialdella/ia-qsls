@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+mcp_filesystem.log
+
+# Salida generada (se regenera desde los .adi)
+qsl*/QSLS/
+qsl*/qsl_log.json
