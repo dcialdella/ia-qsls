@@ -16,10 +16,11 @@ postales generadas.
 > **Aviso de uso:** esta aplicación fue diseñada por Daniel Cialdella. Para su uso,
 > distribución o modificación debe solicitarse permiso previo al autor.
 
-> **Objetivo final:** el usuario ejecuta el script (o el `./generar.sh`), y para cada
-> carpeta qslN con archivos `.adi` + una imagen de fondo, se generan tantas postales como
-> contactos haya, guardadas en `qslN/QSLS/`. Las postales se suben después a Google Drive
-> manualmente.
+> **Objetivo final:** el usuario ejecuta `./generar.sh`, y para cada carpeta qslN con
+> archivos `.adi` + una imagen de fondo, se generan tantas postales como contactos haya,
+> guardadas en `qslN/QSLS/`. Con `--sync-drive`, las postales se copian automáticamente
+> a la carpeta `QSL/QSLs/QSL1`–`QSL7` de Google Drive (app de escritorio sincronizada
+> con la cuenta eg9mm), que las sube a la nube.
 
 ---
 
@@ -37,12 +38,12 @@ postales generadas.
     `qsl5/probe.adi` (1 contacto c/u, estación EA4HUK — sirven para QSL6)
   - `qsl2/activo2.adi` (4 contactos, datos de ejemplo)
   - `qsl3/actividad3.adi` (4 contactos, datos de ejemplo)
-  - `qsl5/dac1.adi` (110 contactos, Smart Logger EA4HUK, POTA ES-1895)
   - `qsl7/ejemplo.adi` (3 contactos, DMR)
-- ✅ Archivos ADI inactivos (extensión `.TEST`, no se procesan):
+- ✅ Archivos ADI inactivos (extensión `.TEST`, NO se procesan):
   - `qsl1/eladio1.adi.TEST` (89 contactos, Ham2K Logger EA3JAQ, POTA ES-2504)
   - `qsl1/eladio2.adi.TEST` (74 contactos, Ham2K Logger EA3JAQ, LLOTA LLES-0413)
   - `qsl2/eladio3.adi.TEST` (44 contactos, Ham2K Logger EA3JAQ, POTA ES-1366)
+  - `qsl5/dac1.adi.TEST` (110 contactos, Smart Logger EA4HUK, POTA ES-1895)
 - ✅ Cada carpeta con datos tiene su log `qslN/qsl_log.json` (se crea solo)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
 - ✅ **Bandera del país** delante del nombre de cada estación (ver "Banderas" más abajo).
@@ -87,6 +88,14 @@ postales generadas.
 13. **Fix `--from-scratch`:** el `find` usaba `-maxdepth 2` y no alcanzaba los PNG dentro
     de `*/QSLS/` (profundidad 3); ahora se borran todas las salidas (preservando `FLAGS/`).
 14. **`bandera_espana.png` eliminado** (ya no se usa; las banderas vienen de `FLAGS/`).
+15. **`dac1.adi` desactivado (`.TEST`).** Se renombró a `dac1.adi.TEST` (110 contactos,
+    POTA ES-1895); ya no se procesa. Lo mismo con `eladio1/2/3.adi.TEST`. Regla: los
+    archivos `.adi.TEST` son inactivos a propósito y NO se renombran sin consultar antes.
+16. **Sincronización con Google Drive (`--sync-drive`).** `generar.sh` copia las postales
+    de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
+    Drive/QSL/QSLs/QSLN` (carpetas en mayúsculas, creadas automáticamente). Usa `rsync
+    --update` (solo copia lo nuevo/modificado) y la app de escritorio de Google Drive
+    sube los cambios a la nube automáticamente.
 
 ### Estructura actual en disco
 
@@ -129,7 +138,7 @@ ia-qsls/
 │   └── qsl_log.json
 ├── qsl5/
 │   ├── f5.png             <- Fondo de qsl5
-│   ├── dac1.adi           <- 110 contactos, Smart Logger EA4HUK (POTA ES-1895)
+│   ├── dac1.adi.TEST      <- INACTIVO: 110 contactos, Smart Logger EA4HUK (POTA ES-1895)
 │   ├── probe.adi          <- EA4HUK (1 contacto)
 │   ├── QSLS/
 │   └── qsl_log.json
@@ -155,7 +164,9 @@ crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
 
 ```bash
 ./generar.sh                    # modo incremental (solo lo que cambió/falta)
+./generar.sh --sync-drive       # incremental + copia las postales a Google Drive
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
+./generar.sh --from-scratch --sync-drive  # regenera todo + copia a Google Drive
 ./generar.sh --clean            # alias de --from-scratch
 ./generar.sh --help             # ayuda resumida
 ```
@@ -179,13 +190,36 @@ Postales generadas por carpeta:
 ### Opción B: ejecutar el generador manualmente
 
 ```bash
-cd /Users/cialdeld/Downloads/ia-qsls
+cd /Users/danielcialdella/Downloads/ia-qsls
 source venv/bin/activate
 python3 qsl_generator.py
 ```
 
 IMPORTANTE: en macOS Python es “externally-managed”, por lo que **no** se usa `pip install`
 globalmente; siempre activar `venv` (o usar `./generar.sh` que lo hace por ti).
+
+### Sincronización automática con Google Drive (`--sync-drive`)
+
+Cuando se pasa `--sync-drive`, al terminar de generar el script copia las postales a la
+carpeta local sincronizada por la app de Google Drive:
+
+```
+~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My Drive/QSL/QSLs/
+├── QSL1/   <- qsl1/QSLS/*.png
+├── QSL2/   <- qsl2/QSLS/*.png
+├── …
+└── QSL7/   <- qsl7/QSLS/*.png
+```
+
+- Cada carpeta local `qslN` se copia a su carpeta `QSLN` (en mayúsculas) dentro de
+  `QSL/QSLs`. Si la carpeta destino no existe, se crea automáticamente.
+- Se usa `rsync -av --update`, que **solo copia lo nuevo o modificado** (no vuelve a
+  copiar lo que ya está). Re-ejecutar `--sync-drive` es barato.
+- Después la **app de escritorio de Google Drive** detecta los archivos y los sube a la
+  nube automáticamente (no hace falta nada más).
+- Preprequisito: tener la app "Google Drive" de escritorio instalada y con la cuenta de
+  **eg9mm.mail@gmail.com**; la ruta del CloudStorage debe existir (la carpeta `QSL/QSLs`
+  con las subcarpetas QSL1–QSL7 se crea sola la primera vez que se sincroniza).
 
 ---
 
@@ -380,14 +414,17 @@ Tipo | Tamaño caja | Contenido | Casillas
 
 1. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
    que las banderas de país delante del nombre se ven como se espera.
-2. Revisar postales de `qsl5/dac1.adi` (110 contactos, Smart Logger) — la mayoría tiene
-   NAME y GRIDSQUARE, las postales deberían mostrar nombre + grid + bandera del país.
+2. Revisar que la **sincronización a Google Drive** funcione: ejecutar
+   `./generar.sh --sync-drive` y comprobar que en `QSL/QSLs/QSL1`–`QSL7` aparecen las
+   postales y que la app las sube a la nube.
 3. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
    a contener varias postales `{call}_act6.png` (se regeneran en cada ejecución).
-4. Los archivos `.TEST` en qsl1 y qsl2 (eladio1, eladio2, eladio3) están inactivos.
-   Para activarlos: renombrar de `.adi.TEST` a `.adi` y ejecutar `./generar.sh`.
-   Nota: estos archivos NO tienen campos NAME/QTH/GRIDSQUARE (solo Ham2K Logger con
-   POTA/LLOTA), así que las postales solo mostrarán callsign + fecha + banda/modo.
+4. Los archivos `.TEST` en qsl1, qsl2 y qsl5 (eladio1, eladio2, eladio3, dac1) están
+   inactivos. Para activarlos: renombrar de `.adi.TEST` a `.adi` y ejecutar
+   `./generar.sh --sync-drive`. **No renombrarlos sin consultar antes al autor.**
+   Nota: los ADI de Eladio no tienen campos NAME/QTH/GRIDSQUARE (solo Ham2K Logger con
+   POTA/LLOTA); `dac1.adi` los tiene (Smart Logger), así que mostraría nombre + grid +
+   bandera del país.
 5. (Opcional) El parser trunca a la longitud declarada: `<QTH:8>palermo` daría `palerm`
    porque el ADI declara 8 pero el valor real son 7. Funciona salvo cuando la longitud
    declarada es **menor** que el valor real; se podría mejorar tomando `max(len_real, decl)`.
@@ -404,7 +441,9 @@ Tipo | Tamaño caja | Contenido | Casillas
 - **Filesystem case-insensitive:** por eso se evitan los globs que mezclan mayúsculas.
 - No hay tests automáticos; la verificación es ejecutar el script + revisar los PNG.
 - `./generar.sh` es la forma recomendada de ejecutar: configura el entorno solo y, con
-  `--from-scratch`, regenera todo el set de postales.
+  `--from-scratch`, regenera todo el set de postales; con `--sync-drive` además copia las
+  postales a Google Drive.
 - **Git/GitHub:** el proyecto está en `git` (rama `main`) con remote `origin` →
   https://github.com/dcialdella/ia-qsls.git. `qsl*/QSLS/` y los `qsl_log.json` están
-  ignorados por `.gitignore` (no se suben).
+  ignorados por `.gitignore` (no se suben). Se commitean solo los `.adi` activos, código
+  y README.
