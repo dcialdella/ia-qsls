@@ -18,9 +18,9 @@ postales generadas.
 
 > **Objetivo final:** el usuario ejecuta `./generar.sh`, y para cada carpeta qslN con
 > archivos `.adi` + una imagen de fondo, se generan tantas postales como contactos haya,
-> guardadas en `qslN/QSLS/`. Con `--sync-drive`, las postales se copian automáticamente
-> a la carpeta `QSL/QSLs/QSL1`–`QSL7` de Google Drive (app de escritorio sincronizada
-> con la cuenta eg9mm), que las sube a la nube.
+> guardadas en `qslN/QSLS/`. Por defecto (siempre, a menos que se use `--no-sync-drive`)
+> las postales se copian automáticamente a la carpeta `QSL/QSLs/qsl1`–`qsl7` de Google
+> Drive (app de escritorio sincronizada con la cuenta eg9mm), que las sube a la nube.
 
 ---
 
@@ -91,11 +91,12 @@ postales generadas.
 15. **`dac1.adi` desactivado (`.TEST`).** Se renombró a `dac1.adi.TEST` (110 contactos,
     POTA ES-1895); ya no se procesa. Lo mismo con `eladio1/2/3.adi.TEST`. Regla: los
     archivos `.adi.TEST` son inactivos a propósito y NO se renombran sin consultar antes.
-16. **Sincronización con Google Drive (`--sync-drive`).** `generar.sh` copia las postales
-    de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
-    Drive/QSL/QSLs/QSLN` (carpetas en mayúsculas, creadas automáticamente). Usa `rsync
-    --update` (solo copia lo nuevo/modificado) y la app de escritorio de Google Drive
-    sube los cambios a la nube automáticamente.
+16. **Sincronización con Google Drive por defecto.** `generar.sh` copia las postales
+     de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
+     Drive/QSL/QSLs/qslN` (mismas carpetas en minúsculas, creadas automáticamente). La
+     sincronización ocurre **siempre**, salvo flag `--no-sync-drive`. Usa `rsync
+     --update` (solo copia lo nuevo/modificado) y la app de escritorio de Google Drive
+     sube los cambios a la nube automáticamente.
 
 ### Estructura actual en disco
 
@@ -163,10 +164,10 @@ El script es portable: se puede copiar a cualquier lado, calcula su propio direc
 crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
 
 ```bash
-./generar.sh                    # modo incremental (solo lo que cambió/falta)
-./generar.sh --sync-drive       # incremental + copia las postales a Google Drive
+./generar.sh                    # incremental + copia las postales a Google Drive (por defecto)
+./generar.sh --no-sync-drive    # incremental, SIN copiar a Google Drive
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
-./generar.sh --from-scratch --sync-drive  # regenera todo + copia a Google Drive
+./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
 ./generar.sh --clean            # alias de --from-scratch
 ./generar.sh --help             # ayuda resumida
 ```
@@ -198,28 +199,30 @@ python3 qsl_generator.py
 IMPORTANTE: en macOS Python es “externally-managed”, por lo que **no** se usa `pip install`
 globalmente; siempre activar `venv` (o usar `./generar.sh` que lo hace por ti).
 
-### Sincronización automática con Google Drive (`--sync-drive`)
+### Sincronización automática con Google Drive (por defecto, desactivable)
 
-Cuando se pasa `--sync-drive`, al terminar de generar el script copia las postales a la
-carpeta local sincronizada por la app de Google Drive:
+La sincronización ocurre **siempre** que ejecutas `./generar.sh`. Solo se desactiva con
+`--no-sync-drive`. Al terminar de generar, el script copia las postales a la carpeta local
+sincronizada por la app de Google Drive:
 
 ```
 ~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My Drive/QSL/QSLs/
-├── QSL1/   <- qsl1/QSLS/*.png
-├── QSL2/   <- qsl2/QSLS/*.png
+├── qsl1/   <- qsl1/QSLS/*.png
+├── qsl2/   <- qsl2/QSLS/*.png
 ├── …
-└── QSL7/   <- qsl7/QSLS/*.png
+└── qsl7/   <- qsl7/QSLS/*.png
 ```
 
-- Cada carpeta local `qslN` se copia a su carpeta `QSLN` (en mayúsculas) dentro de
-  `QSL/QSLs`. Si la carpeta destino no existe, se crea automáticamente.
+- Cada carpeta local `qslN` se copia a su carpeta `qslN` (mismo nombre, en minúsculas)
+  dentro de `QSL/QSLs`. Si la carpeta destino no existe, se crea automáticamente.
 - Se usa `rsync -av --update`, que **solo copia lo nuevo o modificado** (no vuelve a
-  copiar lo que ya está). Re-ejecutar `--sync-drive` es barato.
+  copiar lo que ya está). Re-ejecutar es barato.
 - Después la **app de escritorio de Google Drive** detecta los archivos y los sube a la
   nube automáticamente (no hace falta nada más).
 - Preprequisito: tener la app "Google Drive" de escritorio instalada y con la cuenta de
   **eg9mm.mail@gmail.com**; la ruta del CloudStorage debe existir (la carpeta `QSL/QSLs`
-  con las subcarpetas QSL1–QSL7 se crea sola la primera vez que se sincroniza).
+  con las subcarpetas qsl1–qsl7 se crea sola la primera vez que se sincroniza).
+- Para generar **sin** sincronizar Drive: `./generar.sh --no-sync-drive`.
 
 ---
 
@@ -415,13 +418,13 @@ Tipo | Tamaño caja | Contenido | Casillas
 1. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
    que las banderas de país delante del nombre se ven como se espera.
 2. Revisar que la **sincronización a Google Drive** funcione: ejecutar
-   `./generar.sh --sync-drive` y comprobar que en `QSL/QSLs/QSL1`–`QSL7` aparecen las
-   postales y que la app las sube a la nube.
+   `./generar.sh` y comprobar que en `QSL/QSLs/qsl1`–`qsl7` aparecen las postales y que
+   la app las sube a la nube.
 3. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
    a contener varias postales `{call}_act6.png` (se regeneran en cada ejecución).
 4. Los archivos `.TEST` en qsl1, qsl2 y qsl5 (eladio1, eladio2, eladio3, dac1) están
    inactivos. Para activarlos: renombrar de `.adi.TEST` a `.adi` y ejecutar
-   `./generar.sh --sync-drive`. **No renombrarlos sin consultar antes al autor.**
+   `./generar.sh`. **No renombrarlos sin consultar antes al autor.**
    Nota: los ADI de Eladio no tienen campos NAME/QTH/GRIDSQUARE (solo Ham2K Logger con
    POTA/LLOTA); `dac1.adi` los tiene (Smart Logger), así que mostraría nombre + grid +
    bandera del país.
@@ -441,8 +444,8 @@ Tipo | Tamaño caja | Contenido | Casillas
 - **Filesystem case-insensitive:** por eso se evitan los globs que mezclan mayúsculas.
 - No hay tests automáticos; la verificación es ejecutar el script + revisar los PNG.
 - `./generar.sh` es la forma recomendada de ejecutar: configura el entorno solo y, con
-  `--from-scratch`, regenera todo el set de postales; con `--sync-drive` además copia las
-  postales a Google Drive.
+  `--from-scratch`, regenera todo el set de postales; por defecto además copia las
+  postales a Google Drive (usa `--no-sync-drive` para evitar la copia).
 - **Git/GitHub:** el proyecto está en `git` (rama `main`) con remote `origin` →
   https://github.com/dcialdella/ia-qsls.git. `qsl*/QSLS/` y los `qsl_log.json` están
   ignorados por `.gitignore` (no se suben). Se commitean solo los `.adi` activos, código

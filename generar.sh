@@ -3,11 +3,13 @@
 #  GENERADOR DE POSTALES QSL — ejecución autónoma y portable
 # ============================================================
 #  Uso:
-#    ./generar.sh              -> ejecuta en modo incremental
+#    ./generar.sh              -> incremental + sincroniza a Google Drive
 #    ./generar.sh --from-scratch
 #                              -> borra QSLS/*.png y qsl_log.json
 #                                 y regenera TODO desde cero
 #    ./generar.sh --clean      -> alias de --from-scratch
+#    ./generar.sh --no-sync-drive
+#                              -> NO sincroniza a Google Drive
 #
 #  El script es autocontenido:
 #    * calcula su propio directorio (puede copiarse a cualquier lado)
@@ -25,11 +27,12 @@ PY=python3
 
 # ---------- Argumentos ----------
 FROM_SCRATCH=false
-SYNC_DRIVE=false
+SYNC_DRIVE=true
 for arg in "$@"; do
   case "$arg" in
     --from-scratch|--clean) FROM_SCRATCH=true ;;
     --sync-drive) SYNC_DRIVE=true ;;
+    --no-sync-drive) SYNC_DRIVE=false ;;
     -h|--help)
       sed -n '2,20p' "$0" | sed 's/^# */  /'
       exit 0
@@ -105,7 +108,7 @@ if [ "$SYNC_DRIVE" = true ]; then
   echo "→ sincronizando con Google Drive ($GDRIVE_BASE) ..."
   for d in "$SCRIPT_DIR"/qsl[1-7]; do
     [ -d "$d/QSLS" ] || continue
-    folder_name=$(basename "$d" | tr '[:lower:]' '[:upper:]')
+    folder_name=$(basename "$d")
     dest="$GDRIVE_BASE/$folder_name"
     mkdir -p "$dest"
     rsync -av --update "$d/QSLS/" "$dest/" 2>/dev/null | grep -c '\.png$' > /dev/null 2>&1 || true
