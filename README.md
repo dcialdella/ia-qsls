@@ -28,16 +28,21 @@ postales generadas.
 - ✅ Script funcional e **incremental** en `qsl_generator.py`
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ Script de ejecución autónoma **`generar.sh`** (ver sección 2)
-- ✅ Carpetas `qsl1`–`qsl7` creadas. Con imagen de fondo:
-  - qsl1 (a1.png), qsl2 (a2.png), qsl3 (a3.png), qsl4 (f4.png), qsl6 (f6.png), qsl7 (f7.png)
-- ✅ Datos de ejemplo cargados:
-  - `qsl1/act1.adi` y `qsl1/act2.adi` (4 contactos c/u) → `a1.png`
-  - `qsl2/activo2.adi` (4 contactos) → `a2.png`
-  - `qsl3/actividad3.adi` (4 contactos) → `a3.png`
-  - `qsl4/probe.adi` (1 contacto) → `f4.png`
-  - `qsl7/ejemplo.adi` (3 contactos) → `f7.png`
-  - `probe.adi` también en qsl1, qsl2, qsl3, qsl4 y qsl5 (estación EA4HUK), para que
-    genere su QSL6 (ver sección 5.b).
+- ✅ Carpetas `qsl1`–`qsl7` creadas. Todas con imagen de fondo:
+  - qsl1 (a1.png), qsl2 (a2.png), qsl3 (a3.png), qsl4 (f4.png),
+    qsl5 (f5.png), qsl6 (f6.png), qsl7 (f7.png)
+- ✅ Archivos ADI activos:
+  - `qsl1/act1.adi` y `qsl1/act2.adi` (4 contactos c/u, datos de ejemplo)
+  - `qsl1/probe.adi`, `qsl2/probe.adi`, `qsl3/probe.adi`, `qsl4/probe.adi`,
+    `qsl5/probe.adi` (1 contacto c/u, estación EA4HUK — sirven para QSL6)
+  - `qsl2/activo2.adi` (4 contactos, datos de ejemplo)
+  - `qsl3/actividad3.adi` (4 contactos, datos de ejemplo)
+  - `qsl5/dac1.adi` (110 contactos, Smart Logger EA4HUK, POTA ES-1895)
+  - `qsl7/ejemplo.adi` (3 contactos, DMR)
+- ✅ Archivos ADI inactivos (extensión `.TEST`, no se procesan):
+  - `qsl1/eladio1.adi.TEST` (89 contactos, Ham2K Logger EA3JAQ, POTA ES-2504)
+  - `qsl1/eladio2.adi.TEST` (74 contactos, Ham2K Logger EA3JAQ, LLOTA LLES-0413)
+  - `qsl2/eladio3.adi.TEST` (44 contactos, Ham2K Logger EA3JAQ, POTA ES-1366)
 - ✅ Cada carpeta con datos tiene su log `qslN/qsl_log.json` (se crea solo)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
 - ✅ **Bandera del país** delante del nombre de cada estación (ver "Banderas" más abajo).
@@ -89,24 +94,54 @@ postales generadas.
 ia-qsls/
 ├── qsl_generator.py       <- Script principal (todo en un archivo)
 ├── generar.sh             <- Script de ejecución autónoma (bash)
-├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longuest-match)
+├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
 ├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 249 países
 ├── .gitignore             <- Excluye venv/, __pycache__, qsl*/QSLS/, qsl*/qsl_log.json
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
 ├── README.md
+├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/
 │   ├── a1.png             <- Fondo de qsl1
-│   ├── act1.adi           <- Contactos actividad 1 (dia 1)
-│   ├── act2.adi           <- Contactos actividad 1 (dia 2)
-│   ├── probe.adi          <- EA4HUK (prueba de QSL6)
+│   ├── act1.adi           <- Contactos actividad 1 (dia 1, 4 contactos)
+│   ├── act2.adi           <- Contactos actividad 1 (dia 2, 4 contactos)
+│   ├── probe.adi          <- EA4HUK (prueba de QSL6, 1 contacto)
+│   ├── eladio1.adi.TEST   <- INACTIVO: 89 contactos, Ham2K Logger EA3JAQ (POTA ES-2504)
+│   ├── eladio2.adi.TEST   <- INACTIVO: 74 contactos, Ham2K Logger EA3JAQ (LLOTA LLES-0413)
 │   ├── QSLS/              <- Postales generadas
 │   └── qsl_log.json       <- Log de procesado
-├── qsl2/  (a2.png, activo2.adi, probe.adi, QSLS/, qsl_log.json)
-├── qsl3/  (a3.png, actividad3.adi, probe.adi, QSLS/, qsl_log.json)
-├── qsl4/  (f4.png, probe.adi, QSLS/, qsl_log.json)
-├── qsl5/  (probe.adi con EA4HUK, QSLS/ — SIN imagen de fondo, solo cuenta para QSL6)
-├── qsl6/  (f6.png, QSLS/ con ea4huk_act6.png, qsl_log.json)
-└── qsl7/  (f7.png, ejemplo.adi, QSLS/ con postales DMR, qsl_log.json)
+├── qsl2/
+│   ├── a2.png
+│   ├── activo2.adi        <- 4 contactos (datos de ejemplo)
+│   ├── probe.adi          <- EA4HUK (1 contacto)
+│   ├── eladio3.adi.TEST   <- INACTIVO: 44 contactos, Ham2K Logger EA3JAQ (POTA ES-1366)
+│   ├── QSLS/
+│   └── qsl_log.json
+├── qsl3/
+│   ├── a3.png
+│   ├── actividad3.adi     <- 4 contactos (datos de ejemplo)
+│   ├── probe.adi          <- EA4HUK (1 contacto)
+│   ├── QSLS/
+│   └── qsl_log.json
+├── qsl4/
+│   ├── f4.png
+│   ├── probe.adi          <- EA4HUK (1 contacto)
+│   ├── QSLS/
+│   └── qsl_log.json
+├── qsl5/
+│   ├── f5.png             <- Fondo de qsl5
+│   ├── dac1.adi           <- 110 contactos, Smart Logger EA4HUK (POTA ES-1895)
+│   ├── probe.adi          <- EA4HUK (1 contacto)
+│   ├── QSLS/
+│   └── qsl_log.json
+├── qsl6/
+│   ├── f6.png
+│   ├── QSLS/              <- Postales de record (ea4huk_act6.png)
+│   └── qsl_log.json
+└── qsl7/
+    ├── f7.png
+    ├── ejemplo.adi        <- 3 contactos DMR
+    ├── QSLS/
+    └── qsl_log.json
 ```
 
 ---
@@ -344,14 +379,15 @@ Tipo | Tamaño caja | Contenido | Casillas
 ## 7. Tareas pendientes / próximos pasos
 
 1. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
-   que las banderas de país delante del nombre se ven como se espera (las de España
-   quedan confirmadas por verificación de píxeles; revisar el resto de países).
-2. Sustituir los `.adi` de ejemplo por los reales del usuario en cada carpeta y re-ejecutar
-   (`./generar.sh --from-scratch` para limpiar los de ejemplo).
-3. **Fondo de qsl5:** colocar una imagen (ej. `f5.png`) para que la actividad 5 genere
-   postales normales (EA4HUK ya cuenta para QSL6 por su ADI, pero sin fondo no hay PNG).
-4. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
+   que las banderas de país delante del nombre se ven como se espera.
+2. Revisar postales de `qsl5/dac1.adi` (110 contactos, Smart Logger) — la mayoría tiene
+   NAME y GRIDSQUARE, las postales deberían mostrar nombre + grid + bandera del país.
+3. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
    a contener varias postales `{call}_act6.png` (se regeneran en cada ejecución).
+4. Los archivos `.TEST` en qsl1 y qsl2 (eladio1, eladio2, eladio3) están inactivos.
+   Para activarlos: renombrar de `.adi.TEST` a `.adi` y ejecutar `./generar.sh`.
+   Nota: estos archivos NO tienen campos NAME/QTH/GRIDSQUARE (solo Ham2K Logger con
+   POTA/LLOTA), así que las postales solo mostrarán callsign + fecha + banda/modo.
 5. (Opcional) El parser trunca a la longitud declarada: `<QTH:8>palermo` daría `palerm`
    porque el ADI declara 8 pero el valor real son 7. Funciona salvo cuando la longitud
    declarada es **menor** que el valor real; se podría mejorar tomando `max(len_real, decl)`.
