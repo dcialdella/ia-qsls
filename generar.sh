@@ -71,7 +71,7 @@ fi
 if [ "$FROM_SCRATCH" = true ]; then
   echo "→ modo --from-scratch: borrando salidas anteriores ..."
   # Conserva .adi, fondos y el propio script; borra solo salidas
-  find . -maxdepth 2 -not -path './venv*' -not -path './.git*' \
+  find . -not -path './venv*' -not -path './.git*' -not -path './FLAGS*' \
     \( -name '*.png' -path '*/QSLS/*' -o -name 'qsl_log.json' \) -print -delete
 fi
 

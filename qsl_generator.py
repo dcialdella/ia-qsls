@@ -26,6 +26,11 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+# Versión del generador: si un ADI ya registrado en el log se generó con otra
+# versión, se reprocesa (permite que cambios de código se reflejen al ejecutar
+# en modo incremental sin necesidad de --from-scratch).
+GENERATOR_VERSION = "2"
+
 # Rangos de banda (MHz) para derivar BAND desde FREQ (evita reconstruir la lista)
 BAND_RANGES = [
     ('2190m', 0.135, 0.137), ('630m', 0.472, 0.479),
@@ -164,30 +169,45 @@ class QSLGenerator:
         return self._flag_img
 
     def _load_country_map(self):
-        """Carga country_map.json (prefijos -> ISO2) una sola vez."""
+        """Carga country_map.json (prefijos -> ISO2) una sola vez.
+
+        Devuelve un dict {primera_letra: [items...]} con cada lista ordenada
+        por longitud de prefijo DESCENDENTE (más específico primero), para
+        resolver el país en O(prefijos de esa letra) en lugar de O(todos).
+        """
         if self._country_map is None:
-            import json as _json
             path = Path(__file__).with_name('country_map.json')
+            items = []
             if path.exists():
                 try:
                     with open(path, encoding='utf-8') as f:
-                        self._country_map = _json.load(f)
+                        items = json.load(f)
                 except Exception:
-                    self._country_map = []
-            else:
-                self._country_map = []
+                    items = []
+            index = {}
+            for it in items:
+                p = it.get('p')
+                if not p:
+                    continue
+                index.setdefault(p[0], []).append(it)
+            for lst in index.values():
+                lst.sort(key=lambda i: (-len(i['p']), i.get('ent', 0)))
+            self._country_map = index
         return self._country_map
 
     def country_code_for_call(self, call):
         """Deriva el código ISO2 del país desde el prefijo del callsign.
 
-        Usa longitud máxima de prefijo (predeterminada en country_map.json,
-        que ya viene ordenado de prefijo más largo a más corto).
+        Busca solo entre los prefijos que empiezan por la primera letra
+        de la llamada (ya ordenados por especificidad descendente).
+        Devuelve None para placeholders (N/A, UNKNOWN) y llamadas con
+        caracteres no válidos, para no asociar bandera errónea.
         """
-        call = (call or '').upper()
-        if not call:
+        call = (call or '').upper().strip()
+        if not call or call in ('N/A', 'UNKNOWN', 'WW', 'CALL') \
+                or re.search(r'[^A-Z0-9/]', call):
             return None
-        for item in self._load_country_map():
+        for item in self._load_country_map().get(call[0], []):
             if call.startswith(item['p']):
                 return item['cc']
         return None
@@ -326,8 +346,8 @@ class QSLGenerator:
     def draw_spanish_flag(self, draw, margin=10):
         """Dibuja la bandera de España en la esquina superior derecha.
 
-        Usa `bandera_espana.png` de la carpeta principal si existe; si no,
-        dibuja las franjas 1:2:1 directamente. Tamaño 5% x 5% de la postal.
+        Usa FLAGS/es.png si existe; si no, dibuja las franjas 1:2:1 como
+        fallback. Tamaño 5% x 5% de la postal.
         """
         fw = int(self.WIDTH * 0.05)
         fh = int(self.HEIGHT * 0.05)
@@ -346,7 +366,7 @@ class QSLGenerator:
 
     @staticmethod
     def _draw_spanish_flag_rects(draw, bx0, by0, bx1, by1, fh):
-        """Banderita por franjas (fallback si no existe bandera_espana.png)."""
+        """Banderita por franjas (fallback si no existe FLAGS/es.png)."""
         rojo = (198, 11, 30, 255)
         amarillo = (255, 200, 0, 255)
         third_y = by0 + fh / 4
@@ -681,6 +701,34 @@ def png_valid(path):
         return False
 
 
+def prune_orphan_pngs(folder, log, label=""):
+    """Elimina de QSLS/ los PNG que ya no referencia ningún ADI en el log.
+
+    Evita acumular postales huérfanas cuando se borran contactos de un ADI
+    o se elimina un ADI completo.
+    """
+    output_dir = folder / "QSLS"
+    if not output_dir.exists():
+        return 0
+    referenced = set()
+    for entry in log.values():
+        for c in entry.get('contactos', []):
+            arch = c.get('archivo')
+            if arch:
+                referenced.add(arch)
+    removed = 0
+    for f in output_dir.glob('*.png'):
+        if f.name not in referenced:
+            try:
+                f.unlink()
+                removed += 1
+            except OSError:
+                pass
+    if removed:
+        print(f"   🧹 {label}: {removed} postal/es huérfana/s eliminadas")
+    return removed
+
+
 def count_registered_pngs(folder):
     """Cuenta los PNG ya registrados en el log de una carpeta (secuencia de fondos local)"""
     total = 0
@@ -783,7 +831,8 @@ def process_folder(folder, generator, backgrounds, seq):
         entry = log.get(adi_file.name)
         prev_contacts = entry.get('contactos', []) if entry else []
 
-        if entry is None or entry.get('sha256') != file_hash:
+        if entry is None or entry.get('sha256') != file_hash \
+                or entry.get('generador') != GENERATOR_VERSION:
             # ===== Nuevo o modificado: reprocesar el ADI completo =====
             filenames = unique_filenames(qsos, adi_file.stem)
             contactos = []
@@ -793,6 +842,7 @@ def process_folder(folder, generator, backgrounds, seq):
 
             log[adi_file.name] = {
                 'sha256': file_hash,
+                'generador': GENERATOR_VERSION,
                 'contactos': contactos,
                 'procesado_en': now_iso(),
             }
@@ -836,6 +886,7 @@ def process_folder(folder, generator, backgrounds, seq):
               f"{len(faltantes)} faltantes ({brief})")
 
     save_log(folder, log)
+    prune_orphan_pngs(folder, log, label=folder.name)
     return nuevos, sin_cambios, regenerados, seq
 
 
@@ -848,6 +899,23 @@ def process_act6(base_dir, generator):
     qsl6 = base_dir / "qsl6"
     output_dir = qsl6 / "QSLS"
     output_dir.mkdir(exist_ok=True)
+
+    # Las QSL6 son postales "de record": en cada ejecución se eliminan TODAS
+    # para regenerarlas siempre con la información actual (nombres, grids,
+    # banderas, versión del generador). No hay estado incremental.
+    def _clean_output():
+        n = 0
+        for f in output_dir.glob("*.png"):
+            try:
+                f.unlink()
+                n += 1
+            except OSError:
+                pass
+        return n
+
+    limpiadas = _clean_output()
+    if limpiadas:
+        print(f"   🗑️  QSL6/QSLS: {limpiadas} postal/es regenerada/s desde cero")
 
     bgs = folder_backgrounds(qsl6)
     if not bgs:
@@ -886,16 +954,19 @@ def process_act6(base_dir, generator):
     print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
     print(f"   🏆 {len(comunes)} estación/es contactaron en las 5 actividades")
 
-    # 3) Estado previo en log (incremental)
+    # 3) Estado previo en log (solo informativo; la salida ya se limpió)
     log = load_log(qsl6)
     prev_entry = log.get("act6")
     prev_contacts = prev_entry.get('contactos', []) if prev_entry else []
 
-    # Hash del conjunto actual (para saber si cambió)
+    # Hash del conjunto actual (para el log)
     firma = "\n".join(sorted(
         f"{c}|{info_estacion[c]['name']}|{info_estacion[c]['grid']}" for c in comunes
     ))
     firma_hash = hashlib.sha256(firma.encode()).hexdigest()
+
+    # Regeneración total en cada ejecución (las QSL6 siempre se regeneran).
+    forzar = True
 
     # 4) Reusar las postales ya generadas y correctas; regenerar las demás
     por_archivo = {c.get('archivo'): c for c in prev_contacts}
@@ -906,7 +977,7 @@ def process_act6(base_dir, generator):
         fn = f"{sanitize_filename_component(call).lower()}_act6.png"
         info = info_estacion.get(call, {'name': '', 'grid': ''})
         prev = por_archivo.get(fn)
-        if prev and png_valid(output_dir / fn):
+        if not forzar and prev and png_valid(output_dir / fn):
             contactos.append(prev)
             continue
         # Regenerar (reusando el fondo previo si lo había)
@@ -938,10 +1009,12 @@ def process_act6(base_dir, generator):
 
     log["act6"] = {
         'sha256': firma_hash,
+        'generador': GENERATOR_VERSION,
         'contactos': contactos,
         'procesado_en': now_iso(),
     }
     save_log(qsl6, log)
+    prune_orphan_pngs(qsl6, log, label="qsl6")
 
     nombres = ", ".join(f"{c['call']} → {c['archivo']}" for c in contactos[:5])
     if len(contactos) > 5:
