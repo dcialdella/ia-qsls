@@ -30,7 +30,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Versión del generador: si un ADI ya registrado en el log se generó con otra
 # versión, se reprocesa (permite que cambios de código se reflejen al ejecutar
 # en modo incremental sin necesidad de --from-scratch).
-GENERATOR_VERSION = "2"
+GENERATOR_VERSION = "3"
 
 # Estación propia que se muestra en la esquina inferior derecha de cada postal
 STATION_TEXT = "EG9MM - Melilla"
@@ -196,6 +196,9 @@ class QSLGenerator:
                     continue
                 p = it.get('p')
                 if not isinstance(p, str) or not p:
+                    continue
+                cc = it.get('cc')
+                if not isinstance(cc, str) or not cc:
                     continue
                 index.setdefault(p[0], []).append(it)
             for lst in index.values():

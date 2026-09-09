@@ -33,17 +33,13 @@ postales generadas.
   - qsl1 (a1.png), qsl2 (a2.png), qsl3 (a3.png), qsl4 (f4.png),
     qsl5 (f5.png), qsl6 (f6.png), qsl7 (f7.png)
 - ✅ Archivos ADI activos:
-  - `qsl1/act1.adi` y `qsl1/act2.adi` (4 contactos c/u, datos de ejemplo)
-  - `qsl1/probe.adi`, `qsl2/probe.adi`, `qsl3/probe.adi`, `qsl4/probe.adi`,
-    `qsl5/probe.adi` (1 contacto c/u, estación EA4HUK — sirven para QSL6)
-  - `qsl2/activo2.adi` (4 contactos, datos de ejemplo)
-  - `qsl3/actividad3.adi` (4 contactos, datos de ejemplo)
-  - `qsl7/ejemplo.adi` (3 contactos, DMR)
-- ✅ Archivos ADI inactivos (extensión `.TEST`, NO se procesan):
-  - `qsl1/eladio1.adi.TEST` (89 contactos, Ham2K Logger EA3JAQ, POTA ES-2504)
-  - `qsl1/eladio2.adi.TEST` (74 contactos, Ham2K Logger EA3JAQ, LLOTA LLES-0413)
-  - `qsl2/eladio3.adi.TEST` (44 contactos, Ham2K Logger EA3JAQ, POTA ES-1366)
-  - `qsl5/dac1.adi.TEST` (110 contactos, Smart Logger EA4HUK, POTA ES-1895)
+  - `qsl1/TOTA2222-delta-20260909-1145.adi` (1 contacto)
+  - `qsl1/faro-echo-20260909-1821.adi` (4 contactos)
+  - `qsl1/pota1111-delta-20260909-1417.adi` (3 contactos)
+  - `qsl2/activo2.adi` (4 contactos)
+  - `qsl3/actividad3.adi` (4 contactos)
+  - `qsl4/probe.adi`, `qsl5/probe.adi`, `qsl6` (sin ADIs), `qsl7/ejemplo.adi` (3 contactos, DMR)
+- ✅ No quedan archivos `.adi.TEST` (fueron eliminados; los renombrados pasan a `.adi`)
 - ✅ Cada carpeta con datos tiene su log `qslN/qsl_log.json` (se crea solo)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
 - ✅ **Bandera del país** delante del nombre de cada estación (ver "Banderas" más abajo).
@@ -98,6 +94,15 @@ postales generadas.
      es un **espejo exacto** de la local: `rsync -a --update --delete` copia lo
      nuevo/modificado y borra en Drive los PNG que ya no están localmente. La app de
      escritorio de Google Drive sube los cambios a la nube automáticamente.
+17. **Versión **v3** del generador** (`GENERATOR_VERSION = "3"`). El log guarda esta
+     versión; al subirla, los ADI ya registrados se reprocesan automáticamente sin
+     necesidad de `--from-scratch`.
+18. **Robustez en `_load_country_map`:** se validan también los ítems sin `cc` (código
+     ISO2) no vacío; se descartan antes de indexarlos. Si un callsign no tiene país o
+     bandera, simplemente **no se dibuja nada** (sin crash).
+19. **Eliminados los `.adi.TEST`** (`eladio1/2`, `eladio3`, `dac1`): ya no existen en el
+     repositorio. Los ADI activos se renombran libremente durante las pruebas (son
+     volátiles); la regla de no renombrar sin consultar aplica solo a archivos `.TEST`.
 
 ### Estructura actual en disco
 
@@ -113,18 +118,15 @@ ia-qsls/
 ├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/
 │   ├── a1.png             <- Fondo de qsl1
-│   ├── act1.adi           <- Contactos actividad 1 (dia 1, 4 contactos)
-│   ├── act2.adi           <- Contactos actividad 1 (dia 2, 4 contactos)
-│   ├── probe.adi          <- EA4HUK (prueba de QSL6, 1 contacto)
-│   ├── eladio1.adi.TEST   <- INACTIVO: 89 contactos, Ham2K Logger EA3JAQ (POTA ES-2504)
-│   ├── eladio2.adi.TEST   <- INACTIVO: 74 contactos, Ham2K Logger EA3JAQ (LLOTA LLES-0413)
-│   ├── QSLS/              <- Postales generadas
+│   ├── TOTA2222-delta-20260909-1145.adi  <- Contactos actividad 1 (1 contacto)
+│   ├── faro-echo-20260909-1821.adi       <- Contactos actividad 1 (4 contactos)
+│   ├── pota1111-delta-20260909-1417.adi  <- Contactos actividad 1 (3 contactos)
+│   ├── QSLS/              <- Postales generadas (8)
 │   └── qsl_log.json       <- Log de procesado
 ├── qsl2/
 │   ├── a2.png
 │   ├── activo2.adi        <- 4 contactos (datos de ejemplo)
 │   ├── probe.adi          <- EA4HUK (1 contacto)
-│   ├── eladio3.adi.TEST   <- INACTIVO: 44 contactos, Ham2K Logger EA3JAQ (POTA ES-1366)
 │   ├── QSLS/
 │   └── qsl_log.json
 ├── qsl3/
@@ -140,16 +142,17 @@ ia-qsls/
 │   └── qsl_log.json
 ├── qsl5/
 │   ├── f5.png             <- Fondo de qsl5
-│   ├── dac1.adi.TEST      <- INACTIVO: 110 contactos, Smart Logger EA4HUK (POTA ES-1895)
 │   ├── probe.adi          <- EA4HUK (1 contacto)
 │   ├── QSLS/
 │   └── qsl_log.json
 ├── qsl6/
 │   ├── f6.png
+│   ├── qsl6.txt           <- Nota de la actividad (regla para obtener la QSL6)
 │   ├── QSLS/              <- Postales de record (ea4huk_act6.png)
 │   └── qsl_log.json
 └── qsl7/
     ├── f7.png
+    ├── qsl7.txt           <- Nota de la actividad (DMR)
     ├── ejemplo.adi        <- 3 contactos DMR
     ├── QSLS/
     └── qsl_log.json
@@ -176,14 +179,16 @@ Salida típica (modo incremental, todo ya generado):
 
 ```
 📂 QSL1  (fondos: a1.png)
-   ✓ act1.adi: sin cambios (4 contactos ya generados)
+   ✓ TOTA2222-delta-20260909-1145.adi: sin cambios (1 contactos ya generados)
+   ✓ faro-echo-20260909-1821.adi: sin cambios (4 contactos ya generados)
+   ✓ pota1111-delta-20260909-1417.adi: sin cambios (3 contactos ya generados)
    ...
 ============================================================
   RESUMEN: 0 procesados, 0 regenerados, 10 sin cambios
 ============================================================
 
 Postales generadas por carpeta:
-   qsl1   9 postales
+   qsl1   8 postales
    qsl2   5 postales
    ...
 ```
@@ -265,11 +270,11 @@ Cada carpeta tiene `qsl_log.json` con, por archivo ADI:
 
 ```json
 {
-  "act1.adi": {
+  "pota1111-delta-20260909-1417.adi": {
     "sha256": "bac65c…",
-    "generador": "2",
+    "generador": "3",
     "contactos": [
-      { "call": "EA4HJZ", "archivo": "ea4hjz_act1.png",
+      { "call": "EA4HJZ", "archivo": "ea4hjz_pota1111-delta-20260909-1417.png",
         "fondo": "a1.png", "generado_en": "2026-09-09T11:31:37Z" },
       ...
     ],
@@ -294,7 +299,7 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 
 ### Nominación de archivos
 - Formato: `{callsign}_{archivo_adi}.png` todo en minúsculas.
-  - Ej: `EA4HJZ` + `act1.adi` → `ea4hjz_act1.png`
+  - Ej: `EA4HJZ` + `pota1111-delta-20260909-1417.adi` → `ea4hjz_pota1111-delta-20260909-1417.png`
 - Si el mismo callsign aparece 2+ veces en un ADI: sufijo `_2`, `_3`…
   (función `unique_filenames`)
 - Actividad 6: `{callsign}_act6.png` (ej. `ea4huk_act6.png`).
@@ -423,15 +428,11 @@ Tipo | Tamaño caja | Contenido | Casillas
    la app las sube a la nube.
 3. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
    a contener varias postales `{call}_act6.png` (se regeneran en cada ejecución).
-4. Los archivos `.TEST` en qsl1, qsl2 y qsl5 (eladio1, eladio2, eladio3, dac1) están
-   inactivos. Para activarlos: renombrar de `.adi.TEST` a `.adi` y ejecutar
-   `./generar.sh`. **No renombrarlos sin consultar antes al autor.**
-   Nota: los ADI de Eladio no tienen campos NAME/QTH/GRIDSQUARE (solo Ham2K Logger con
-   POTA/LLOTA); `dac1.adi` los tiene (Smart Logger), así que mostraría nombre + grid +
-   bandera del país.
-5. (Opcional) El parser trunca a la longitud declarada: `<QTH:8>palermo` daría `palerm`
-   porque el ADI declara 8 pero el valor real son 7. Funciona salvo cuando la longitud
-   declarada es **menor** que el valor real; se podría mejorar tomando `max(len_real, decl)`.
+4. Cuando quieras **activar contactos masivos** (p.ej. Eladio/DAC con Ham2K o Smart
+   Logger), renombrar sus `.adi` a `.adi` activo y ejecutar `./generar.sh`.
+5. (Resuelto) El parser trunca a la longitud declarada: `<QTH:8>palermo` daría `palerm`
+   porque el ADI declara 8 pero el valor real son 7. Es el comportamiento **intencional**
+   del ADIF (longitudes declaradas); no es un error y se mantiene así.
 6. (Opcional) Añadir banderas `UN` (Naciones Unidas) y `ZZ` (Orden de Malta) si se quieren
    esas entidades; hoy se dejan sin bandera por defecto.
 
