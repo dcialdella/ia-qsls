@@ -133,6 +133,8 @@ class QSLGenerator:
         self._flag_tile = None      # bandera ya redimensionada (5% x 5% de la postal)
         self._bg_cache = {}         # path -> RGBA ya escalado a 'cover' (evita reescalar 5000x)
         self._flag_text_cache = {}  # (texto, tamaño fuente) -> imagen RGBA lista para pegar
+        self._station_flag_cache = {}  # (iso2, alto) -> imagen RGBA pequeña de bandera
+        self._country_map = None    # country_map.json cargado bajo demanda (lazy)
 
     def prepare_background(self, path):
         """Devuelve la imagen de fondo ya escalada a 'cover' y RGBA (cacheada).
@@ -148,18 +150,72 @@ class QSLGenerator:
         return self._bg_cache[key]
 
     def get_flag_image(self):
-        """Carga `bandera_espana.png` desde la carpeta del script (cacheado).
+        """Carga la bandera de España desde FLAGS/es.png (cacheado).
 
         Si no existe, devuelve None y el renderizado cae al dibujo por franjas.
         """
         if self._flag_img is None:
-            path = Path(__file__).with_name('bandera_espana.png')
+            path = Path(__file__).with_name('FLAGS') / 'es.png'
             if path.exists():
                 try:
                     self._flag_img = Image.open(path).convert('RGBA')
                 except Exception:
                     self._flag_img = None
         return self._flag_img
+
+    def _load_country_map(self):
+        """Carga country_map.json (prefijos -> ISO2) una sola vez."""
+        if self._country_map is None:
+            import json as _json
+            path = Path(__file__).with_name('country_map.json')
+            if path.exists():
+                try:
+                    with open(path, encoding='utf-8') as f:
+                        self._country_map = _json.load(f)
+                except Exception:
+                    self._country_map = []
+            else:
+                self._country_map = []
+        return self._country_map
+
+    def country_code_for_call(self, call):
+        """Deriva el código ISO2 del país desde el prefijo del callsign.
+
+        Usa longitud máxima de prefijo (predeterminada en country_map.json,
+        que ya viene ordenado de prefijo más largo a más corto).
+        """
+        call = (call or '').upper()
+        if not call:
+            return None
+        for item in self._load_country_map():
+            if call.startswith(item['p']):
+                return item['cc']
+        return None
+
+    def station_flag(self, call, height):
+        """Devuelve la bandera del país de `call` redimensionada a `height` px de alto.
+
+        Resultado cacheado por (iso2, alto). None si no se puede determinar
+        el país o no existe su bandera en FLAGS/.
+        """
+        cc = self.country_code_for_call(call)
+        if not cc:
+            return None
+        key = (cc, height)
+        if key not in self._station_flag_cache:
+            img = None
+            path = Path(__file__).with_name('FLAGS') / f"{cc.lower()}.png"
+            if path.exists():
+                try:
+                    with Image.open(path) as raw:
+                        raw = raw.convert('RGBA')
+                    ratio = height / raw.height
+                    new_w = max(1, round(raw.width * ratio))
+                    img = raw.resize((new_w, height), Image.LANCZOS)
+                except Exception:
+                    img = None
+            self._station_flag_cache[key] = img
+        return self._station_flag_cache[key]
 
     def get_font(self, size, bold=False):
         """Obtiene una fuente del sistema (cacheada)"""
@@ -361,6 +417,18 @@ class QSLGenerator:
                 return name
         return ''
 
+    def draw_station_flag(self, overlay, call, x, center_y, height):
+        """Dibuja la bandera del país de `call` delante del nombre.
+
+        Devuelve la coordenada x donde debe empezar el texto (después de la
+        bandera más un pequeño margen). Si no hay bandera, devuelve `x` intacto.
+        """
+        flag = self.station_flag(call, height)
+        if flag is None:
+            return x
+        overlay.alpha_composite(flag, dest=(x, center_y - height // 2))
+        return x + flag.width + 6
+
     def compose(self, background_path, qso, activity=None):
         """Compone una postal con la info del contacto sobre el fondo.
 
@@ -434,10 +502,14 @@ class QSLGenerator:
             draw.text((box[0] + pad_x, inner_top + line_h * 2), band_mode,
                       font=font_data, fill=(255, 255, 255, 240), anchor="lm")
 
-        # Línea 4: nombre / qth / grid / tu callsign
+        # Línea 4: nombre / qth / grid / tu callsign (con bandera del país delante)
         info = "  •  ".join(x for x in [name, qth, grid] if x)
         if info:
-            draw.text((box[0] + pad_x, inner_top + line_h * 3), info,
+            y_info = inner_top + line_h * 3
+            fh = font_info.size
+            x_name = box[0] + pad_x
+            x_name = self.draw_station_flag(overlay, call, x_name, y_info, fh)
+            draw.text((x_name, y_info), info,
                       font=font_info, fill=(255, 255, 255, 230), anchor="lm")
 
         # Casillas de actividades (tilde en la que corresponde)
@@ -512,9 +584,12 @@ class QSLGenerator:
         self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
                                   station_text, font_station)
 
-        # Línea 2: Nombre
+        # Línea 2: Nombre (con bandera del país delante)
         if name:
-            draw.text((box[0] + pad_x, y_name), name,
+            fh = font_data.size
+            x_name = box[0] + pad_x
+            x_name = self.draw_station_flag(overlay, call, x_name, y_name, fh)
+            draw.text((x_name, y_name), name,
                       font=font_data, fill=(255, 255, 255, 240), anchor="lm")
 
         # Línea 3: Grid locator
