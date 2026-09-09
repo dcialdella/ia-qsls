@@ -25,9 +25,11 @@ PY=python3
 
 # ---------- Argumentos ----------
 FROM_SCRATCH=false
+SYNC_DRIVE=false
 for arg in "$@"; do
   case "$arg" in
     --from-scratch|--clean) FROM_SCRATCH=true ;;
+    --sync-drive) SYNC_DRIVE=true ;;
     -h|--help)
       sed -n '2,20p' "$0" | sed 's/^# */  /'
       exit 0
@@ -95,6 +97,23 @@ for d in "$SCRIPT_DIR"/qsl[1-7]; do
   n=$(find "$d/QSLS" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
   printf "   %-6s %s postales\n" "$(basename "$d")" "${n:-0}"
 done
+
+# ---------- 8. Sync a Google Drive (opcional) ----------
+if [ "$SYNC_DRIVE" = true ]; then
+  GDRIVE_BASE="$HOME/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My Drive/QSL/QSLs"
+  echo
+  echo "→ sincronizando con Google Drive ($GDRIVE_BASE) ..."
+  for d in "$SCRIPT_DIR"/qsl[1-7]; do
+    [ -d "$d/QSLS" ] || continue
+    folder_name=$(basename "$d" | tr '[:lower:]' '[:upper:]')
+    dest="$GDRIVE_BASE/$folder_name"
+    mkdir -p "$dest"
+    rsync -av --update "$d/QSLS/" "$dest/" 2>/dev/null | grep -c '\.png$' > /dev/null 2>&1 || true
+    count=$(find "$dest" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+    printf "   %-6s -> %s/  (%s PNGs)\n" "$folder_name" "$dest" "${count:-0}"
+  done
+  echo "→ Google Drive sincronizará automáticamente con la nube."
+fi
 
 echo
 echo "Listo. Busca las imágenes en cada qslN/QSLS/."
