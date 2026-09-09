@@ -31,6 +31,9 @@ from PIL import Image, ImageDraw, ImageFont
 # en modo incremental sin necesidad de --from-scratch).
 GENERATOR_VERSION = "2"
 
+# Estación propia que se muestra en la esquina inferior derecha de cada postal
+STATION_TEXT = "EG9MM - Melilla"
+
 # Rangos de banda (MHz) para derivar BAND desde FREQ (evita reconstruir la lista)
 BAND_RANGES = [
     ('2190m', 0.135, 0.137), ('630m', 0.472, 0.479),
@@ -103,6 +106,8 @@ class ADIFParser:
             raw = content[raw_start:raw_end]
             if length and length > 0:
                 raw = raw[:length]
+            # strip() recorta SOLO los extremos; los espacios internos
+            # (p.ej. QTH "san fernando") se conservan íntegros.
             value = raw.strip()
             # Nunca sobrescribir la llamada con una vacía
             if tag_upper == 'CALL' and not value:
@@ -186,14 +191,25 @@ class QSLGenerator:
                     items = []
             index = {}
             for it in items:
+                if not isinstance(it, dict):
+                    continue
                 p = it.get('p')
-                if not p:
+                if not isinstance(p, str) or not p:
                     continue
                 index.setdefault(p[0], []).append(it)
             for lst in index.values():
-                lst.sort(key=lambda i: (-len(i['p']), i.get('ent', 0)))
+                lst.sort(key=QSLGenerator._country_sort_key)
             self._country_map = index
         return self._country_map
+
+    @staticmethod
+    def _country_sort_key(item):
+        """Clave de orden segura: ignora ítems con 'ent' no numérico."""
+        try:
+            ent = int(item.get('ent'))
+        except (TypeError, ValueError):
+            ent = 0
+        return (-len(item['p']), ent)
 
     def country_code_for_call(self, call):
         """Deriva el código ISO2 del país desde el prefijo del callsign.
@@ -498,7 +514,7 @@ class QSLGenerator:
 
         # Esquina inferior derecha: operador de la estación, en colores de bandera,
         # dentro de una minicaja con contraste (igual estilo que la caja de datos)
-        station_text = "EG9MM - Melilla"
+        station_text = STATION_TEXT
         font_station = self.get_font(52, bold=True)
         sbox = draw.textbbox((0, 0), station_text, font=font_station)
         sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
@@ -590,7 +606,7 @@ class QSLGenerator:
 
         # Esquina inferior derecha: operador de la estación, en colores de bandera,
         # dentro de una minicaja con contraste (igual estilo que la caja de datos)
-        station_text = "EG9MM - Melilla"
+        station_text = STATION_TEXT
         font_station = self.get_font(36, bold=True)
         sbox = draw.textbbox((0, 0), station_text, font=font_station)
         sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
@@ -913,14 +929,16 @@ def process_act6(base_dir, generator):
                 pass
         return n
 
+    bgs = folder_backgrounds(qsl6)
+    if not bgs:
+        print(f"\n⚠️  QSL6: no tiene imagen de fondo propia (f6.png). No se generan records.")
+        return 0, 0, 0
+
+    print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
+
     limpiadas = _clean_output()
     if limpiadas:
         print(f"   🗑️  QSL6/QSLS: {limpiadas} postal/es regenerada/s desde cero")
-
-    bgs = folder_backgrounds(qsl6)
-    if not bgs:
-        print(f"\n⚠️  QSL6: no tiene imagen de fondo propia (a6.png). No se generan records.")
-        return 0, 0, 0
 
     # 1) Recolectar estaciones y su info en cada actividad
     act_names = [f"qsl{n}" for n in range(1, 6)]
@@ -947,11 +965,9 @@ def process_act6(base_dir, generator):
     # 2) Intersección de las 5 actividades
     comunes = set.intersection(*por_actividad.values()) if por_actividad else set()
     if not comunes:
-        print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
         print(f"   ℹ️  Ninguna estación contactó en las 5 actividades. Sin records que generar.")
         return 0, 0, 0
 
-    print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
     print(f"   🏆 {len(comunes)} estación/es contactaron en las 5 actividades")
 
     # 3) Estado previo en log (solo informativo; la salida ya se limpió)
@@ -965,10 +981,8 @@ def process_act6(base_dir, generator):
     ))
     firma_hash = hashlib.sha256(firma.encode()).hexdigest()
 
-    # Regeneración total en cada ejecución (las QSL6 siempre se regeneran).
-    forzar = True
-
-    # 4) Reusar las postales ya generadas y correctas; regenerar las demás
+    # Regeneración total en cada ejecución (las QSL6 siempre se regeneran:
+    # la salida ya se limpió arriba, así que no hay nada que reutilizar).
     por_archivo = {c.get('archivo'): c for c in prev_contacts}
     contactos = []
     nuevos = 0
@@ -977,9 +991,6 @@ def process_act6(base_dir, generator):
         fn = f"{sanitize_filename_component(call).lower()}_act6.png"
         info = info_estacion.get(call, {'name': '', 'grid': ''})
         prev = por_archivo.get(fn)
-        if not forzar and prev and png_valid(output_dir / fn):
-            contactos.append(prev)
-            continue
         # Regenerar (reusando el fondo previo si lo había)
         bg_path = None
         if prev and prev.get('fondo'):
