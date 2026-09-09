@@ -23,6 +23,7 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import ClassVar
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -58,7 +59,7 @@ class ADIFParser:
     """
 
     # Campos propios de la cabecera/gestión, nunca datos de QSO
-    HEADER_KEYS = {
+    HEADER_KEYS: ClassVar[set[str]] = {
         'ADIF_VER', 'ADIFVER', 'PROGRAMID', 'PROGRAM_NAME', 'PROGRAMVERSION',
         'EOH', 'USERDEF', 'CREATED_TIMESTAMP', 'GENERATED_TIMESTAMP',
         'LASTUPDATED', 'SUBMITTED', 'ENDOFLOG', 'APP_ADIF_VER',
@@ -169,7 +170,7 @@ class QSLGenerator:
             if path.exists():
                 try:
                     self._flag_img = Image.open(path).convert('RGBA')
-                except Exception:
+                except OSError:
                     self._flag_img = None
         return self._flag_img
 
@@ -187,7 +188,7 @@ class QSLGenerator:
                 try:
                     with open(path, encoding='utf-8') as f:
                         items = json.load(f)
-                except Exception:
+                except (OSError, json.JSONDecodeError):
                     items = []
             index = {}
             for it in items:
@@ -248,7 +249,7 @@ class QSLGenerator:
                     ratio = height / raw.height
                     new_w = max(1, round(raw.width * ratio))
                     img = raw.resize((new_w, height), Image.LANCZOS)
-                except Exception:
+                except OSError:
                     img = None
             self._station_flag_cache[key] = img
         return self._station_flag_cache[key]
@@ -268,7 +269,7 @@ class QSLGenerator:
                     try:
                         self.fonts[key] = ImageFont.truetype(path, size)
                         break
-                    except Exception:
+                    except OSError:
                         continue
             else:
                 self.fonts[key] = ImageFont.load_default()
@@ -713,7 +714,7 @@ def png_valid(path):
         with Image.open(path) as img:
             img.verify()
         return True
-    except Exception:
+    except OSError:
         return False
 
 
@@ -931,7 +932,7 @@ def process_act6(base_dir, generator):
 
     bgs = folder_backgrounds(qsl6)
     if not bgs:
-        print(f"\n⚠️  QSL6: no tiene imagen de fondo propia (f6.png). No se generan records.")
+        print("\n⚠️  QSL6: no tiene imagen de fondo propia (f6.png). No se generan records.")
         return 0, 0, 0
 
     print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
@@ -965,7 +966,7 @@ def process_act6(base_dir, generator):
     # 2) Intersección de las 5 actividades
     comunes = set.intersection(*por_actividad.values()) if por_actividad else set()
     if not comunes:
-        print(f"   ℹ️  Ninguna estación contactó en las 5 actividades. Sin records que generar.")
+        print("   ℹ️  Ninguna estación contactó en las 5 actividades. Sin records que generar.")
         return 0, 0, 0
 
     print(f"   🏆 {len(comunes)} estación/es contactaron en las 5 actividades")
