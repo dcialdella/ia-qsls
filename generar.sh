@@ -111,7 +111,7 @@ if [ "$SYNC_DRIVE" = true ]; then
     folder_name=$(basename "$d")
     dest="$GDRIVE_BASE/$folder_name"
     mkdir -p "$dest"
-    rsync -av --update "$d/QSLS/" "$dest/" 2>/dev/null | grep -c '\.png$' > /dev/null 2>&1 || true
+    rsync -av --update --delete "$d/QSLS/" "$dest/" 2>/dev/null | grep -c '\.png$' > /dev/null 2>&1 || true
     count=$(find "$dest" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
     printf "   %-6s -> %s/  (%s PNGs)\n" "$folder_name" "$dest" "${count:-0}"
   done

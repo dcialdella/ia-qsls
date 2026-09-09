@@ -94,9 +94,10 @@ postales generadas.
 16. **Sincronización con Google Drive por defecto.** `generar.sh` copia las postales
      de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
      Drive/QSL/QSLs/qslN` (mismas carpetas en minúsculas, creadas automáticamente). La
-     sincronización ocurre **siempre**, salvo flag `--no-sync-drive`. Usa `rsync
-     --update` (solo copia lo nuevo/modificado) y la app de escritorio de Google Drive
-     sube los cambios a la nube automáticamente.
+     sincronización ocurre **siempre**, salvo flag `--no-sync-drive`. La carpeta de Drive
+     es un **espejo exacto** de la local: `rsync -a --update --delete` copia lo
+     nuevo/modificado y borra en Drive los PNG que ya no están localmente. La app de
+     escritorio de Google Drive sube los cambios a la nube automáticamente.
 
 ### Estructura actual en disco
 
@@ -215,8 +216,9 @@ sincronizada por la app de Google Drive:
 
 - Cada carpeta local `qslN` se copia a su carpeta `qslN` (mismo nombre, en minúsculas)
   dentro de `QSL/QSLs`. Si la carpeta destino no existe, se crea automáticamente.
-- Se usa `rsync -av --update`, que **solo copia lo nuevo o modificado** (no vuelve a
-  copiar lo que ya está). Re-ejecutar es barato.
+- La carpeta de Drive es un **espejo exacto** de `qslN/QSLS/`: se usa
+  `rsync -av --update --delete`, que copia lo nuevo/modificado **y borra** en Drive los
+  PNGs que ya no existen localmente (postales huérfanas eliminadas).
 - Después la **app de escritorio de Google Drive** detecta los archivos y los sube a la
   nube automáticamente (no hace falta nada más).
 - Preprequisito: tener la app "Google Drive" de escritorio instalada y con la cuenta de
