@@ -33,11 +33,7 @@ for arg in "$@"; do
     --from-scratch|--clean) FROM_SCRATCH=true ;;
     --sync-drive) SYNC_DRIVE=true ;;
     --no-sync-drive) SYNC_DRIVE=false ;;
-    -h|--help)
-      sed -n '2,20p' "$0" | sed 's/^# */  /'
-      exit 0
-      ;;
-    *) echo "Argumento desconocido: $arg (ver $0 --help)"; exit 1 ;;
+    *) echo "Argumento desconocido: $arg"; exit 1 ;;
   esac
 done
 

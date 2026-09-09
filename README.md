@@ -170,7 +170,6 @@ crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
 ./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
 ./generar.sh --clean            # alias de --from-scratch
-./generar.sh --help             # ayuda resumida
 ```
 
 Salida típica (modo incremental, todo ya generado):
