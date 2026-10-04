@@ -785,6 +785,61 @@ Partiendo del estado de inicio (sin `.adi` en `qslN/`, sin postcards generadas):
   `TEST DATA/` ahora, los de `qslN/` cuando los actives), `index.html`, `qsl_index.json`,
   `country_map.json`, `FLAGS/`, el código y el README.
 - **Estado Git:** `main` en sync con `origin/main` (0 ahead, 0 behind). Último commit:
-  `a756881` — *"Regeneracion total sin ADIs in qsl1-qsl7: 0 postcards, indice a 0"*
-  (sin tildes, por coherencia con el resto de commits): el volcado deliberado a estado de
-  inicio que describe §1. Lo único modificado sobre ese commit es este `README.md`.
+  `bf02d44` — *"Unificar los fondos: f1.png..f7.png en las 7 actividades"*. Antes,
+  `a756881` — *"Regeneracion total sin ADIs in qsl1-qsl7: 0 postcards, indice a 0"*: el
+  volcado deliberado al estado de inicio que describe §1.
+- **Punto de retorno guardado:** hay un tag **`inicio-fresco`** en `bf02d44` que congela
+  este estado (sin ADIs en `qslN/`, sin postcards, índice a 0). Ver §10.
+---
+
+## 10. Punto de retorno: el tag `inicio-fresco`
+
+Hay un tag de git que congela el estado "**INICIO FRESCO sin datos generados**", por si
+hay que deshacer pruebas o empezar de cero otra vez:
+
+```bash
+git tag -n9 inicio-fresco        # ver qué guarda
+git show inicio-fresco           # contenido exacto del tag
+```
+
+### Qué estado congela
+
+Apunta al commit `bf02d44`:
+
+- `qsl1`–`qsl7` con **solo su fondo**: `f1.png` … `f7.png` (convención `f<n>.png`)
+- `qslN/QSLS/` **vacía** en las 7 actividades (0 postcards)
+- **Ningún** `qslN/qsl_log.json` (se crean solos al primer procesado real)
+- **Cero** `.adi` dentro de `qsl1`–`qsl7`
+- Los 10 `.adi` de ejemplo en `TEST DATA/`, sin procesar
+- `qsl_index.json` válido pero vacío: `total: 0`, `counts` a 0, `entries: []`
+
+### Cómo volver a él
+
+**Para trabajar desde ahí sin perder el `main` actual** (recomendado):
+
+```bash
+git switch -c prueba-inicio-fresco inicio-fresco
+```
+
+**Para volver al estado de inicio destruyendo lo que haya ahora**:
+
+```bash
+git reset --hard inicio-fresco
+git clean -fdX qsl1 qsl2 qsl3 qsl4 qsl5 qsl6 qsl7   # borra QSLS/*.png y qsl_log.json
+./generar.sh --no-sync-drive                        # comprobación: 0 postcards
+./generar.sh --index-only                           # deja el índice a 0
+```
+
+> `git reset --hard` **descarta** cualquier cambio sin commitear. Haz `git status` antes.
+> El `git clean -fdX` solo borra lo ignorado (`QSLS/`, `qsl_log.json`); el `-X` es lo que
+> limita el borrado a los ficheros ignorados, así que no toca `f<n>.png` ni los `.adi`.
+
+### Lo que el tag NO guarda
+
+- **Los PNG generados y los `qsl_log.json`**: están en `.gitignore`, así que no entran en
+  ningún commit ni en el tag. Para eso está el `git clean -fdX` de arriba. (En el momento
+  de crear el tag no había ninguno, así que el tag sí reproduce el estado completo.)
+- **Google Drive**: la carpeta `QSL/QSLs` con sus 7 subcarpetas vive fuera de git. Hay que
+  comprobarla a mano. Recuerda la regla 1 de §0: **las 7 carpetas nunca se borran**, aunque
+  estén vacías. Para vaciarlas, borra los PNG de `qslN/QSLS/` y ejecuta
+  `./generar.sh` (el `rsync --delete` los refleja en Drive) o bórralos allí a mano.
