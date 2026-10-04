@@ -205,8 +205,7 @@ async function load() {
 
 let timer;
 input.addEventListener('input', () => {
-  clearTimeout(timer);
-  timer = setTimeout(() => render(input.value.trim()), 120);
+  // No buscar automáticamente; esperar a pulsar 'Buscar' (Go)
 });
 $('#go').addEventListener('click', () => render(input.value.trim()));
 $('#clear').addEventListener('click', () => { input.value = ''; render(''); input.focus(); });
