@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generador de Postales QSL desde archivos ADI (ADIF)
-Usa a1.png/a2.png como fondos y superpone los datos de contacto.
+Usa f1.png..f7.png como fondos y superpone los datos de contacto.
 
 Lógica inteligente:
   - Cada carpeta qslN tiene su log (qslN/qsl_log.json).

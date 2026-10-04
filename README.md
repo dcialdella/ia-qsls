@@ -63,8 +63,9 @@ postales generadas.
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ Script de ejecución autónoma **`generar.sh`** (ver sección 2)
 - ✅ Carpetas `qsl1`–`qsl7` creadas y **vacías de contactos**. Todas con su fondo:
-  - qsl1 (`a1.png`), qsl2 (`a2.png`), qsl3 (`a3.png`), qsl4 (`f4.png`),
-    qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`)
+  - qsl1 (`f1.png`), qsl2 (`f2.png`), qsl3 (`f3.png`), qsl4 (`f4.png`),
+    qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`) — la convención es `f<n>.png`,
+    el número coincide con la actividad
 - ✅ `qsl1`–`qsl7`: **cero archivos `.adi`** y `QSLS/` vacío (se regenera al añadir ADIs)
 - ✅ Los **10 `.adi` de ejemplo están en `TEST DATA/`**, no en las carpetas de actividad.
   No se procesan: el generador solo lee `qslN/*.adi`. Para usarlos, cópialos a su
@@ -217,13 +218,13 @@ ia-qsls/
 ├── README.md
 ├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/
-│   ├── a1.png             <- Fondo de qsl1
+│   ├── f1.png             <- Fondo de qsl1
 │   └── QSLS/              <- (vacía) se llena al copiar aquí los .adi y ejecutar
 ├── qsl2/
-│   ├── a2.png
+│   ├── f2.png
 │   └── QSLS/              <- (vacía)
 ├── qsl3/
-│   ├── a3.png
+│   ├── f3.png
 │   └── QSLS/              <- (vacía)
 ├── qsl4/
 │   ├── f4.png
@@ -328,7 +329,7 @@ La **primera** vez que se procesa un `.adi` (recién copiado de `TEST DATA/`) se
 `⚡`, no con `✓ sin cambios`. En la **segunda** ejecución, si nada ha cambiado:
 
 ```
-📂 QSL1  (fondos: a1.png)
+📂 QSL1  (fondos: f1.png)
    ⚡ TOTA2222-delta-20260909-1145.adi: 1 contactos -> ea4huk_tota2222-delta-20260909-1145.png
    ⚡ faro-echo-20260909-1821.adi: 4 contactos -> ea4hjz_faro-echo-20260909-1821.png, df5bnl_faro-echo-20260909-1821.png, it9rki_faro-echo-20260909-1821.png, f5len_faro-echo-20260909-1821.png
    ⚡ pota1111-delta-20260909-1417.adi: 4 contactos -> ea3jaq_pota1111-delta-20260909-1417.png, ea4hjz_pota1111-delta-20260909-1417.png, df5bnl_pota1111-delta-20260909-1417.png, f5len_pota1111-delta-20260909-1417.png
@@ -347,7 +348,7 @@ La **primera** vez que se procesa un `.adi` (recién copiado de `TEST DATA/`) se
 Y en una tercera, ya con todo generado:
 
 ```
-📂 QSL1  (fondos: a1.png)
+📂 QSL1  (fondos: f1.png)
    ✓ TOTA2222-delta-20260909-1145.adi: sin cambios (1 contactos ya generados)
    ✓ faro-echo-20260909-1821.adi: sin cambios (4 contactos ya generados)
    ✓ pota1111-delta-20260909-1417.adi: sin cambios (4 contactos ya generados)
@@ -439,7 +440,7 @@ Cada carpeta tiene `qsl_log.json` con, por archivo ADI:
     "generador": "3",
     "contactos": [
       { "call": "EA4HJZ", "archivo": "ea4hjz_pota1111-delta-20260909-1417.png",
-        "fondo": "a1.png", "generado_en": "2026-09-09T11:31:37Z" },
+        "fondo": "f1.png", "generado_en": "2026-09-09T11:31:37Z" },
       ...
     ],
     "procesado_en": "2026-09-09T11:31:37Z"
@@ -469,9 +470,15 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 - Actividad 6: `{callsign}_act6.png` (ej. `ea4huk_act6.png`).
 
 ### Fondos
-- Cada carpeta usa **sus propios** fondos (los de su raíz). QSL1 usa a1.png, QSL2 a2.png, etc.
+- Cada carpeta usa **sus propios** fondos (los de su raíz), con la convención **`f<n>.png`
+  donde `n` es el número de actividad**: QSL1 → `f1.png`, QSL2 → `f2.png`… QSL7 → `f7.png`.
+  El nombre es solo convención: el generador **no** lo hardcodea, hace
+  `glob('*.png')` sobre la carpeta (`folder_backgrounds`), así que cualquier otro nombre
+  funciona igual mientras sea el único PNG de la raíz.
 - Si una carpeta tiene varios fondos se alternan por contacto (`index % len(fondos)`).
-- Al regenerar un faltante se **reusa el fondo** guardado en el log (`fondo`).
+- Al regenerar un faltante se **reusa el fondo** guardado en el log (`fondo`). Si ese nombre
+  ya no existe (p. ej. renombraste el fondo), cae con gracia a `pick_background(...)`: no
+  peta, pero la postcard se rehace con otro fondo.
 - **Sin imagen → no se genera nada** (ni QSLS, ni log).
 
 ---
