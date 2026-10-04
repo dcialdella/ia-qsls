@@ -36,6 +36,16 @@ postales generadas.
    `.gitignore` (`qsl*/QSLS/`).
 4. **La raíz de Drive `QSLs` solo contiene las 7 carpetas `qsl1`–`qsl7`**, ningún
    archivo suelto en la raíz.
+5. **Tras cada generación de imágenes (parcial o total) hay que regenerar el índice
+   y subir el código.** El sitio lee `qsl_index.json` desde GitHub Pages, así que
+   sin push la web no ve las postcards nuevas. Secuencia obligatoria:
+   1. `./generar.sh --index` (o `--from-scratch` y luego `--index-only` si hay que
+      esperar a que Drive suba los PNG a la nube).
+   2. `git add -A && git commit && git push`.
+   3. Verificar en <https://dcialdella.github.io/ia-qsls/qsl_index.json> que
+      `total` y `counts` reflejan lo generado (Pages tarda ~1 min).
+   Ojo: `drive_index.py` lee la nube, no el disco local; si se indexa antes de que
+   Drive suba los ficheros, el JSON sale con `total: 0`.
 
 ---
 
