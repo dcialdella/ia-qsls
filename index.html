@@ -85,14 +85,14 @@
 <body>
 <header>
   <h1><span class="flag">🇪🇸</span> QSL EG9MM · Melilla</h1>
-  <p class="sub">Escribe tu indicativo y descarga tus postcards QSL</p>
+  <p class="sub">Escribe tu indicativo / Type your Caller ID to download the QSLs</p>
   <div class="search">
     <input id="q" type="search" placeholder="EA4HJZ" autocomplete="off" autocapitalize="characters"
            spellcheck="false" aria-label="Indicativo a buscar">
     <button class="primary" id="go">Buscar</button>
     <button id="clear">Limpiar</button>
   </div>
-  <p class="hint">También puedes buscar por inicio: <code>EA4</code> lista todas las estaciones EA4.</p>
+  <p class="hint">Mínimo 4 caracteres / Minimum 4 characters. Búsqueda por inicio del nombre del archivo / Search matches start of filename.</p>
 </header>
 
 <main>
@@ -102,7 +102,7 @@
 
 <footer>
   <span id="updated">–</span> · <span id="total"></span><br>
-  EG9MM · Melilla · 2026
+  EG9MM · Melilla · 2026 · email: eg9mm.mail@gmail.com
 </footer>
 
 <script>
@@ -138,34 +138,32 @@ function itemRow(e) {
       <span class="tag${isRec ? ' rec' : ''}">${escapeHtml(e.act.toUpperCase())} · ${escapeHtml(title)}</span>
       <div class="size">${kb(e.size)} · ${escapeHtml((e.modified || '').slice(0, 10))}</div>
     </div>
-    <div class="actions">
-      <a class="dl" href="${DL(e.id)}">Descargar</a>
-      <a href="${VIEW(e.id)}" target="_blank" rel="noopener">Abrir</a>
-    </div>
+      <div class="actions">
+        <a class="dl" href="${DL(e.id)}">Descargar</a>
+      </div>
   </li>`;
 }
 
 // Agrupa por indicativo y ordena: coincidencia exacta primero, luego A→Z.
 function render(term) {
   results.innerHTML = '';
-  if (!term) {
-    statusEl.textContent = index.total.toLocaleString('es') + ' postcards indexadas.';
+  const t = norm(term).trim();
+  if (!t || t.length < 4) {
+    statusEl.textContent = index && index.total ? index.total.toLocaleString('es') + ' postcards indexadas.' : '';
     return;
   }
 
-  const t = norm(term);
   const groups = new Map();
   for (const e of index.entries) {
-    if (!norm(e.call).startsWith(t)) continue;
+    const prefix = norm(e.name).split('_')[0];
+    if (!prefix.startsWith(t)) continue;
     if (!groups.has(e.call)) groups.set(e.call, []);
     groups.get(e.call).push(e);
   }
 
   if (!groups.size) {
     statusEl.textContent = `Sin resultados para "${term}".`;
-    const all = [...new Set(index.entries.map(e => e.call))].sort();
-    results.innerHTML = `<div class="empty">Prueba con menos letras.<br><br>Indicativos disponibles:<br>` +
-      all.map(c => `<code>${escapeHtml(c)}</code>`).join(' ') + `</div>`;
+    results.innerHTML = '';
     return;
   }
 

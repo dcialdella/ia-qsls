@@ -74,10 +74,10 @@ else
   echo "→ Pillow ya disponible: $($PY_VENV -c 'import PIL; print(PIL.__version__)')"
 fi
 
-# ---------- 3.b Instalar google-auth si se va a indexar Drive ----------
-if [ "$BUILD_INDEX" = true ] && ! "$PY_VENV" -c "import google.auth" >/dev/null 2>&1; then
-  echo "→ instalando google-auth en el venv ..."
-  "$PY_VENV" -m pip install google-auth
+# ---------- 3.b Instalar dependencias para indexado web (opcional) ----------
+if [ "$BUILD_INDEX" = true ]; then
+  # No se necesitan credenciales: drive_index.py funciona leyendo HTML público
+  : # sin dependencias extra
 fi
 
 # ---------- 4. (Opcional) Regenerar todo desde cero ----------
@@ -133,15 +133,9 @@ fi
 # ---------- 9. Índice web (opcional) ----------
 if [ "$BUILD_INDEX" = true ]; then
   echo
-  if [ ! -f "$SCRIPT_DIR/drive_creds.json" ]; then
-    echo "→ falta drive_creds.json: no se regenera el índice web (ver README §9)."
-  else
-    echo "→ regenerando qsl_index.json ..."
-    echo "  (si acabas de sincronizar, Drive puede tardar unos segundos en subir"
-    echo "   los PNG nuevos: si faltan, repite '--index-only' en un minuto)"
-    read -r -a DRIVE_INDEX_ARGS_ARR <<< "${DRIVE_INDEX_ARGS:-}"
-    "$PY_VENV" "$SCRIPT_DIR/drive_index.py" "${DRIVE_INDEX_ARGS_ARR[@]+"${DRIVE_INDEX_ARGS_ARR[@]}"}"
-  fi
+  echo "→ regenerando qsl_index.json (lectura HTML público, sin credenciales) ..."
+  echo "  ID por defecto: 1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy"
+  "$PY_VENV" "$SCRIPT_DIR/drive_index.py" "${DRIVE_INDEX_ARGS_ARR[@]+"${DRIVE_INDEX_ARGS_ARR[@]}"}"
 fi
 
 echo

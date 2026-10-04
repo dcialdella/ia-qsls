@@ -2,51 +2,59 @@
 """
 Constructor del índice público de QSLs (qsl_index.json).
 
-Los enlaces de descarga de Google Drive no se pueden construir a partir del
-nombre del archivo: siempre llevan el 'file id'
-(https://drive.google.com/uc?export=download&id=<ID>). Por eso este script
-recorre la carpeta de Drive con la API v3 usando una *cuenta de servicio* y
-guarda el nombre + el id de cada PNG.
+La carpeta de Drive es pública ('cualquier persona con el enlace'), así que no
+hace falta ninguna credencial: la página de una carpeta pública trae embebidos el
+nombre y el file id de cada hijo, y con ese id el enlace de descarga funciona
+sin iniciar sesión:
 
-Con ese JSON la página index.html busca por prefijo del nombre de archivo
-(que empieza por el indicativo, ver unique_filenames en qsl_generator.py) y
-ofrece enlaces de descarga directa.
+    https://drive.google.com/uc?export=download&id=<ID>   ->  303  ->  200 image/png
 
-Requisitos (una sola vez):
-  1. Google Cloud > crear proyecto > IAM > Cuentas de servicio > Crear
-     (sin roles de GCP).
-  2. Descargar la clave JSON y guardarla en la raíz como 'drive_creds.json'
-     (está en .gitignore: no se sube nunca).
-  3. Compartir la carpeta de Drive 'QSL' (o 'QSLs') con el correo de la cuenta
-     de servicio como Lector. Compartir por enlace NO da acceso a la API.
-  4. pip install google-auth
+Este script lee esas páginas y escribe qsl_index.json, que es lo que después
+descarga index.html para buscar por indicativo.
+
+Sin dependencias: solo la biblioteca estándar.
 
 Uso:
-    python3 drive_index.py                        # usa la carpeta de EG9MM por defecto
-    python3 drive_index.py --folder-id <ID>        # otra carpeta 'QSLs'
-    python3 drive_index.py --parent-id <ID>        # busca 'QSLs' dentro de <ID>
-    python3 drive_index.py --dry-run               # no escribe, solo informa
+    python3 drive_index.py                # usa la carpeta pública de EG9MM
+    python3 drive_index.py --folder-id ID # otra carpeta
+    python3 drive_index.py --dry-run      # no escribe, solo informa
+    python3 drive_index.py --verbose
 """
 
 import argparse
 import json
+import re
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
-PAGE_SIZE = 1000
-DEFAULT_CREDS = "drive_creds.json"
-DEFAULT_OUT = "qsl_index.json"
-DEFAULT_FOLDER_NAME = "QSLs"
-FOLDER_MIME = "application/vnd.google-apps.folder"
-IMAGE_MIMES = ("image/png", "image/jpeg", "image/webp")
-
 # Carpeta pública de EG9MM con las subcarpetas qsl1..qsl7:
-# https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy
+# https://drive.google.com/drive/u/5/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy
 DEFAULT_FOLDER_ID = "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy"
+DEFAULT_OUT = "qsl_index.json"
 
-# Actividad -> etiqueta legible para la página web
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+FOLDER_URL = "https://drive.google.com/drive/folders/{id}"
+DOWNLOAD_URL = "https://drive.google.com/uc?export=download&id={id}"
+TIMEOUT = 45
+
+FOLDER_MIME = "application/vnd.google-apps.folder"
+
+# Cada entrada del HTML de Drive empieza por [null,"<ID>"] seguido (a menos de
+# 400 caracteres) de su mime type. El nombre del archivo aparece algo después,
+# dentro del mismo bloque.
+ENTRY_HEAD = r'\[null,"([A-Za-z0-9_-]{25,44})"\](?:(?!\[null,"[A-Za-z0-9_-]{25,44}"\]).{0,400}?)'
+FOLDER_ENTRY_RE = re.compile(ENTRY_HEAD + re.escape(FOLDER_MIME), re.S)
+FILE_ENTRY_RE = re.compile(ENTRY_HEAD + r'"image/(?:png|jpeg|webp)"', re.S)
+# Etiqueta que Drive adjunta a la carpeta en la página pública ("qsl1"...)
+LABEL_RE = re.compile(r'\[\[\["(qsl\d)"')
+FILENAME_RE = re.compile(r'"([^"]+\.(?:png|jpg|jpeg|webp))"')
+
 ACTIVITY_TITLES = {
     "qsl1": "Actividad 1",
     "qsl2": "Actividad 2",
@@ -63,138 +71,121 @@ def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build_session(creds_path):
-    """Devuelve una AuthorizedSession autenticada como la cuenta de servicio."""
+def fetch(url, want_bytes=False):
+    """Descarga una URL. Devuelve texto (o bytes) y lanza error con diagnóstico."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        from google.auth.transport.requests import AuthorizedSession
-        from google.oauth2 import service_account
-    except ImportError as exc:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            data = resp.read()
+    except urllib.error.HTTPError as exc:
         raise SystemExit(
-            "Falta la dependencia 'google-auth'. Instálala con:\n"
-            "    pip install google-auth"
-        ) from exc
-
-    path = Path(creds_path)
-    if not path.is_file():
-        raise SystemExit(
-            f"No encuentro las credenciales '{path}'.\n"
-            "Descarga la clave JSON de la cuenta de servicio y guárdala con ese nombre."
-        )
-
-    scopes = ["https://www.googleapis.com/auth/drive.readonly"]
-    creds = service_account.Credentials.from_service_account_file(
-        str(path), scopes=scopes
-    )
-    return AuthorizedSession(creds), creds.signer_email
-
-
-def api_get(session, params, label):
-    """GET paginado a la API de Drive. Devuelve la lista de 'files'."""
-    items = []
-    page_token = None
-    while True:
-        query = dict(params, pageSize=PAGE_SIZE)
-        if page_token:
-            query["pageToken"] = page_token
-        resp = session.get(DRIVE_FILES_URL, params=query, timeout=60)
-        if resp.status_code != 200:
-            raise SystemExit(
-                f"Error {resp.status_code} de la API de Drive ({label}):\n"
-                f"{resp.text[:600]}\n"
-                "Comprueba que la carpeta está compartida con la cuenta de servicio."
+            f"Error {exc.code} al abrir {url}\n"
+            + (
+                "Si es 404, la carpeta no existe o ya no es pública."
+                if exc.code == 404
+                else "Revisa la conexión y que la carpeta esté compartida por enlace."
             )
-        payload = resp.json()
-        items.extend(payload.get("files", []))
-        page_token = payload.get("nextPageToken")
-        if not page_token:
-            return items
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"No se pudo conectar con Drive: {exc.reason}") from exc
+    return data if want_bytes else data.decode("utf-8", errors="replace")
 
 
-def find_child_folder(session, parent_id, name):
-    """Localiza una subcarpeta por nombre exacto (case-insensitive)."""
-    files = api_get(
-        session,
-        {
-            "q": f"'{parent_id}' in parents and trashed = false",
-            "fields": "nextPageToken, files(id, name, mimeType)",
-            "supportsAllDrives": "true",
-            "includeItemsFromAllDrives": "true",
-        },
-        f"buscando carpeta '{name}'",
-    )
-    for f in files:
-        if f.get("mimeType") == FOLDER_MIME and f.get("name", "").lower() == name.lower():
-            return f["id"]
-    found = [f.get("name") for f in files if f.get("mimeType") == FOLDER_MIME]
-    raise SystemExit(
-        f"No encuentro la carpeta '{name}' dentro de {parent_id}.\n"
-        f"Carpetas daughters encontradas: {found or '(ninguna)'}"
-    )
+def split_blocks(html, entry_re):
+    """Parte el HTML en bloques 'entrada' y devuelve [(id, inicio, fin), ...]."""
+    matches = list(entry_re.finditer(html))
+    blocks = []
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(html)
+        blocks.append((m.group(1), m.start(), end))
+    return blocks
 
 
-def list_images(session, folder_id):
-    """Lista los PNG/JPG de una carpeta de Drive, paginando."""
-    files = api_get(
-        session,
-        {
-            "q": f"'{folder_id}' in parents and trashed = false",
-            "fields": "nextPageToken, files(id, name, mimeType, size, modifiedTime)",
-            "orderBy": "name",
-            "supportsAllDrives": "true",
-            "includeItemsFromAllDrives": "true",
-        },
-        f"listando imágenes de {folder_id}",
-    )
-    return [f for f in files if f.get("mimeType") in IMAGE_MIMES]
+def parse_child_folders(html):
+    """Devuelve {nombre_actividad: folder_id} a partir de la página pública."""
+    blocks = split_blocks(html, FOLDER_ENTRY_RE)
+    found = []
+    for fid, start, end in blocks:
+        label = LABEL_RE.search(html[start:end])
+        found.append((label.group(1).lower() if label else None, fid))
+
+    named = {name: fid for name, fid in found if name}
+    if len(named) == len(found) and named:
+        return named
+
+    # Sin etiquetas legibles: Drive las ordena por nombre (qsl1..qsl7).
+    fallback = {f"qsl{i + 1}": fid for i, (_, fid) in enumerate(found)}
+    if fallback:
+        print(
+            "   aviso: no se han podido leer las etiquetas; se asigna por orden.",
+            file=sys.stderr,
+        )
+    return fallback
+
+
+def parse_files(html):
+    """Devuelve [{'id':…, 'name':…}] con los archivos de imagen de la carpeta."""
+    files = []
+    seen = set()
+    for fid, start, end in split_blocks(html, FILE_ENTRY_RE):
+        if fid in seen:
+            continue
+        name_match = FILENAME_RE.search(html[start:end])
+        if not name_match:
+            continue
+        seen.add(fid)
+        files.append({"id": fid, "name": name_match.group(1)})
+    return files
+
+
+def file_size(file_id):
+    """Tamaño en bytes del archivo, o 0 si no se puede averiguar."""
+    try:
+        req = urllib.request.Request(
+            DOWNLOAD_URL.format(id=file_id),
+            headers={"User-Agent": USER_AGENT},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            return int(resp.headers.get("Content-Length") or 0)
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, OSError):
+        return 0
 
 
 def callsign_from_filename(name):
-    """El nombre del archivo empieza por el indicativo: ea4hjz_pota1111.png -> EA4HJZ."""
+    """El nombre empieza por el indicativo: ea4hjz_pota1111.png -> EA4HJZ."""
     stem = name.rsplit(".", 1)[0]
-    prefix = stem.split("_", 1)[0]
-    return prefix.upper() or "?"
+    return stem.split("_", 1)[0].upper() or "?"
 
 
-def build_index(session, qsls_id, verbose=False):
-    """Recorre qsl1..qsl7 dentro de 'qsls_id' y devuelve el índice."""
-    children = api_get(
-        session,
-        {
-            "q": f"'{qsls_id}' in parents and trashed = false",
-            "fields": "nextPageToken, files(id, name, mimeType)",
-            "supportsAllDrives": "true",
-            "includeItemsFromAllDrives": "true",
-        },
-        f"listando carpetas de {qsls_id}",
-    )
-    folders = {
-        f["name"].lower(): f
-        for f in children
-        if f.get("mimeType") == FOLDER_MIME and f.get("name", "").lower().startswith("qsl")
-    }
+def build_index(root_id, with_sizes=True, verbose=False):
+    """Recorre la carpeta pública y sus qsl1..qsl7."""
+    print(f"→ leyendo {FOLDER_URL.format(id=root_id)}")
+    html = fetch(FOLDER_URL.format(id=root_id))
+    folders = parse_child_folders(html)
     if not folders:
         raise SystemExit(
-            f"La carpeta {qsls_id} no contiene subcarpetas qsl1..qsl7.\n"
-            "Indica --folder-id con la carpeta 'QSLs' directamente."
+            f"La carpeta {root_id} no parece pública o no contiene subcarpetas.\n"
+            "Comprueba que el enlace 'cualquier persona con el enlace' sigue activo."
         )
+    print(f"→ carpetas encontradas: {', '.join(sorted(folders))}")
 
     entries = []
     counts = {}
-    for key in sorted(folders):
-        folder = folders[key]
-        images = list_images(session, folder["id"])
-        counts[folder["name"]] = len(images)
+    for act in sorted(folders, key=lambda a: (len(a), a)):
+        sub_id = folders[act]
+        files = parse_files(fetch(FOLDER_URL.format(id=sub_id)))
+        counts[act] = len(files)
         if verbose:
-            print(f"   {folder['name']:<6} {len(images):>4} PNG")
-        for img in images:
+            print(f"   {act:<6} {len(files):>4} PNG")
+        for f in files:
             entries.append(
                 {
-                    "call": callsign_from_filename(img["name"]),
-                    "act": folder["name"].lower(),
-                    "name": img["name"],
-                    "id": img["id"],
-                    "size": int(img.get("size") or 0),
-                    "modified": img.get("modifiedTime", ""),
+                    "call": callsign_from_filename(f["name"]),
+                    "act": act,
+                    "name": f["name"],
+                    "id": f["id"],
+                    "size": file_size(f["id"]) if with_sizes else 0,
                 }
             )
 
@@ -202,10 +193,11 @@ def build_index(session, qsls_id, verbose=False):
     return {
         "version": 1,
         "generated_at": now_iso(),
-        "folder_id": qsls_id,
+        "folder_id": root_id,
+        "folder_url": FOLDER_URL.format(id=root_id),
         "activities": {
-            name: {"id": folders[name]["id"], "title": ACTIVITY_TITLES.get(name, name)}
-            for name in sorted(folders)
+            act: {"id": folders[act], "title": ACTIVITY_TITLES.get(act, act)}
+            for act in sorted(folders, key=lambda a: (len(a), a))
         },
         "counts": counts,
         "total": len(entries),
@@ -215,34 +207,25 @@ def build_index(session, qsls_id, verbose=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Genera qsl_index.json con los file IDs de Google Drive."
+        description="Genera qsl_index.json con los file IDs de la carpeta pública de Drive."
     )
-    parser.add_argument("--creds", default=DEFAULT_CREDS, help="clave JSON de la cuenta de servicio")
-    parser.add_argument(
-        "--folder-id",
-        default=DEFAULT_FOLDER_ID,
-        help="ID de la carpeta con qsl1..qsl7 (por defecto, la carpeta pública de EG9MM)",
-    )
-    parser.add_argument("--parent-id", help="ID de la carpeta padre; se busca --folder-name dentro")
-    parser.add_argument("--folder-name", default=DEFAULT_FOLDER_NAME, help="nombre de la carpeta a buscar")
+    parser.add_argument("--folder-id", default=DEFAULT_FOLDER_ID, help="carpeta con qsl1..qsl7")
     parser.add_argument("--out", default=DEFAULT_OUT, help="fichero JSON de salida")
+    parser.add_argument("--no-sizes", action="store_true", help="no consultar el tamaño de cada PNG")
     parser.add_argument("--dry-run", action="store_true", help="no escribe el JSON, solo informa")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
-    session, email = build_session(args.creds)
-    print(f"→ autenticado como {email}")
+    index = build_index(
+        args.folder_id, with_sizes=not args.no_sizes, verbose=args.verbose
+    )
 
-    if args.parent_id:
-        qsls_id = find_child_folder(session, args.parent_id, args.folder_name)
-    else:
-        qsls_id = args.folder_id
-    print(f"→ carpeta QSLs: {qsls_id}")
-
-    index = build_index(session, qsls_id, verbose=args.verbose)
     print(f"→ {index['total']} imagenes indexadas")
-    for name, n in index["counts"].items():
-        print(f"     {name:<6} {n:>4}")
+    for act, n in index["counts"].items():
+        print(f"     {act:<6} {n:>4}")
+
+    calls = len({e["call"] for e in index["entries"]})
+    print(f"→ {calls} indicativos distintos")
 
     if args.dry_run:
         print("→ --dry-run: no se ha escrito ningún archivo")
