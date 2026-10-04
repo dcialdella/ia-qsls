@@ -17,6 +17,13 @@
 #    * calcula su propio directorio (puede copiarse a cualquier lado)
 #    * crea/usa el venv local (venv/) e instala Pillow si hace falta
 #    * NO toca tus .adi ni tus fondos; solo las salidas (QSLS/ y logs)
+#
+#  Sincronización con Drive:
+#    * rsync usa --delete, así que las postcards borradas en local se
+#      propagan a Drive (podado de huérfanas incluido).
+#    * Si una carpeta no tiene NINGÚN PNG en local, su sync se salta y
+#      Drive no se toca. Para vaciar una actividad en Drive hay que
+#      borrar la carpeta a mano allí.
 # ============================================================
 set -euo pipefail
 
@@ -122,8 +129,21 @@ if [ "$SYNC_DRIVE" = true ]; then
     [ -d "$d/QSLS" ] || continue
     folder_name=$(basename "$d")
     dest="$GDRIVE_BASE/$folder_name"
+    src_count=$(find "$d/QSLS" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+    # Guarda de seguridad: con el origen vacío, rsync --delete vaciaría $dest
+    # y Drive propagaría el borrado a la nube. Una carpeta vacía en local
+    # NUNCA significa "borra mi carpeta de Drive": se salta el sync.
+    if [ "${src_count:-0}" -eq 0 ]; then
+      dest_count=$(find "$dest" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+      printf "   %-6s -> %s/  (%s PNGs)  [origen vacío: NO se toca Drive]\n" \
+        "$folder_name" "$dest" "${dest_count:-0}"
+      continue
+    fi
     mkdir -p "$dest"
-    rsync -av --update --delete "$d/QSLS/" "$dest/" 2>/dev/null | grep -c '\.png$' > /dev/null 2>&1 || true
+    if ! rsync -a --update --delete "$d/QSLS/" "$dest/"; then
+      echo "ERROR: rsync falló al sincronizar $folder_name (código $?)." >&2
+      exit 1
+    fi
     count=$(find "$dest" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
     printf "   %-6s -> %s/  (%s PNGs)\n" "$folder_name" "$dest" "${count:-0}"
   done
