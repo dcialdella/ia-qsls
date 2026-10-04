@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-10-04T17:38:23Z",
+ "generated_at": "2026-10-04T17:45:45Z",
  "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "activities": {
@@ -34,7 +34,7 @@
   }
  },
  "counts": {
-  "qsl1": 2,
+  "qsl1": 0,
   "qsl2": 0,
   "qsl3": 0,
   "qsl4": 0,
@@ -42,21 +42,6 @@
   "qsl6": 0,
   "qsl7": 0
  },
- "total": 2,
- "entries": [
-  {
-   "call": "EA3JAQ",
-   "act": "qsl1",
-   "name": "ea3jaq_lugar1-delta1-2026-10-04.png",
-   "id": "1gKFfQ1ePN_JjHDZ0O0j8cIX1X5XrLtRt",
-   "size": 1098317
-  },
-  {
-   "call": "EA4HUK",
-   "act": "qsl1",
-   "name": "ea4huk_lugar1-delta1-2026-10-04.png",
-   "id": "1S_P_eSDaUYiK5vt9sy5PTGqG4dZakKk4",
-   "size": 1097457
-  }
- ]
+ "total": 0,
+ "entries": []
 }
