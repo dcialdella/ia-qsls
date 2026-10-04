@@ -173,6 +173,8 @@ crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
 ./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
 ./generar.sh --clean            # alias de --from-scratch
+./generar.sh --index            # además regenera qsl_index.json (índice web, ver §9)
+./generar.sh --index-only       # solo regenera qsl_index.json (no toca las postcards)
 ```
 
 Salida típica (modo incremental, todo ya generado):
@@ -416,10 +418,111 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `process_folder(folder, gen, bgs, seq)` | Lógica incremental por carpeta |
 | `process_act6(base_dir, gen)` | Limpia QSL6/QSLS + detecta estaciones en las 5 actividades + genera QSL de record |
 | `main()` | Orquesta las 7 carpetas (qsl6 especial) |
+| `drive_index.py` | Recorre la carpeta de Drive con una cuenta de servicio y escribe `qsl_index.json` con los *file ids* |
 
 ---
 
-## 7. Tareas pendientes / próximos pasos
+## 7. Página web pública de descarga de QSLs
+
+### Qué hace
+
+`index.html` (en la raíz del repo, servido por **GitHub Pages**) es un buscador
+público: la persona escribe su **indicativo** y la página muestra sus postcards
+con miniatura y dos botones, **Descargar** y **Abrir** en Google Drive. Los PNG
+siguen viviendo en tu carpeta de Drive; la web solo pone los enlaces.
+
+La búsqueda es por **inicio del nombre del archivo** (que empieza por el indicativo,
+ver `unique_filenames`): escribir `EA4` lista todas las estaciones EA4, y la
+coincidencia exacta se resalta y se trae arriba.
+
+> **Por qué hace falta un índice:** los enlaces de descarga de Drive siempre llevan
+> el *file id* (`.../uc?export=download&id=<ID>`), nunca el nombre del archivo.
+> `drive_index.py` recorre la carpeta pública de Drive con la API v3 usando una
+> **cuenta de servicio** y escribe `qsl_index.json` con nombre + id de cada PNG.
+> Ese JSON se sube a git y es lo que la página descarga con `fetch`.
+
+### Carpeta de origen
+
+`My Drive/QSL/QSLs` → <https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy>
+
+- ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy` (ya viene por defecto en
+  `drive_index.py`, no hay que pasar nada).
+- Contiene `qsl1`…`qsl7`. Dentro de cada una, los PNG se llaman
+  `{indicativo}_{nombre_adi}.png`, así que **el prefijo del nombre es el indicativo**.
+- Acceso: *Cualquier persona con el enlace* → Lector. **Ya está hecho** (verificado:
+  la carpeta responde 200 sin iniciar sesión).
+
+### Puesta en marcha (una sola vez)
+
+1. **Cuenta de servicio** (Google Cloud → crear proyecto → IAM y administración →
+   Cuentas de servicio → Crear, sin roles):
+   - Descarga la clave JSON y guárdala en la raíz del proyecto como
+     **`drive_creds.json`** (ya está en `.gitignore`, nunca se sube a git).
+2. **Comparte la carpeta con la cuenta de servicio:** en la carpeta de arriba →
+   *Compartir* → *Añadir personas y grupos* → pega el correo
+   `...@...iam.gserviceaccount.com` → **Lector**.
+   Ojo: compartir *por enlace* NO da acceso a la API, hace falta este paso aparte.
+3. Genera el índice:
+
+   ```bash
+   ./generar.sh --index-only              # instala google-auth y escribe qsl_index.json
+   python3 drive_index.py --dry-run       # prueba sin escribir nada
+   ```
+
+4. Sube el índice (`git add qsl_index.json && git commit && git push`) y activa
+   GitHub Pages (Settings → Pages → *Deploy from a branch* → `main` / raíz).
+   La página queda en **https://dcialdella.github.io/ia-qsls/**
+
+### Uso diario
+
+```bash
+./generar.sh --index          # postcards + sync a Drive + regenera qsl_index.json
+./generar.sh --index-only     # solo regenera el índice (no toca las postcards)
+./generar.sh                  # no toca el índice (hay que pedirlo con --index)
+```
+
+Para una carpeta distinta: `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --index-only`
+
+> **Ojo con el retardo de Drive:** Drive for Desktop sube los PNG de forma
+> asíncrona. Si generas postcards nuevas y sincronizas en el mismo momento, el
+> índice se construirá antes de que existan en la nube: repite `--index-only`
+> un minuto después.
+
+### Formato de `qsl_index.json`
+
+```json
+{
+ "version": 1,
+ "generated_at": "2026-10-04T10:00:00Z",
+ "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
+ "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"}},
+ "counts": {"qsl1": 12, "qsl2": 3},
+ "total": 15,
+ "entries": [
+   {"call": "EA4HJZ", "act": "qsl1",
+    "name": "ea4hjz_pota1111-delta-20260909-1417.png",
+    "id": "1QwErTy...", "size": 210433,
+    "modified": "2026-09-09T11:31:37.000Z"}
+ ]
+}
+```
+
+- `call` se deduce del nombre del archivo (`{call}_{stem}.png`), no del log.
+- La web usa `lh3.googleusercontent.com/d/<id>` para las miniaturas y
+  `drive.google.com/uc?export=download&id=<id>` para la descarga.
+
+### Seguridad
+
+- La clave de la cuenta de servicio **solo vive en tu Mac**: la web es estática y
+  no habla con la API de Drive en ningún momento.
+- La cuenta de servicio solo tiene permiso de lectura (`drive.readonly`).
+- Con la carpeta pública, cualquiera que conozca el enlace puede ver todos los PNG.
+  Es coherente con que las QSL son públicas, pero tenlo en cuenta si añades
+  datos personales (nombre/QTH) que no quieras exponer.
+
+---
+
+## 8. Tareas pendientes / próximos pasos
 
 1. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
    que las banderas de país delante del nombre se ven como se espera.

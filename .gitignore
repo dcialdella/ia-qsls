@@ -7,3 +7,9 @@ mcp_filesystem.log
 # Salida generada (se regenera desde los .adi)
 qsl*/QSLS/
 qsl*/qsl_log.json
+
+# Credenciales de Google Drive (NUNCA subir la clave de la cuenta de servicio)
+drive_creds.json
+*.drive-creds.json
+service-account*.json
+token.json

@@ -10,6 +10,8 @@
 #    ./generar.sh --clean      -> alias de --from-scratch
 #    ./generar.sh --no-sync-drive
 #                              -> NO sincroniza a Google Drive
+#    ./generar.sh --index      -> regenera qsl_index.json (indice web)
+#    ./generar.sh --index-only -> solo regenera qsl_index.json
 #
 #  El script es autocontenido:
 #    * calcula su propio directorio (puede copiarse a cualquier lado)
@@ -28,11 +30,15 @@ PY=python3
 # ---------- Argumentos ----------
 FROM_SCRATCH=false
 SYNC_DRIVE=true
+BUILD_INDEX=false
+INDEX_ONLY=false
 for arg in "$@"; do
   case "$arg" in
     --from-scratch|--clean) FROM_SCRATCH=true ;;
     --sync-drive) SYNC_DRIVE=true ;;
     --no-sync-drive) SYNC_DRIVE=false ;;
+    --index) BUILD_INDEX=true ;;
+    --index-only) BUILD_INDEX=true; INDEX_ONLY=true ;;
     *) echo "Argumento desconocido: $arg"; exit 1 ;;
   esac
 done
@@ -68,6 +74,12 @@ else
   echo "→ Pillow ya disponible: $($PY_VENV -c 'import PIL; print(PIL.__version__)')"
 fi
 
+# ---------- 3.b Instalar google-auth si se va a indexar Drive ----------
+if [ "$BUILD_INDEX" = true ] && ! "$PY_VENV" -c "import google.auth" >/dev/null 2>&1; then
+  echo "→ instalando google-auth en el venv ..."
+  "$PY_VENV" -m pip install google-auth
+fi
+
 # ---------- 4. (Opcional) Regenerar todo desde cero ----------
 if [ "$FROM_SCRATCH" = true ]; then
   echo "→ modo --from-scratch: borrando salidas anteriores ..."
@@ -83,19 +95,23 @@ if [ ! -f "$SCRIPT_DIR/qsl_generator.py" ]; then
 fi
 
 # ---------- 6. Ejecutar el generador ----------
-echo
-echo "→ ejecutando qsl_generator.py ..."
-echo
-"$PY_VENV" "$SCRIPT_DIR/qsl_generator.py"
+if [ "$INDEX_ONLY" = false ]; then
+  echo
+  echo "→ ejecutando qsl_generator.py ..."
+  echo
+  "$PY_VENV" "$SCRIPT_DIR/qsl_generator.py"
+fi
 
 # ---------- 7. Resumen de salidas ----------
-echo
-echo "Postales generadas por carpeta:"
-for d in "$SCRIPT_DIR"/qsl[1-7]; do
-  [ -d "$d" ] || continue
-  n=$(find "$d/QSLS" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
-  printf "   %-6s %s postales\n" "$(basename "$d")" "${n:-0}"
-done
+if [ "$INDEX_ONLY" = false ]; then
+  echo
+  echo "Postales generadas por carpeta:"
+  for d in "$SCRIPT_DIR"/qsl[1-7]; do
+    [ -d "$d" ] || continue
+    n=$(find "$d/QSLS" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+    printf "   %-6s %s postales\n" "$(basename "$d")" "${n:-0}"
+  done
+fi
 
 # ---------- 8. Sync a Google Drive (opcional) ----------
 if [ "$SYNC_DRIVE" = true ]; then
@@ -112,6 +128,20 @@ if [ "$SYNC_DRIVE" = true ]; then
     printf "   %-6s -> %s/  (%s PNGs)\n" "$folder_name" "$dest" "${count:-0}"
   done
   echo "→ Google Drive sincronizará automáticamente con la nube."
+fi
+
+# ---------- 9. Índice web (opcional) ----------
+if [ "$BUILD_INDEX" = true ]; then
+  echo
+  if [ ! -f "$SCRIPT_DIR/drive_creds.json" ]; then
+    echo "→ falta drive_creds.json: no se regenera el índice web (ver README §9)."
+  else
+    echo "→ regenerando qsl_index.json ..."
+    echo "  (si acabas de sincronizar, Drive puede tardar unos segundos en subir"
+    echo "   los PNG nuevos: si faltan, repite '--index-only' en un minuto)"
+    read -r -a DRIVE_INDEX_ARGS_ARR <<< "${DRIVE_INDEX_ARGS:-}"
+    "$PY_VENV" "$SCRIPT_DIR/drive_index.py" "${DRIVE_INDEX_ARGS_ARR[@]+"${DRIVE_INDEX_ARGS_ARR[@]}"}"
+  fi
 fi
 
 echo
