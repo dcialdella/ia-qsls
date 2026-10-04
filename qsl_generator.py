@@ -115,6 +115,12 @@ class ADIFParser:
                 continue
             current_qso[tag_upper] = value
 
+        # Tolerancia: hay exportadores que no cierran el último registro con
+        # <EOR>. Se vuelca el QSO pendiente para no perderlo.
+        clean = ADIFParser._resolve_call(current_qso)
+        if clean:
+            qsos.append(clean)
+
         return qsos
 
     @staticmethod

@@ -101,7 +101,7 @@
 </main>
 
 <footer>
-  <span id="updated">–</span> · <span id="total"></span><br>
+  <span id="fmeta"><span id="updated">–</span> · <span id="total"></span></span><br>
   EG9MM · Melilla · 2026 · email: eg9mm.mail@gmail.com
 </footer>
 
@@ -148,13 +148,13 @@ function itemRow(e) {
 function render(term) {
   results.innerHTML = '';
   const t = norm(term).trim();
-  if (!t || t.length < 4) {
+  if (!t || t.length < 4 || !index) {
     statusEl.textContent = index && index.total ? index.total.toLocaleString('es') + ' postcards indexadas.' : '';
     return;
   }
 
   const groups = new Map();
-  for (const e of index.entries) {
+  for (const e of (index.entries || [])) {
     const prefix = norm(e.name).split('_')[0];
     if (!prefix.startsWith(t)) continue;
     if (!groups.has(e.call)) groups.set(e.call, []);
@@ -197,8 +197,11 @@ async function load() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     index = await res.json();
   } catch (err) {
-    statusEl.innerHTML = `No se pudo cargar <code>qsl_index.json</code> (${escapeHtml(String(err))}).<br>
-      Si abriste el fichero con doble clic, publícalo en GitHub Pages o sírvelo por HTTP.`;
+    // Sin qsl_index.json no hay postcards: la página se queda en blanco,
+    // sin mensajes de error ni avisos.
+    index = null;
+    statusEl.textContent = '';
+    $('#fmeta').style.display = 'none';
     return;
   }
   $('#updated').textContent = 'Índice actualizado: ' + (index.generated_at || '?');
