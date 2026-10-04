@@ -12,6 +12,7 @@
 #                              -> NO sincroniza a Google Drive
 #    ./generar.sh --index      -> regenera qsl_index.json (indice web)
 #    ./generar.sh --index-only -> solo regenera qsl_index.json
+#    ./generar.sh --auto       -> genera + sincroniza Drive + actualiza índice web + commit + push a GitHub
 #
 #  El script es autocontenido:
 #    * calcula su propio directorio (puede copiarse a cualquier lado)
@@ -39,6 +40,7 @@ FROM_SCRATCH=false
 SYNC_DRIVE=true
 BUILD_INDEX=false
 INDEX_ONLY=false
+AUTO_PUSH=false
 for arg in "$@"; do
   case "$arg" in
     --from-scratch|--clean) FROM_SCRATCH=true ;;
@@ -46,6 +48,7 @@ for arg in "$@"; do
     --no-sync-drive) SYNC_DRIVE=false ;;
     --index) BUILD_INDEX=true ;;
     --index-only) BUILD_INDEX=true; INDEX_ONLY=true ;;
+    --auto) BUILD_INDEX=true; SYNC_DRIVE=true; AUTO_PUSH=true ;;
     *) echo "Argumento desconocido: $arg"; exit 1 ;;
   esac
 done
@@ -156,6 +159,20 @@ if [ "$BUILD_INDEX" = true ]; then
   echo "→ regenerando qsl_index.json (lectura HTML público, sin credenciales) ..."
   echo "  ID por defecto: 1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy"
   "$PY_VENV" "$SCRIPT_DIR/drive_index.py" "${DRIVE_INDEX_ARGS_ARR[@]+"${DRIVE_INDEX_ARGS_ARR[@]}"}"
+fi
+
+# ---------- 10. Auto push a GitHub (opcional) ----------
+if [ "$AUTO_PUSH" = true ]; then
+  echo
+  echo "→ commit y push a GitHub ..."
+  git add -A
+  if git diff --cached --quiet; then
+    echo "   (sin cambios para commitear)"
+  else
+    git commit -m "Actualización automática: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+    git push origin main
+    echo "   → GitHub Pages se actualizará en ~1 minuto"
+  fi
 fi
 
 echo
