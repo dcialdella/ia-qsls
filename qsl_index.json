@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-10-04T18:56:34Z",
+ "generated_at": "2026-10-04T19:06:03Z",
  "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "activities": {
@@ -35,14 +35,14 @@
  },
  "counts": {
   "qsl1": 16,
-  "qsl2": 17,
-  "qsl3": 16,
-  "qsl4": 14,
-  "qsl5": 14,
-  "qsl6": 14,
-  "qsl7": 14
+  "qsl2": 18,
+  "qsl3": 17,
+  "qsl4": 15,
+  "qsl5": 15,
+  "qsl6": 15,
+  "qsl7": 15
  },
- "total": 105,
+ "total": 111,
  "entries": [
   {
    "call": "1A0AAA",
@@ -225,6 +225,48 @@
    "name": "ea4huk_lugar1-delta1-2026-10-04.png",
    "id": "17BHS-XzxGu2FgkfOMyJcHQRFdQVHUXwd",
    "size": 1097457
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl2",
+   "name": "ea4huk_prueba1-ea4huk-2026-10-08.png",
+   "id": "1rUbtkpmR4jXtwmM1_MwAUbOLV_5Lc--A",
+   "size": 831739
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl3",
+   "name": "ea4huk_prueba1-ea4huk-2026-10-08.png",
+   "id": "1hk-x5B7df84YTq62zT5KkRSfIlY2DMx7",
+   "size": 1554490
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl4",
+   "name": "ea4huk_prueba1-ea4huk-2026-10-08.png",
+   "id": "1sV92N669h1wW3awjqtgdQi4N24X2SfaI",
+   "size": 610069
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl5",
+   "name": "ea4huk_prueba1-ea4huk-2026-10-08.png",
+   "id": "17GT9m-ki8q2hV5JiG0RRqFOdm-SDKkqE",
+   "size": 1303489
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl6",
+   "name": "ea4huk_act6.png",
+   "id": "1G2cNh6PdkFeR-hISgro5Ng4_wp7vfQ5D",
+   "size": 868424
+  },
+  {
+   "call": "EA4HUK",
+   "act": "qsl7",
+   "name": "ea4huk_prueba1-ea4huk-2026-10-08.png",
+   "id": "1wMMoYOoySht27MrNfipfP9Lg_64cWQ7N",
+   "size": 751109
   },
   {
    "call": "EA4HUK",
