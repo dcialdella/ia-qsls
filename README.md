@@ -33,7 +33,8 @@ postales generadas.
    repo.** No contienen información sensible (datos públicos de radioaficionado:
    indicativo, nombre, grid locator, banda/modo). Van en la carpeta de su actividad
    (`qslN/*.adi`) y los de prueba en `TEST DATA/`. No deben borrarse ni excluirse
-   del control de versiones.
+   del control de versiones. *Nota: en el estado de inicio actual no hay ninguno en
+   `qslN/`; los 10 de ejemplo están en `TEST DATA/` (§1).*
 3. **En `qslN/QSLS/` no se versiona ningún PNG.** Es salida generada y está en
    `.gitignore` (`qsl*/QSLS/`).
 4. **La raíz de Drive `QSLs` solo contiene las 7 carpetas `qsl1`–`qsl7`**, ningún
@@ -51,26 +52,90 @@ postales generadas.
 
 ---
 
-## 1. Estado actual del proyecto (última sesión)
+## 1. Estado actual del proyecto
 
-- ✅ Script funcional e **incremental** en `qsl_generator.py`
+> **Estado de inicio:** el generador está completo y probado, pero el árbol de datos está
+> **vacío a propósito**. No hay ningún `.adi` dentro de `qsl1`–`qsl7` ni ninguna postal
+> generada en `qslN/QSLS/`. Todo lo que hay es el código, los fondos y los `.adi` de
+> ejemplo aparcados en `TEST DATA/`.
+
+- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "3"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ Script de ejecución autónoma **`generar.sh`** (ver sección 2)
-- ✅ Carpetas `qsl1`–`qsl7` creadas. Todas con imagen de fondo:
-  - qsl1 (a1.png), qsl2 (a2.png), qsl3 (a3.png), qsl4 (f4.png),
-    qsl5 (f5.png), qsl6 (f6.png), qsl7 (f7.png)
-- ✅ Archivos ADI activos:
-  - `qsl1/TOTA2222-delta-20260909-1145.adi` (1 contacto)
-  - `qsl1/faro-echo-20260909-1821.adi` (4 contactos)
-  - `qsl1/pota1111-delta-20260909-1417.adi` (3 contactos)
-  - `qsl2/activo2.adi` (4 contactos)
-  - `qsl3/actividad3.adi` (4 contactos)
-  - `qsl4/probe.adi`, `qsl5/probe.adi`, `qsl6` (sin ADIs), `qsl7/ejemplo.adi` (3 contactos, DMR)
+- ✅ Carpetas `qsl1`–`qsl7` creadas y **vacías de contactos**. Todas con su fondo:
+  - qsl1 (`a1.png`), qsl2 (`a2.png`), qsl3 (`a3.png`), qsl4 (`f4.png`),
+    qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`)
+- ✅ `qsl1`–`qsl7`: **cero archivos `.adi`** y `QSLS/` vacío (se regenera al añadir ADIs)
+- ✅ Los **10 `.adi` de ejemplo están en `TEST DATA/`**, no en las carpetas de actividad.
+  No se procesan: el generador solo lee `qslN/*.adi`. Para usarlos, cópialos a su
+  actividad correspondiente (ver §1.1).
+- ✅ `qsl_index.json` coherente con el vacío: `total: 0` y `counts` a 0 en las 7 actividades
+- ✅ No existen `qslN/qsl_log.json`: se crean solos al primer procesado real
 - ✅ No quedan archivos `.adi.TEST` (fueron eliminados; los renombrados pasan a `.adi`)
-- ✅ Cada carpeta con datos tiene su log `qslN/qsl_log.json` (se crea solo)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
 - ✅ **Bandera del país** delante del nombre de cada estación (ver "Banderas" más abajo).
 - ✅ Repositorio Git con remote en **GitHub** (`dcialdella/ia-qsls`, rama `main`).
+
+### 1.1 Cómo volver a poblar las actividades
+
+Los `.adi` de `TEST DATA/` son datos de ejemplo/prueba, no datos de producción. Para
+generar postcards de prueba, copia solo los que te interesen a la carpeta de su actividad:
+
+```bash
+# --- 1) Copiar los .adi de ejemplo a sus actividades ---
+cp "TEST DATA/activo2.adi"                 qsl2/     # actividad 2
+cp "TEST DATA/actividad3.adi"              qsl3/     # actividad 3
+cp "TEST DATA/probe.adi"                   qsl4/     # 1 contacto (EA4HUK)
+cp "TEST DATA/probe.adi"                   qsl5/     # 1 contacto (EA4HUK)
+cp "TEST DATA/TOTA2222-delta-20260909-1145.adi" \
+   "TEST DATA/faro-echo-20260909-1821.adi" \
+   "TEST DATA/pota1111-delta-20260909-1417.adi" qsl1/   # actividad 1 (1+4+4)
+cp "TEST DATA/ejemplo.adi"                 qsl7/     # actividad 7 (carpeta DMR)
+
+# --- 2) Probar en local SIN tocar Google Drive ni la web ---
+./generar.sh --no-sync-drive
+# revisa qslN/QSLS/*.png a ojo
+
+# --- 3) Cuando el resultado te guste: sincronizar + reindexar la web ---
+./generar.sh --index
+```
+
+Ojo con los nombres que llevan **espacio** (`TEST DATA/probe copy.adi`): entrecomíllalos.
+
+Para deshacer la prueba y volver al estado de inicio:
+
+```bash
+find qsl[1-7] -maxdepth 1 -name '*.adi' -delete  # quita los .adi copiados de TEST DATA/
+./generar.sh --from-scratch --no-sync-drive      # borra QSLS/*.png y los qsl_log.json
+./generar.sh --index-only                         # deja el índice a 0 otra vez
+```
+
+> Usa `find` y no `rm qsl*/*.adi`: en zsh un glob sin coincidencias aborta el comando con
+> `no matches found` en vez de ser un no-op.
+
+> **Importante:** `--from-scratch` es obligatorio en el paso 2. Si solo borras los `.adi` y
+> ejecutas el generador, las postcards **no se borran**: `main()` hace `continue` en las
+> carpetas sin `.adi` y `prune_orphan_pngs` (que es lo que limpia los huérfanos) solo se
+> llama desde `process_folder` y `process_act6`. Es decir, la poda no llega a ejecutarse.
+> `qsl6` es la única actividad que se limpia sola en cada pasada.
+
+`qsl6` (postales de record) no necesita `.adi` propios: se alimenta de los contactos ya
+registrados en las actividades 1–5 (ver §3.b).
+
+Contenido actual de `TEST DATA/` (contactos según `<CALL:`):
+
+| Archivo | Contactos | Actividad destino |
+|---------|-----------|-------------------|
+| `TOTA2222-delta-20260909-1145.adi` | 1 | qsl1 |
+| `faro-echo-20260909-1821.adi` | 4 | qsl1 |
+| `pota1111-delta-20260909-1417.adi` | 4 | qsl1 |
+| `lugar1-delta1-2026-10-04.adi` | 2 | qsl1 (alternativo, sustituye a los tres previos) |
+| `activo2.adi` | 4 | qsl2 |
+| `actividad3.adi` | 4 | qsl3 |
+| `probe.adi` | 1 | qsl4, qsl5 |
+| `probe copy.adi` | 1 | qsl4, qsl5 (copia de trabajo) |
+| `probe copy 2.adi` | 1 | qsl4, qsl5 (copia de trabajo) |
+| `ejemplo.adi` | 4 | qsl7 (los QSO son CW/SSB; lo "DMR" es el tema de la carpeta 7) |
 
 ### Cambios recientes (aplicados y verificados)
 
@@ -80,9 +145,10 @@ postales generadas.
    `pad_y + 4`; el callsign queda a ~10px del borde interior de la caja.
 3. **Casillas de actividades rediseñadas:** fila alineada a la **derecha** de la caja de
    datos, con el rótulo **"ACT"** a la izquierda. Las casillas son más pequeñas
-   (26×26px normales, 28×28px act6).
+   (30×30 px en las normales —el default de `draw_activity_checkboxes`—, 28×28 px en
+   act6, que sí los sobrescribe).
 4. **Números dentro de las casillas.** Cada casilla muestra su número 1–6. Cuando la
-   actividad está lograda, el número se **reemplaza por un tilde dorado** `(245,166,35)`.
+   actividad está lograda, el número se **reemplaza por un tilde dorado** `(245,166,35,255)`.
    Se eliminaron las etiquetas "QSL1"…"QSL6" que había debajo de cada cuadro.
 5. **QSL6 (record):** casillas 1–5 con tilde y la **casilla 6 con la bandera de España**
    (rojo-amarillo-rojo 1:2:1, fondos `(198,11,30)` / `(255,200,0)`) en lugar del número.
@@ -91,7 +157,9 @@ postales generadas.
    caja.
 7. **Limpieza de código:** eliminados `load_backgrounds()` (obsoleto), el chequeo global
    de fondos, y los parámetros `my_callsign`/`label_color`/`--callsign`. El rendering usa
-   solo los datos del contacto.
+   **solo los datos del contacto** más el sello fijo de estación `STATION_TEXT`
+   (`"EG9MM - Melilla"`, `qsl_generator.py:36`), que se dibuja en la esquina inferior
+   derecha de todas las postcards.
 8. **Bandera del país delante del nombre de cada estación:** el país se deriva del prefijo
    del callsign con `country_map.json` (845 prefijos → ISO2, mejor coincidencia por
    longest-match). La bandera se pinta con la misma altura que el texto:
@@ -111,17 +179,18 @@ postales generadas.
 13. **Fix `--from-scratch`:** el `find` usaba `-maxdepth 2` y no alcanzaba los PNG dentro
     de `*/QSLS/` (profundidad 3); ahora se borran todas las salidas (preservando `FLAGS/`).
 14. **`bandera_espana.png` eliminado** (ya no se usa; las banderas vienen de `FLAGS/`).
-15. **`dac1.adi` desactivado (`.TEST`).** Se renombró a `dac1.adi.TEST` (110 contactos,
-    POTA ES-1895); ya no se procesa. Lo mismo con `eladio1/2/3.adi.TEST`. Regla: los
-    archivos `.adi.TEST` son inactivos a propósito y NO se renombran sin consultar antes.
+15. **(histórico) `dac1.adi` se desactivó renombrándolo a `dac1.adi.TEST`** (110 contactos,
+    POTA ES-1895), igual que `eladio1/2/3.adi.TEST`. Ya no queda ningún `.TEST` (ver punto
+    19), así que la regla que se establecía aquí está hoy vacía: si algún día vuelve a
+    aparecer un `.adi.TEST`, es inactivo a propósito y no se renombra a `.adi` sin consultar.
 16. **Sincronización con Google Drive por defecto.** `generar.sh` copia las postales
      de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
      Drive/QSL/QSLs/qslN` (mismas carpetas en minúsculas, creadas automáticamente). La
      sincronización ocurre **siempre**, salvo flag `--no-sync-drive`. La carpeta de Drive
-     es un **espejo exacto** de la local: `rsync -a --update --delete` copia lo
+     es un **espejo exacto** de la local: `rsync -av --update --delete` copia lo
      nuevo/modificado y borra en Drive los PNG que ya no están localmente. La app de
      escritorio de Google Drive sube los cambios a la nube automáticamente.
-17. **Versión **v3** del generador** (`GENERATOR_VERSION = "3"`). El log guarda esta
+17. **Versión v3 del generador** (`GENERATOR_VERSION = "3"`). El log guarda esta
      versión; al subirla, los ADI ya registrados se reprocesan automáticamente sin
      necesidad de `--from-scratch`.
 18. **Robustez en `_load_country_map`:** se validan también los ítems sin `cc` (código
@@ -137,53 +206,49 @@ postales generadas.
 ia-qsls/
 ├── qsl_generator.py       <- Script principal (todo en un archivo)
 ├── generar.sh             <- Script de ejecución autónoma (bash)
+├── drive_index.py         <- Genera qsl_index.json para la web (§7)
+├── index.html             <- Página web de descarga (GitHub Pages)
+├── qsl_index.json         <- Índice web (ahora vacío: total 0)
 ├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
 ├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 249 países
+├── TEST DATA/             <- 10 .adi de ejemplo/prueba (NO se procesan aquí)
 ├── .gitignore             <- Excluye venv/, __pycache__, qsl*/QSLS/, qsl*/qsl_log.json
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
 ├── README.md
 ├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/
 │   ├── a1.png             <- Fondo de qsl1
-│   ├── TOTA2222-delta-20260909-1145.adi  <- Contactos actividad 1 (1 contacto)
-│   ├── faro-echo-20260909-1821.adi       <- Contactos actividad 1 (4 contactos)
-│   ├── pota1111-delta-20260909-1417.adi  <- Contactos actividad 1 (3 contactos)
-│   ├── QSLS/              <- Postales generadas (8)
-│   └── qsl_log.json       <- Log de procesado
+│   └── QSLS/              <- (vacía) se llena al copiar aquí los .adi y ejecutar
 ├── qsl2/
 │   ├── a2.png
-│   ├── activo2.adi        <- 4 contactos (datos de ejemplo)
-│   ├── probe.adi          <- EA4HUK (1 contacto)
-│   ├── QSLS/
-│   └── qsl_log.json
+│   └── QSLS/              <- (vacía)
 ├── qsl3/
 │   ├── a3.png
-│   ├── actividad3.adi     <- 4 contactos (datos de ejemplo)
-│   ├── probe.adi          <- EA4HUK (1 contacto)
-│   ├── QSLS/
-│   └── qsl_log.json
+│   └── QSLS/              <- (vacía)
 ├── qsl4/
 │   ├── f4.png
-│   ├── probe.adi          <- EA4HUK (1 contacto)
-│   ├── QSLS/
-│   └── qsl_log.json
+│   └── QSLS/              <- (vacía)
 ├── qsl5/
 │   ├── f5.png             <- Fondo de qsl5
-│   ├── probe.adi          <- EA4HUK (1 contacto)
-│   ├── QSLS/
-│   └── qsl_log.json
+│   └── QSLS/              <- (vacía)
 ├── qsl6/
 │   ├── f6.png
-│   ├── qsl6.txt           <- Nota de la actividad (regla para obtener la QSL6)
-│   ├── QSLS/              <- Postales de record (ea4huk_act6.png)
-│   └── qsl_log.json
+│   └── QSLS/              <- (vacía) postcards de record, se regeneran siempre
 └── qsl7/
     ├── f7.png
-    ├── qsl7.txt           <- Nota de la actividad (DMR)
-    ├── ejemplo.adi        <- 3 contactos DMR
-    ├── QSLS/
-    └── qsl_log.json
+    └── QSLS/              <- (vacía) postcards DMR
 ```
+
+Notes sobre esta estructura:
+
+- **No hay ningún `.adi` dentro de `qsl1`–`qsl7`.** Es el estado de inicio buscado.
+- **No hay `qslN/qsl_log.json`.** Se crean solos la primera vez que se procesa un `.adi`
+  real, y están ignorados por `.gitignore`.
+- **`qslN/QSLS/` existe pero vacía** en las 7 actividades (los PNG no se versionan).
+- **`qsl6/qsl6.txt` y `qsl7/qsl7.txt` ya no existen** (las notas de actividad se
+  eliminaron al vaciar el árbol; la regla de la QSL6 se documenta en §3.b).
+- Las carpetas `qsl1`–`qsl7` de **Google Drive** también existen, pero vacías (regla 1 de
+  §0: nunca se borran).
 
 ---
 
@@ -200,26 +265,96 @@ crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
 ./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
 ./generar.sh --clean            # alias de --from-scratch
-./generar.sh --index            # además regenera qsl_index.json (índice web, ver §9)
+./generar.sh --index            # además regenera qsl_index.json (índice web, ver §7)
 ./generar.sh --index-only       # solo regenera qsl_index.json (no toca las postcards)
 ```
 
-Salida típica (modo incremental, todo ya generado):
+Salida típica en el **estado de inicio** (sin `.adi` en las carpetas, nada que generar).
+Lo que ves es el setup de `generar.sh` y luego la salida del generador:
+
+```
+============================================================
+  GENERADOR QSL — setup automático
+  Proyecto: /Users/danielcialdella/Downloads/ia-qsls
+============================================================
+→ python3 detectado: Python 3.14.8
+→ venv ya existente: /Users/danielcialdella/Downloads/ia-qsls/venv
+→ Pillow ya disponible: 12.3.0
+→ ejecutando qsl_generator.py ...
+
+============================================================
+  GENERADOR DE POSTALES QSL (incremental)
+============================================================
+
+📂 QSL1  (sin archivos .adi, nada que generar)
+📂 QSL2  (sin archivos .adi, nada que generar)
+📂 QSL3  (sin archivos .adi, nada que generar)
+📂 QSL4  (sin archivos .adi, nada que generar)
+📂 QSL5  (sin archivos .adi, nada que generar)
+📂 QSL6  (fondos: f6.png)
+   ℹ️  Ninguna estación contactó en las 5 actividades. Sin records que generar.
+📂 QSL7  (sin archivos .adi, nada que generar)
+
+============================================================
+  RESUMEN: 0 procesados, 0 regenerados, 0 sin cambios
+  Log por carpeta: qslN/qsl_log.json
+============================================================
+
+Postales generadas por carpeta:
+   qsl1   0 postales
+   qsl2   0 postales
+   qsl3   0 postales
+   qsl4   0 postales
+   qsl5   0 postales
+   qsl6   0 postales
+   qsl7   0 postales
+
+Listo. Busca las imágenes en cada qslN/QSLS/.
+```
+
+> Todo lo anterior es **literal**. El rótulo del resumen es `   %-6s %s postales`
+> (`generar.sh:112`): dice "postales" también para qsl6 y qsl7, que son postcards de record
+> y de DMR.
+
+> Ojo: la línea `Log por carpeta: qslN/qsl_log.json` se imprime siempre, pero en el
+> estado de inicio esos ficheros **no se crean** (solo se escriben al procesar un `.adi`
+> real). `qsl6` se procesa siempre, aunque no tenga `.adi` propios.
+>
+> Con los flags por defecto (sin `--no-sync-drive`) se intercala además el bloque
+> `→ sincronizando con Google Drive (...)`; y con `--index`, el resumen del indexado.
+> Los bloques de arriba se recortan a lo que aporta `qsl_generator.py`.
+
+La **primera** vez que se procesa un `.adi` (recién copiado de `TEST DATA/`) se anuncia con
+`⚡`, no con `✓ sin cambios`. En la **segunda** ejecución, si nada ha cambiado:
+
+```
+📂 QSL1  (fondos: a1.png)
+   ⚡ TOTA2222-delta-20260909-1145.adi: 1 contactos -> ea4huk_tota2222-delta-20260909-1145.png
+   ⚡ faro-echo-20260909-1821.adi: 4 contactos -> ea4hjz_faro-echo-20260909-1821.png, df5bnl_faro-echo-20260909-1821.png, it9rki_faro-echo-20260909-1821.png, f5len_faro-echo-20260909-1821.png
+   ⚡ pota1111-delta-20260909-1417.adi: 4 contactos -> ea3jaq_pota1111-delta-20260909-1417.png, ea4hjz_pota1111-delta-20260909-1417.png, df5bnl_pota1111-delta-20260909-1417.png, f5len_pota1111-delta-20260909-1417.png
+   ...
+============================================================
+  RESUMEN: 8 procesados, 0 regenerados, 0 sin cambios
+  Log por carpeta: qslN/qsl_log.json
+============================================================
+```
+
+> `brief` lista como mucho los 5 primeros PNG y remata con `... y N más`.
+> **El RESUMEN cuenta por archivo ADI, no por contacto**: los 8 son los 8 `.adi` del
+> §1.1 (3 en qsl1 + 1 en qsl2, qsl3, qsl4, qsl5 y qsl7). `qsl6` aporta 0 mientras ninguna
+> estación haya contactado en las 5 actividades.
+
+Y en una tercera, ya con todo generado:
 
 ```
 📂 QSL1  (fondos: a1.png)
    ✓ TOTA2222-delta-20260909-1145.adi: sin cambios (1 contactos ya generados)
    ✓ faro-echo-20260909-1821.adi: sin cambios (4 contactos ya generados)
-   ✓ pota1111-delta-20260909-1417.adi: sin cambios (3 contactos ya generados)
+   ✓ pota1111-delta-20260909-1417.adi: sin cambios (4 contactos ya generados)
    ...
 ============================================================
-  RESUMEN: 0 procesados, 0 regenerados, 10 sin cambios
+  RESUMEN: 0 procesados, 0 regenerados, 8 sin cambios
 ============================================================
-
-Postales generadas por carpeta:
-   qsl1   8 postales
-   qsl2   5 postales
-   ...
 ```
 
 ### Opción B: ejecutar el generador manualmente
@@ -348,9 +483,9 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 <PROGRAMID:4>QSLG
 <EOH>                                    <- fin de cabecera
 
-<QSO_DATE:8>20241215                     <- REQUERIDO fecha YYYYMMDD
-<TIME_ON:6>143022                        <- REQUERIDO hora HHMMSS
-<CALL:6>EA4HJZ                           <- REQUERIDO callsign
+<QSO_DATE:8>20241215                     <- fecha YYYYMMDD
+<TIME_ON:6>143022                        <- hora HHMMSS
+<CALL:6>EA4HJZ                           <- REQUERIDO (único campo obligatorio)
 <BAND:3>20M                              <- banda
 <MODE:3>SSB                              <- modo
 <RST_SENT:3>599                          <- RST enviado (se lee, NO se dibuja)
@@ -361,13 +496,24 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 <eor>                                    <- fin de registro
 ```
 
-- Campos obligatorios: `QSO_DATE`, `TIME_ON`, `CALL` (el resto opcionales).
+- **El único callsign obligatorio es `CALL`** (o, en su defecto, `DX_CALL`: `_resolve_call`
+  hace `CALL or DX_CALL`, para los QSOs de FT8/FT4 que solo traen `DX_CALL`). Sin ninguno de
+  los dos, el registro se descarta entero. `QSO_DATE` y `TIME_ON` **no se validan**: si
+  faltan, la postcard se dibuja con `----` y `--:--`. Aun así, conviene exportarlos siempre
+  desde el logger.
 - El parser (`ADIFParser`) tolera la parte opcional `:TIPO` (ej. `<RST_SENT:3:number>`)
   y valores con signo (ej. RST `-10` para FT8).
 - **Longitudes incorrectas toleradas:** si un tag declara más longitud de la que tiene
   (ej. `<QTH:8>madrid`), el valor se corta donde empieza el siguiente `<tag>`. Así no se
   colaba el símbolo `<` dentro del valor.
-- Ignora `<VERSION>`, `<PROGRAMID>`, `<EOH>`, `<CREATED_TIMESTAMP>`.
+- **Cabecera ignorada** (`HEADER_KEYS`): `ADIF_VER`, `ADIFVER`, `PROGRAMID`,
+  `PROGRAM_NAME`, `PROGRAMVERSION`, `EOH`, `USERDEF`, `CREATED_TIMESTAMP`,
+  `GENERATED_TIMESTAMP`, `LASTUPDATED`, `SUBMITTED`, `ENDOFLOG`, `APP_ADIF_VER`.
+  Ojo: **`VERSION` no está en esa lista** (el estándar ADIF usa `ADIF_VER`), así que un
+  `<VERSION:5>` como el del ejemplo se guarda como un campo más del QSO. Es inofensivo
+  (no se dibuja), pero es una rareza conocida del parser.
+- Tolerante con exportadores que no cierran el último registro con `<EOR>`: el QSO
+  pendiente se vuelca al final en lugar de perderse.
 - Registros repetidos con el mismo callsign → sufijo numérico en el archivo.
 
 ---
@@ -384,15 +530,20 @@ Tipo | Tamaño caja | Contenido | Casillas
 - El fondo se escala con recorte centrado "cover" (nunca distorsiona).
 - Caja con radio 16–18 px, fondo negro `(0,0,0,150/160)` y borde (blanco sutil o dorado
   en act6).
-- El texto (callsign) queda a ~10px del borde superior de la caja (`inner_top`).
+- El texto (callsign) queda a 22 px del borde superior de la caja: `inner_top = box[1] +
+  pad_y + 12`, con `pad_y = 10`.
 - **Casillas** (`QSLGenerator.draw_activity_checkboxes`):
   - Fila alineada a la **derecha** de la caja con rótulo **"ACT"** a la izquierda.
-  - Casillas redondeadas (26×26 normales, 28×28 act6), número 1–6 dentro de cada una.
+  - Casillas redondeadas (30×30 normales, 28×28 act6), número 1–6 dentro de cada una.
   - La casilla de la actividad lograda **reemplaza el número por un tilde dorado**
-    `(245,166,35,255)` (2 trazos de 4px).
+    RGBA `(245, 166, 35, 255)` (2 trazos de 4px).
   - La casilla bandera (solo act6, casilla 6) dibuja la bandera de España en lugar del
     número: rojo `(198,11,30)` / amarillo `(255,200,0)`, franjas 1:2:1.
 - **NO se dibuja** el texto RST ni la marca "QSL".
+- **Sí se dibuja el sello de estación** `EG9MM - Melilla` (`STATION_TEXT`, constante en
+  `qsl_generator.py:36`), en la esquina inferior derecha, con los colores de la bandera de
+  España. Aparece en **las dos** composiciones (`compose` y `compose_act6`). Los ejemplos
+  de postcard de esta web son de EG9MM, así que el sello es intencional.
 
 ### Banderas de país (delante del nombre)
 
@@ -408,8 +559,12 @@ Tipo | Tamaño caja | Contenido | Casillas
 - **Si no existe bandera para ese país (o la estación no tiene país), NO se dibuja nada**:
   el texto del nombre simplemente arranca en la posición original. Así nunca se pinta una
   bandera incorrecta.
-- Banderas en `FLAGS/` (249 países, ~80×53 px de flagcdn). Faltan solo `UN` (Naciones
-  Unidas) y `ZZ` (Soberana Orden de Malta, p.ej. `1A0AAA`), que se dejan sin bandera.
+- Banderas en `FLAGS/`: 249 PNG de flagcdn, en principio ~80×53 px pero en la práctica
+  **24 tamaños distintos** (alturas de 31 a 98 px; solo 109 son 80×53). Da igual: el
+  reescalado a la altura del texto normaliza todas. `country_map.json` tiene 248
+  códigos ISO2 distintos y **faltan 4 banderas**: `un` (sede de la UIT, prefijo `4U`),
+  `xi` (Irlanda del Norte, prefijos `GI`/`GN`/`2I`), `xk` (Kosovo, prefijo `Z6`) y `zz`
+  (Orden Soberana de Malta, p.ej. `1A0AAA`). Esas estaciones se quedan sin bandera.
 - La **esquina superior derecha** de cada postal lleva la bandera de España (`FLAGS/es.png`);
   si faltara el archivo, se dibuja igual la franja 1:2:1 como fallback.
 - **`bandera_espana.png` fue eliminado**; las banderas ahora viven exclusivamente en `FLAGS/`.
@@ -421,11 +576,17 @@ Tipo | Tamaño caja | Contenido | Casillas
 | Función | Qué hace |
 |---|---|
 | `ADIFParser.parse(filepath)` | Parsea ADI → lista de dicts de QSO (longitudes tolerantes, sin `<`) |
+| `ADIFParser._resolve_call(qso)` | Normaliza un QSO y descarta los que no tienen `CALL` |
 | `QSLGenerator.get_font(size, bold)` | Carga fuente del sistema (cacheada) |
 | `QSLGenerator.cover_fit(bg, w, h)` | Escala fondo a "cover" |
 | `QSLGenerator.rounded_rect(draw, xy, r, fill)` | Rectángulo redondeado |
 | `QSLGenerator.draw_activity_checkboxes(draw, box, checked, …)` | Fila "ACT" + 6 casillas con número/tilde/bandera |
 | `QSLGenerator.get_flag_image()` | Bandera de España de FLAGS/es.png (esquina sup. dcha.) |
+| `QSLGenerator.draw_spanish_flag(img, …)` / `_draw_spanish_flag_rects(draw, …)` | Bandera de España como imagen, o dibujada a franjas 1:2:1 como fallback |
+| `QSLGenerator.draw_flag_color_text(…, text, …)` | Texto con la silueta rellena de los colores de la bandera (sello de estación) |
+| `QSLGenerator.prepare_background(path, w, h)` | Carga + escala un fondo al tamaño de la postal |
+| `QSLGenerator.fmt_date(qso)` / `fmt_time(qso)` | Formatean fecha (`----` si falta) y hora (`''` si falta; el rótulo `--:--` lo pone `compose`, no `fmt_time`) |
+| `QSLGenerator.band_from_freq(freq)` | Banda desde la frecuencia, vía `BAND_RANGES` (`qsl_generator.py:39`) |
 | `QSLGenerator._load_country_map()` | Carga country_map.json indexado por 1ª letra |
 | `QSLGenerator.country_code_for_call(call)` | ISO2 desde prefijo (longest-match, ignora placeholders) |
 | `QSLGenerator.station_flag(call, height)` | PNG de FLAGS/{cc}.png reescalado o None |
@@ -435,6 +596,7 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `find_adi_files(folder)` | Detecta ADI/ADIF por extensión, sin duplicados, cualquier nombre |
 | `folder_backgrounds(folder)` | Fondos de UNA carpeta |
 | `pick_background(backgrounds, idx)` | Alterna `fondos[idx % n]` |
+| `sanitize_filename_component(text)` | Limpia un componente de nombre de archivo |
 | `sha256_file(path)` | Hash del ADI para detectar cambios |
 | `load_log(folder)` / `save_log(folder, log)` | Leer/escribir `qsl_log.json` |
 | `now_iso()` | Timestamp UTC |
@@ -445,7 +607,7 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `process_folder(folder, gen, bgs, seq)` | Lógica incremental por carpeta |
 | `process_act6(base_dir, gen)` | Limpia QSL6/QSLS + detecta estaciones en las 5 actividades + genera QSL de record |
 | `main()` | Orquesta las 7 carpetas (qsl6 especial) |
-| `drive_index.py` | Recorre la carpeta de Drive con una cuenta de servicio y escribe `qsl_index.json` con los *file ids* |
+| `drive_index.py` → `fetch/split_blocks/parse_folders/parse_files/fsize/calln/main` | **Scraping del HTML público** de la carpeta de Drive con `urllib` (sin API, sin credenciales) y escribe `qsl_index.json` con los *file ids* |
 
 ---
 
@@ -464,41 +626,49 @@ coincidencia exacta se resalta y se trae arriba.
 
 > **Por qué hace falta un índice:** los enlaces de descarga de Drive siempre llevan
 > el *file id* (`.../uc?export=download&id=<ID>`), nunca el nombre del archivo.
-> `drive_index.py` recorre la carpeta pública de Drive con la API v3 usando una
-> **cuenta de servicio** y escribe `qsl_index.json` con nombre + id de cada PNG.
-> Ese JSON se sube a git y es lo que la página descarga con `fetch`.
+> `drive_index.py` recorre la carpeta **pública** de Drive, hace *scraping* del HTML con
+> `urllib` (**sin API v3, sin credenciales y sin dependencias extra** — la `venv` solo
+> tiene Pillow) y escribe `qsl_index.json` con nombre + id de cada PNG. Ese JSON se sube
+> a git y es lo que la página descarga con `fetch`.
+
+> Histórico: antes se usaba la API v3 con una cuenta de servicio y `drive_creds.json`.
+> Ese enfoque se abandonó por el scraping del HTML público (más simple, cero secretos que
+> guardar). Las referencias a `drive_creds.json` que quedan en `.gitignore` son inofensivas.
 
 ### Carpeta de origen
 
 `My Drive/QSL/QSLs` → <https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy>
 
-- ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy` (ya viene por defecto en
-  `drive_index.py`, no hay que pasar nada).
+- ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy`, hardcodeado en la constante
+  `DEFAULT_FOLDER_ID` de `drive_index.py`. **No hay flag para cambiarlo**: para indexar otra
+  carpeta hay que editar esa constante.
 - Contiene `qsl1`…`qsl7`. Dentro de cada una, los PNG se llaman
   `{indicativo}_{nombre_adi}.png`, así que **el prefijo del nombre es el indicativo**.
 - Acceso: *Cualquier persona con el enlace* → Lector. **Ya está hecho** (verificado:
-  la carpeta responde 200 sin iniciar sesión).
+  la carpeta responde 200 sin iniciar sesión). Es un requisito indispensable: sin enlace
+  público el scraping devuelve 0 ficheros.
 
-### Puesta en marcha (una sola vez)
+### Puesta en marcha
 
-1. **Cuenta de servicio** (Google Cloud → crear proyecto → IAM y administración →
-   Cuentas de servicio → Crear, sin roles):
-   - Descarga la clave JSON y guárdala en la raíz del proyecto como
-     **`drive_creds.json`** (ya está en `.gitignore`, nunca se sube a git).
-2. **Comparte la carpeta con la cuenta de servicio:** en la carpeta de arriba →
-   *Compartir* → *Añadir personas y grupos* → pega el correo
-   `...@...iam.gserviceaccount.com` → **Lector**.
-   Ojo: compartir *por enlace* NO da acceso a la API, hace falta este paso aparte.
-3. Genera el índice:
+No hay nada que preparar: **no hacen falta credenciales, ni cuenta de servicio, ni
+dependencias**. Solo la carpeta de Drive compartida por enlace (ya está) y:
 
-   ```bash
-   ./generar.sh --index-only              # instala google-auth y escribe qsl_index.json
-   python3 drive_index.py --dry-run       # prueba sin escribir nada
-   ```
+```bash
+./generar.sh --index-only              # ejecuta drive_index.py y escribe qsl_index.json
+```
 
-4. Sube el índice (`git add qsl_index.json && git commit && git push`) y activa
-   GitHub Pages (Settings → Pages → *Deploy from a branch* → `main` / raíz).
-   La página queda en **https://dcialdella.github.io/ia-qsls/**
+`drive_index.py` **no parsea argumentos** (`argparse` está importado pero no se usa) y
+siempre escribe el archivo. `main()` no acepta `--dry-run` ni `--folder-id`: cualquier
+flag que le pases se ignora en silencio.
+
+> Bug latente conocido: `generar.sh:138` invoca `drive_index.py` con
+> `"${DRIVE_INDEX_ARGS_ARR[@]}"`, pero **`DRIVE_INDEX_ARGS_ARR` no se asigna en ningún
+> sitio**. O sea que `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --index-only`
+> tampoco funciona. Para indexar otra carpeta hay que editar `DEFAULT_FOLDER_ID` en
+> `drive_index.py:6`.
+
+Después, sube el índice y activa GitHub Pages (Settings → Pages → *Deploy from a branch*
+→ `main` / raíz). La página queda en **https://dcialdella.github.io/ia-qsls/**
 
 ### Uso diario
 
@@ -508,8 +678,6 @@ coincidencia exacta se resalta y se trae arriba.
 ./generar.sh                  # no toca el índice (hay que pedirlo con --index)
 ```
 
-Para una carpeta distinta: `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --index-only`
-
 > **Ojo con el retardo de Drive:** Drive for Desktop sube los PNG de forma
 > asíncrona. Si generas postcards nuevas y sincronizas en el mismo momento, el
 > índice se construirá antes de que existan en la nube: repite `--index-only`
@@ -517,62 +685,88 @@ Para una carpeta distinta: `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --i
 
 ### Formato de `qsl_index.json`
 
+Los 7 `id` de actividad y el `folder_id` **se rellenan siempre** (regla 1 de §0), aunque
+no haya ninguna postcard. Estado actual del repo: índice **vacío pero válido**, con
+`total: 0`, `counts` a 0 y `entries: []`. La web lo muestra sin errores.
+
 ```json
 {
  "version": 1,
  "generated_at": "2026-10-04T10:00:00Z",
  "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
+ "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"}},
  "counts": {"qsl1": 12, "qsl2": 3},
  "total": 15,
  "entries": [
    {"call": "EA4HJZ", "act": "qsl1",
     "name": "ea4hjz_pota1111-delta-20260909-1417.png",
-    "id": "1QwErTy...", "size": 210433,
-    "modified": "2026-09-09T11:31:37.000Z"}
+    "id": "1QwErTy...", "size": 210433}
  ]
 }
 ```
 
+- El ejemplo abrevia `activities` a una sola clave, pero el archivo real trae **las 7**
+  con su `id` y su `title` ("Actividad 1"… "Actividad 7"), siempre, aunque estén vacías.
 - `call` se deduce del nombre del archivo (`{call}_{stem}.png`), no del log.
+- `entries` **no lleva `modified`**: el scraping del HTML no lo expone. El tamaño (`size`)
+  sí se lee, vía la redirección `uc?export=download`.
 - La web usa `lh3.googleusercontent.com/d/<id>` para las miniaturas y
   `drive.google.com/uc?export=download&id=<id>` para la descarga.
 
 ### Seguridad
 
-- La clave de la cuenta de servicio **solo vive en tu Mac**: la web es estática y
-  no habla con la API de Drive en ningún momento.
-- La cuenta de servicio solo tiene permiso de lectura (`drive.readonly`).
+- **No hay secretos que gestionar.** `drive_index.py` no usa la API de Drive ni credenciales:
+  solo lee el HTML de la carpeta pública. `drive_creds.json` ya no hace falta para nada
+  (las entradas que lo ignoran en `.gitignore` son una precaución inofensiva).
+- La web es estática: no habla con Drive en ningún momento, solo carga `qsl_index.json`
+  desde GitHub Pages.
 - Con la carpeta pública, cualquiera que conozca el enlace puede ver todos los PNG.
   Es coherente con que las QSL son públicas, pero tenlo en cuenta si añades
   datos personales (nombre/QTH) que no quieras exponer.
+- Corolario de usar HTML público: si algún día Drive deja de renderizar esos `<a>` en su
+  HTML, el índice saldría vacío **sin error visible**. Si `total: 0` de repente, es lo
+  primero a mirar.
 
 ---
 
 ## 8. Tareas pendientes / próximos pasos
 
-1. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
-   que las banderas de país delante del nombre se ven como se espera.
-2. Revisar que la **sincronización a Google Drive** funcione: ejecutar
-   `./generar.sh` y comprobar que en `QSL/QSLs/qsl1`–`qsl7` aparecen las postales y que
-   la app las sube a la nube.
-3. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comience
-   a contener varias postales `{call}_act6.png` (se regeneran en cada ejecución).
-4. Cuando quieras **activar contactos masivos** (p.ej. Eladio/DAC con Ham2K o Smart
-   Logger), renombrar sus `.adi` a `.adi` activo y ejecutar `./generar.sh`.
-5. (Resuelto) El parser trunca a la longitud declarada: `<QTH:8>palermo` daría `palerm`
-   porque el ADI declara 8 pero el valor real son 7. Es el comportamiento **intencional**
-   del ADIF (longitudes declaradas); no es un error y se mantiene así.
-6. (Opcional) Añadir banderas `UN` (Naciones Unidas) y `ZZ` (Orden de Malta) si se quieren
-   esas entidades; hoy se dejan sin bandera por defecto.
+Partiendo del estado de inicio (sin `.adi` en `qslN/`, sin postcards generadas):
+
+1. **Prueba de humo del generador:** copiar 2–3 `.adi` de `TEST DATA/` a sus actividades
+   (ver §1.1) y ejecutar `./generar.sh --no-sync-drive`. Debe crear postcards en
+   `qslN/QSLS/` y los `qsl_log.json` correspondientes.
+2. **Confirmar visualmente las postales** generadas (abrir `qslN/QSLS/*.png`) y validar
+   que las banderas de país delante del nombre se ven como se espera, y que las casillas
+   1–6 / el texto "DMR Confirmated" salen bien.
+3. **Revisar la sincronización a Google Drive**: ejecutar `./generar.sh` y comprobar que en
+   `QSL/QSLs/qsl1`–`qsl7` aparecen las postcards y que la app las sube a la nube.
+4. **Verificar la web** con datos reales: `./generar.sh --index` y comprobar
+   `qsl_index.json` en <https://dcialdella.github.io/ia-qsls/qsl_index.json>.
+5. Cuando haya varias estaciones en las 5 actividades, revisar que `qsl6/QSLS/` comienza
+   a contener varias postcards `{call}_act6.png` (se regeneran en cada ejecución).
+6. Cuando quieras **activar contactos masivos** (p.ej. Eladio/DAC con Ham2K o Smart
+   Logger), dejar sus `.adi` en la carpeta de su actividad y ejecutar `./generar.sh`.
+7. (Resuelto) **Longitudes declaradas mal ajustadas.** El parser recorta el valor a la
+   longitud `<len>` solo si el valor real es **más largo**: `<QTH:3>palermo` → `pal`. Si
+   declara más de lo que tiene (`<QTH:8>palermo`), respeta la cadena entera (`palermo`),
+   no se rellena ni se corta. Antes se documentaba al revés aquí; el comportamiento real
+   está en §4.
+8. (Opcional) Añadir banderas para los 4 códigos sin PNG en `FLAGS/`: `un` (sede de la
+   UIT, prefijo `4U`), `xi` (Irlanda del Norte), `xk` (Kosovo) y `zz` (Orden de Malta).
+   Hoy esas estaciones se quedan sin bandera.
 
 ---
 
-## 8. Notas de entorno
+## 9. Notas de entorno
 
 - **Mac (darwin), zsh.** El script `generar.sh` funciona también en Linux.
-- **Python:** 3.14 venv; Pillow instalado (también numpy, usado solo en pruebas de debug).
-- **Fuentes usadas:** Arial/Helvetica del sistema macOS (con fallback DejaVu en Linux).
+- **Python:** 3.14 venv con **solo Pillow** (12.3.0) + `pip`. Ni numpy ni google-auth:
+  el generador no los usa y `drive_index.py` va con la `urllib` de la stdlib.
+- **Fuentes usadas:** Arial → Helvetica → Verdana → DejaVu, en ese orden de preferencia
+  (`get_font`, `qsl_generator.py:266`). En macOS suelen salir Arial o Helvetica; DejaVu es
+  el fallback para Linux.
 - **Filesystem case-insensitive:** por eso se evitan los globs que mezclan mayúsculas.
 - No hay tests automáticos; la verificación es ejecutar el script + revisar los PNG.
 - `./generar.sh` es la forma recomendada de ejecutar: configura el entorno solo y, con
@@ -580,5 +774,10 @@ Para una carpeta distinta: `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --i
   postales a Google Drive (usa `--no-sync-drive` para evitar la copia).
 - **Git/GitHub:** el proyecto está en `git` (rama `main`) con remote `origin` →
   https://github.com/dcialdella/ia-qsls.git. `qsl*/QSLS/` y los `qsl_log.json` están
-  ignorados por `.gitignore` (no se suben). Se commitean solo los `.adi` activos, código
-  y README.
+  ignorados por `.gitignore` (no se suben). Se commitean los fondos, los `.adi` (los de
+  `TEST DATA/` ahora, los de `qslN/` cuando los actives), `index.html`, `qsl_index.json`,
+  `country_map.json`, `FLAGS/`, el código y el README.
+- **Estado Git:** `main` en sync con `origin/main` (0 ahead, 0 behind). Último commit:
+  `a756881` — *"Regeneracion total sin ADIs in qsl1-qsl7: 0 postcards, indice a 0"*
+  (sin tildes, por coherencia con el resto de commits): el volcado deliberado a estado de
+  inicio que describe §1. Lo único modificado sobre ese commit es este `README.md`.
