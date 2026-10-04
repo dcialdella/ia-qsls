@@ -24,6 +24,21 @@ postales generadas.
 
 ---
 
+## 0. Reglas invariables (no romper)
+
+1. **Las carpetas `qsl1`–`qsl7` de Google Drive NO se borran nunca.** Deben **existir
+   siempre**, aunque estén **vacías**. Si desaparecen, hay que volver a crearlas
+   (el índice web y los enlaces de descarga dependen de que existan los 7 `id`).
+2. **En las carpetas `qsl1`–`qsl7` del repo no hay archivos `.adi`.** Los ADI de
+   trabajo se guardan fuera (p. ej. `TEST DATA/`); en `qslN/` solo el fondo `.png`
+   y la carpeta `QSLS/`.
+3. **En `qslN/QSLS/` no se versiona ningún PNG.** Es salida generada y está en
+   `.gitignore` (`qsl*/QSLS/`).
+4. **La raíz de Drive `QSLs` solo contiene las 7 carpetas `qsl1`–`qsl7`**, ningún
+   archivo suelto en la raíz.
+
+---
+
 ## 1. Estado actual del proyecto (última sesión)
 
 - ✅ Script funcional e **incremental** en `qsl_generator.py`
