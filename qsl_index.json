@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-10-04T19:06:03Z",
+ "generated_at": "2026-10-04T19:13:43Z",
  "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
  "activities": {
@@ -35,14 +35,14 @@
  },
  "counts": {
   "qsl1": 16,
-  "qsl2": 18,
+  "qsl2": 13,
   "qsl3": 17,
   "qsl4": 15,
   "qsl5": 15,
-  "qsl6": 15,
-  "qsl7": 15
+  "qsl6": 10,
+  "qsl7": 12
  },
- "total": 111,
+ "total": 98,
  "entries": [
   {
    "call": "1A0AAA",
@@ -185,13 +185,6 @@
    "size": 869532
   },
   {
-   "call": "EA0XYZ",
-   "act": "qsl7",
-   "name": "ea0xyz_prueba10-dmr-2026-10-04.png",
-   "id": "1NJqv6egba1RMSbYQVmXJzz6y8FfmJ8ij",
-   "size": 752750
-  },
-  {
    "call": "EA1XYZ",
    "act": "qsl7",
    "name": "ea1xyz_prueba10-dmr-2026-10-04.png",
@@ -284,13 +277,6 @@
   },
   {
    "call": "EA4XYZ",
-   "act": "qsl2",
-   "name": "ea4xyz_prueba10-2026-10-04.png",
-   "id": "1his4NneDGi-sbnmOAGoTbZsK_GEamktu",
-   "size": 833091
-  },
-  {
-   "call": "EA4XYZ",
    "act": "qsl3",
    "name": "ea4xyz_lugar2-delta1-2026-10-04.png",
    "id": "1br5hjaYl_GshFPorTOWLptFWOggrilmW",
@@ -316,13 +302,6 @@
    "name": "ea4xyz_prueba10-2026-10-04.png",
    "id": "1GAiUTrupLDlhbVz9QhSfSfBrYLox8qV_",
    "size": 1304717
-  },
-  {
-   "call": "EA4XYZ",
-   "act": "qsl6",
-   "name": "ea4xyz_act6.png",
-   "id": "1ob3MwnmeIXLQd6eqyETFxP_POSj3yTus",
-   "size": 869274
   },
   {
    "call": "EA5DEF",
@@ -379,13 +358,6 @@
    "name": "ea5xyz_prueba10-dmr-2026-10-04.png",
    "id": "1FMEaUZ0zl9V_wsytiwi61ke_vzU9HQNl",
    "size": 752966
-  },
-  {
-   "call": "EA6XYZ",
-   "act": "qsl7",
-   "name": "ea6xyz_prueba10-dmr-2026-10-04.png",
-   "id": "1ElqlJvB-Uunue9xcC3q1gJoTHcHPjeY6",
-   "size": 753240
   },
   {
    "call": "EA7XYZ",
@@ -449,13 +421,6 @@
    "name": "ea8xyz_prueba10-dmr-2026-10-04.png",
    "id": "1PeeDZzYHTDW_4cY6yGKH4Iy7g-rCUiYy",
    "size": 752559
-  },
-  {
-   "call": "EA9XYZ",
-   "act": "qsl7",
-   "name": "ea9xyz_prueba10-dmr-2026-10-04.png",
-   "id": "1eSOBRy4dJuUZ5Cwjjuol9jtAI5SYTD4A",
-   "size": 753159
   },
   {
    "call": "F5XYZ",
@@ -557,13 +522,6 @@
   },
   {
    "call": "I2ABC",
-   "act": "qsl2",
-   "name": "i2abc_prueba10-2026-10-04.png",
-   "id": "1hWLaPtboFdLmko5RpPvxukOjxNwmv2QX",
-   "size": 833556
-  },
-  {
-   "call": "I2ABC",
    "act": "qsl3",
    "name": "i2abc_prueba10-2026-10-04.png",
    "id": "1yiOD2TRLQ3G83vERYJV9Pgu9xN8TmZIZ",
@@ -584,13 +542,6 @@
    "size": 1305120
   },
   {
-   "call": "I2ABC",
-   "act": "qsl6",
-   "name": "i2abc_act6.png",
-   "id": "1Is-OFYuiwjyC1sbTUBWSEIofbmLVYuJL",
-   "size": 869613
-  },
-  {
    "call": "LU1ABC",
    "act": "qsl2",
    "name": "lu1abc_prueba3-2026-10-08.png",
@@ -603,13 +554,6 @@
    "name": "oe1abc_prueba10-2026-10-04.png",
    "id": "1kXxsK2wv20S2uXo-w3w_DvoqVPifeWzX",
    "size": 1098360
-  },
-  {
-   "call": "OE1ABC",
-   "act": "qsl2",
-   "name": "oe1abc_prueba10-2026-10-04.png",
-   "id": "1LeXMXhoB9fLZ3yCBbnXavDOK3eVPgc2K",
-   "size": 832836
   },
   {
    "call": "OE1ABC",
@@ -633,25 +577,11 @@
    "size": 1304352
   },
   {
-   "call": "OE1ABC",
-   "act": "qsl6",
-   "name": "oe1abc_act6.png",
-   "id": "1MRxCOZhcQbKPuHPGMjmjHAjra3pC7Bwo",
-   "size": 869030
-  },
-  {
    "call": "PA3XYZ",
    "act": "qsl1",
    "name": "pa3xyz_prueba10-2026-10-04.png",
    "id": "1tobJKV9DMoiaY9Ljilzov96pRJP5TIyi",
    "size": 1099141
-  },
-  {
-   "call": "PA3XYZ",
-   "act": "qsl2",
-   "name": "pa3xyz_prueba10-2026-10-04.png",
-   "id": "1Rm8zvRDHB62UWmm823wYTkkTwqzOk7vg",
-   "size": 833628
   },
   {
    "call": "PA3XYZ",
@@ -673,13 +603,6 @@
    "name": "pa3xyz_prueba10-2026-10-04.png",
    "id": "1zG78mbQ2UILnrUDobcTPv4vkdIw55LOA",
    "size": 1305264
-  },
-  {
-   "call": "PA3XYZ",
-   "act": "qsl6",
-   "name": "pa3xyz_act6.png",
-   "id": "1pUQMp5lIx8S4-l_AM5Lfb-6huD8unzI1",
-   "size": 869732
   },
   {
    "call": "SP9ABC",
@@ -739,13 +662,6 @@
   },
   {
    "call": "SV1ABC",
-   "act": "qsl2",
-   "name": "sv1abc_prueba10-2026-10-04.png",
-   "id": "1vsVns380kC1KE-_Rlnjwft4HEFZCt5qM",
-   "size": 834345
-  },
-  {
-   "call": "SV1ABC",
    "act": "qsl3",
    "name": "sv1abc_prueba10-2026-10-04.png",
    "id": "1Nh80zwYnAth2b6Hy2Q4MZCBvOYJqbcf3",
@@ -764,13 +680,6 @@
    "name": "sv1abc_prueba10-2026-10-04.png",
    "id": "1-XhG9jeMJiJ8N_WTGpfjAlx3Pi_06_k_",
    "size": 1306118
-  },
-  {
-   "call": "SV1ABC",
-   "act": "qsl6",
-   "name": "sv1abc_act6.png",
-   "id": "1apvbuUgS9QAHzzKvDpxioN-whucHeUdd",
-   "size": 871242
   },
   {
    "call": "VK3DEF",
