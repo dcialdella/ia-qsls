@@ -173,7 +173,12 @@ function render(term) {
   statusEl.textContent = `${names.length} indicativo(s) · ${files} postcard(s) para "${term}".`;
 
   for (const call of names) {
-    const items = groups.get(call).sort((a, b) => a.act.localeCompare(b.act) || a.name.localeCompare(b.name));
+    const items = groups.get(call).sort((a, b) => {
+      const na = parseInt((a.act.match(/qsl(\d+)/) || [0,0])[1]);
+      const nb = parseInt((b.act.match(/qsl(\d+)/) || [0,0])[1]);
+      if (na !== nb) return na - nb;
+      return a.name.localeCompare(b.name);
+    });
     const div = document.createElement('div');
     div.className = 'card' + (norm(call) === t ? ' exact' : '');
     div.innerHTML = `<div class="chead"><span class="call">${escapeHtml(call)}</span>
