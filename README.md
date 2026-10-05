@@ -41,14 +41,16 @@ postales generadas.
    archivo suelto en la raíz.
 5. **Tras cada generación de imágenes (parcial o total) hay que regenerar el índice
    y subir el código.** El sitio lee `qsl_index.json` desde GitHub Pages, así que
-   sin push la web no ve las postcards nuevas. Secuencia obligatoria:
+   sin push la web no ve las postcards nuevas. La forma normal de hacerlo es
+   **`./run_all.sh`** (ver §2.0), que ya encadena los tres pasos:
    1. `./generar.sh --index` (o `--from-scratch` y luego `--index-only` si hay que
       esperar a que Drive suba los PNG a la nube).
    2. `git add -A && git commit && git push`.
    3. Verificar en <https://dcialdella.github.io/ia-qsls/qsl_index.json> que
       `total` y `counts` reflejan lo generado (Pages tarda ~1 min).
    Ojo: `drive_index.py` lee la nube, no el disco local; si se indexa antes de que
-   Drive suba los ficheros, el JSON sale con `total: 0`.
+   Drive suba los ficheros, el JSON sale sin las postcards nuevas (no necesariamente
+   con `total: 0`). Se arregla repitiendo `./run_all.sh` al minuto.
 
 ---
 
@@ -59,7 +61,7 @@ postales generadas.
 > generada en `qslN/QSLS/`. Todo lo que hay es el código, los fondos y los `.adi` de
 > ejemplo aparcados en `TEST DATA/`.
 
-- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "3"`)
+- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "4"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ Script de ejecución autónoma **`generar.sh`** (ver sección 2)
 - ✅ Carpetas `qsl1`–`qsl7` creadas y **vacías de contactos**. Todas con su fondo:
@@ -200,13 +202,39 @@ Contenido actual de `TEST DATA/` (contactos según `<CALL:`):
 19. **Eliminados los `.adi.TEST`** (`eladio1/2`, `eladio3`, `dac1`): ya no existen en el
      repositorio. Los ADI activos se renombran libremente durante las pruebas (son
      volátiles); la regla de no renombrar sin consultar aplica solo a archivos `.TEST`.
+20. **Versión v4 del generador: fuera la bandera de España y el sello de estación.**
+     Se han quitado **dos elementos** de todas las postcards:
+     - La **bandera de España de la esquina superior derecha** (era `draw_spanish_flag()`,
+       5% x 5% de la postal) ya no se dibuja.
+     - El **sello `EG9MM - Melilla` de la esquina inferior derecha** (minicaja negra con
+       el texto relleno con los colores de la bandera, `draw_flag_color_text()`) ya no
+       se dibuja.
+
+     Se quitaron **las llamadas**, no el código: `draw_spanish_flag()`,
+     `_draw_spanish_flag_rects()`, `draw_flag_color_text()`, `get_flag_image()` y la
+     constante `STATION_TEXT` siguen existiendo, con los bloques de dibujo comentados
+     dentro de `compose()` y `compose_act6()`. Para volver a dibujarlas basta con
+     descomentar.
+     *Se conservan* (no son el sello de estación): la **bandera del país** delante del
+     nombre de cada estación, y la **bandera de España dentro de la casilla 6** de las
+     postcards de record de QSL6.
+21. **`run_all.sh`: el proceso diario en un comando.** Envoltura de `generar.sh --auto`
+     que encadena generar → sync a Drive → regenerar `qsl_index.json` → `git add -A`
+     → commit → push. Ver §2.0.
+22. **Fechas y horas distintas en los `.adi`.** Los ADI de `qsl1`–`qsl7` usaban las
+     mismas fechas y horas en varios ficheros (`20240901`/`100000` en todos los de
+     qsl1, `20240902`/`100000` en todos los de qsl2, etc.), así que postcards distintas
+     mostraban datos idénticos. Ahora cada actividad tiene su día (`20240901`…
+     `20240907`) y cada QSO su hora, avanzando 5 minutos por contacto dentro de la
+     actividad. Se regeneró todo el set.
 
 ### Estructura actual en disco
 
 ```
 ia-qsls/
 ├── qsl_generator.py       <- Script principal (todo en un archivo)
-├── generar.sh             <- Script de ejecución autónoma (bash)
+├── run_all.sh             <- PROCESO DIARIO: generar + Drive + índice web + git push
+├── generar.sh             <- Script de ejecución autónoma (bash), con --auto
 ├── drive_index.py         <- Genera qsl_index.json para la web (§7)
 ├── index.html             <- Página web de descarga (GitHub Pages)
 ├── qsl_index.json         <- Índice web (ahora vacío: total 0)
@@ -255,13 +283,60 @@ Notes sobre esta estructura:
 
 ## 2. Cómo ejecutar
 
-### Opción A: uso el script autónomo `./generar.sh` (recomendado)
+### 2.0 El proceso diario normal (lo de cada día)
+
+Este es el flujo de trabajo de rutina:
+
+1. **Copiar los `.adi` nuevos a la carpeta de su actividad:** `qsl1`, `qsl2`,
+   `qsl3`, `qsl4`, `qsl5` o `qsl7`. No hace falta nada más: el generador los
+   detecta solo por su hash.
+2. **Correr un único comando:**
+
+   ```bash
+   ./run_all.sh
+   ```
+
+   Y ya está. `run_all.sh` es una envoltura de `generar.sh --auto` que encadena
+   todo el proceso en este orden:
+
+   | Paso | Qué hace |
+   |---|---|
+   | 1 | Detecta los `.adi` nuevos o modificados y genera sus PNG en `qslN/QSLS/` (incremental; `qsl6` se regenera siempre) |
+   | 2 | Sincroniza los PNG con Google Drive (`rsync --update --delete`) |
+   | 3 | Regenera `qsl_index.json` leyendo la carpeta pública de Drive |
+   | 4 | `git add -A` + `git commit` + `git push` (los `.adi` nuevos también se suben) |
+   | 5 | GitHub Pages publica el sitio en ~1 min |
+
+   Los PNG de `QSLS/` y los `qsl_log.json` **no** se commitean (están en
+   `.gitignore`): viven en Drive y la web los enlaza desde ahí.
+
+3. **Verificar** en <https://dcialdella.github.io/ia-qsls/> que el indicativo
+   buscado aparece.
+
+> **Importante — el retardo de Drive:** el paso 3 indexa lo que hay **en la nube**,
+> y Google Drive sube los ficheros de forma asíncrona. Si corres `./run_all.sh` en
+> el mismo momento en que copias el `.adi`, las postcards nuevas todavía no están
+> en Drive y **no aparecerán en la web** hasta la siguiente pasada.
+>
+> **Solución: repetir `./run_all.sh` un minuto después.** Reindexa y pushea
+> siempre (la marca de tiempo `generated_at` cambia en cada corrida), así que la
+> segunda pasada recoge lo que la primera se dejó por subir.
+
+> **`qsl6` no recibe `.adi`.** Es la actividad de *record* y se alimenta sola de las
+> estaciones que contactaron en `qsl1`–`qsl5`. Por eso el flujo diario usa las
+> carpetas 1, 2, 3, 4, 5 y 7. (El `qsl6/qsl6_extra1.adi` que hay en el repo no se
+> procesa nunca.)
+
+### Opción A: usar el script autónomo `./generar.sh` (avanzado)
 
 El script es portable: se puede copiar a cualquier lado, calcula su propio directorio,
 crea el venv e instala Pillow si hace falta, y no toca tus `.adi` ni tus fondos.
+`./run_all.sh` es la forma recomendada para el día a día; `generar.sh` directamente
+sirve para casos puntuales (regenerar todo, probar sin tocar Drive, etc.).
 
 ```bash
 ./generar.sh                    # incremental + copia las postales a Google Drive (por defecto)
+./generar.sh --auto             # igual que ./run_all.sh (además indexa y pushea)
 ./generar.sh --no-sync-drive    # incremental, SIN copiar a Google Drive
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
 ./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
@@ -680,15 +755,18 @@ Después, sube el índice y activa GitHub Pages (Settings → Pages → *Deploy 
 ### Uso diario
 
 ```bash
+./run_all.sh                    # postcards + sync a Drive + índice + commit + push (TODO)
 ./generar.sh --index          # postcards + sync a Drive + regenera qsl_index.json
 ./generar.sh --index-only     # solo regenera el índice (no toca las postcards)
 ./generar.sh                  # no toca el índice (hay que pedirlo con --index)
 ```
 
+Lo normal es `./run_all.sh` (§2.0). Los flags de abajo sirven para casos puntuales.
+
 > **Ojo con el retardo de Drive:** Drive for Desktop sube los PNG de forma
 > asíncrona. Si generas postcards nuevas y sincronizas en el mismo momento, el
 > índice se construirá antes de que existan en la nube: repite `--index-only`
-> un minuto después.
+> (o `./run_all.sh`) un minuto después.
 
 ### Formato de `qsl_index.json`
 
