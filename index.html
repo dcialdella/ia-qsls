@@ -120,7 +120,7 @@ const safeId = id => (typeof id === 'string' && ID_RE.test(id)) ? id : null;
 // encodeURIComponent sobre un id ya validado es identidad en la práctica, pero
 // mantiene la invariante aunque la validación se relajara en el futuro.
 const THUMB = (id, v) => {
-  const vid = v ? `&v=${encodeURIComponent(String(v))}` : '';
+  const vid = v ? `#v=${encodeURIComponent(String(v))}` : '';
   return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w600${vid}`;
 };
 const VIEW  = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
