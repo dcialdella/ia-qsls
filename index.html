@@ -71,8 +71,6 @@
     border-radius: 9px; border: 1px solid var(--line); color: var(--fg); background: #1e242d; white-space: nowrap;
   }
   .actions a.dl { background: var(--gold); color: #1a1206; border-color: var(--gold); font-weight: 700; }
-  .more { display: flex; justify-content: center; padding: 22px 0 4px; }
-  .more button { padding: 12px 22px; font-size: 14px; }
   #status .err { color: #ff9a8b; margin-bottom: 10px; }
   #status a { color: var(--accent); }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
@@ -95,12 +93,12 @@
   <h1><span class="flag">🇪🇸</span> QSL EG9MM · Melilla</h1>
   <p class="sub">Escribe tu indicativo / Type your Caller ID to download the QSLs</p>
   <div class="search">
-    <input id="q" type="search" placeholder="EA4HJZ" autocomplete="off" autocapitalize="characters"
+    <input id="q" type="search" placeholder="EA4XX1" autocomplete="off" autocapitalize="characters"
            spellcheck="false" aria-label="Indicativo a buscar">
     <button class="primary" id="go">Buscar</button>
     <button id="clear">Limpiar</button>
   </div>
-  <p class="hint">Mínimo 4 caracteres / Minimum 4 characters. Búsqueda por inicio del nombre del archivo / Search matches start of filename.</p>
+  <p class="hint">Escribe el indicativo completo / Enter the full callsign.</p>
 </header>
 
 <main>
@@ -125,10 +123,6 @@ const THUMB = id => `https://lh3.googleusercontent.com/d/${encodeURIComponent(id
 const VIEW  = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const DL    = id => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
 
-// Máximo de tarjetas por búsqueda (D5). Con miles de postcards, prefijos como
-// "EA4" generaban cientos de <img> simultáneos y bloqueaban el hilo.
-const PAGE_SIZE = 50;
-const ID_MIN = 4;         // mínimo de caracteres para buscar
 
 const $ = s => document.querySelector(s);
 const results = $('#results'), statusEl = $('#status'), input = $('#q');
@@ -139,7 +133,6 @@ const results = $('#results'), statusEl = $('#status'), input = $('#q');
 $('#year').textContent = String(new Date().getFullYear());
 let index = null;
 let byCall = new Map();   // indicativo normalizado -> [entradas]
-let shown = PAGE_SIZE;    // cuántas tarjetas se están pintando (D5)
 
 // Normaliza lo que escribe la persona: mayúsculas y sin espacios ni separadores.
 const norm = s => s.toUpperCase().replace(/[\s\-_]+/g, '');
@@ -186,37 +179,18 @@ function sortItems(a, b) {
   return String(a.name).localeCompare(String(b.name));
 }
 
-// Pinta las tarjetas ya agrupadas. `limit` acota cuántas se muestran (D5).
-function paint(names, t) {
-  const upto = names.slice(0, shown);
-  const frag = document.createDocumentFragment();
-  for (const call of upto) {
-    const items = byCall.get(call).slice().sort(sortItems);
-    const div = document.createElement('div');
-    div.className = 'card' + (norm(call) === t ? ' exact' : '');
-    div.innerHTML = `<div class="chead"><span class="call">${escapeHtml(call)}</span>
+// Pinta la tarjeta de un indicativo y todas sus postcards.
+function paint(call) {
+  const items = byCall.get(call).slice().sort(sortItems);
+  const div = document.createElement('div');
+  div.className = 'card exact';
+  div.innerHTML = `<div class="chead"><span class="call">${escapeHtml(call)}</span>
         <span class="count">${items.length} postcard(s)</span></div>
       <ul class="items">${items.map(itemRow).join('')}</ul>`;
-    frag.appendChild(div);
-  }
-  results.appendChild(frag);
-
-  if (shown < names.length) {
-    const more = document.createElement('div');
-    more.className = 'more';
-    const btn = document.createElement('button');
-    btn.textContent = `Ver más (mostrando ${upto.length} de ${names.length} indicativos)`;
-    btn.addEventListener('click', () => {
-      shown += PAGE_SIZE;
-      results.innerHTML = '';
-      paint(names, t);
-    });
-    more.appendChild(btn);
-    results.appendChild(more);
-  }
+  results.appendChild(div);
 }
 
-// Agrupa por indicativo y ordena: coincidencia exacta primero, luego A→Z.
+// Consulta de una estación: coincidencia EXACTA del indicativo.
 function render(term) {
   results.innerHTML = '';
   const raw = String(term || '').trim();
@@ -230,45 +204,25 @@ function render(term) {
   // reserva a lo que la persona ha pedido. Solo el contador, para saber que
   // el índice está cargado.
   if (!t) {
-    shown = PAGE_SIZE;
     statusEl.textContent = index.total.toLocaleString('es') + ' postcards indexadas.';
     return;
   }
-  // Con 1-3 caracteres escritos se avisa en vez de fingir un resultado.
-  if (t.length < ID_MIN) {
-    statusEl.textContent = `Escribe al menos ${ID_MIN} caracteres para buscar.`;
+  // Coincidencia EXACTA del indicativo, no prefijo: escribir "EA4X" debe dar
+  // solo EA4XX1..EA4XX7, y "EA4X" a secas no debe devolver las seis. Es lo que
+  // se pidió: la búsqueda es una consulta de una estación, no un filtro.
+  if (byCall.has(t)) {
+    statusEl.textContent =
+      `${byCall.get(t)[0].call} · ${byCall.get(t).length} postcard(s).`;
+    paint(byCall.get(t)[0].call);
     return;
   }
 
-  // La búsqueda usa el campo `call` del índice, no el nombre del fichero: el
-  // nombre incluye el stem del ADI, así que buscar "EST1" devolvía tarjetas de
-  // todos los indicativos.
-  const groups = new Map();
-  for (const [nc, entries] of byCall) {
-    if (nc.startsWith(t)) groups.set(entries[0].call, entries);
-  }
-
-  shown = PAGE_SIZE;
-
-  if (!groups.size) {
-    statusEl.textContent = `Sin resultados para "${raw}".`;
-    return;
-  }
-
-  const names = [...groups.keys()].sort();
-  names.sort((a, b) => (norm(a) === t ? -1 : norm(b) === t ? 1 : 0));
-  const files = names.reduce((n, c) => n + groups.get(c).length, 0);
-  const tail = names.length > shown ? ` (mostrando ${shown} de ${names.length})` : '';
-  statusEl.textContent =
-    `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`;
-
-  paint(names, t);
-
-  // El scroll usaba `term` sin normalizar, así que "EA4-HJZ" no llegaba.
-  if (names.some(c => norm(c) === t)) {
-    const first = results.firstElementChild;
-    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  // Sin coincidencia exacta: se listan los indicativos que empiezan por lo
+  // escrito, para que un tecleo a medias no dé "sin resultados" sin más.
+  const near = [...byCall.keys()].filter(nc => nc.startsWith(t)).sort();
+  statusEl.textContent = near.length
+    ? `Indicativo completo para "${raw}". Empieza por: ${near.join(', ')}.`
+    : `Sin resultados para "${raw}".`;
 }
 
 async function load() {
