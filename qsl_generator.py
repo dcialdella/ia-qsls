@@ -451,7 +451,7 @@ class QSLGenerator:
     def compose(self, background_path, qso, activity=None):
         """Compone una postal con la info del contacto sobre el fondo.
 
-        Los datos van en una caja en la esquina inferior izquierda.
+        Los datos van en una caja en la parte inferior.
         Debajo de los datos, una fila de casillas QSL1..QSL6 con tilde en la
         actividad que corresponde (parámetro `activity`, 1-based; None = ninguna).
         """
@@ -459,16 +459,26 @@ class QSLGenerator:
         overlay = Image.new('RGBA', (self.WIDTH, self.HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
-        # Caja de datos: 22% alto (17% + 5% para que entre el texto), 55% ancho
-        box_h = int(self.HEIGHT * BOX_H_RATIO)
-        box_w = int(self.WIDTH * BOX_W_RATIO)
-        pad_x = BOX_PAD_X
-        pad_y = BOX_PAD_Y
-        box = [BOX_MARGIN, self.HEIGHT - box_h - BOX_MARGIN,
-               BOX_MARGIN + box_w, self.HEIGHT - BOX_MARGIN]
-        self.rounded_rect(draw, box, BOX_RADIUS, (0, 0, 0, 150))
-        # Borde sutil de la caja
-        draw.rounded_rectangle(box, radius=BOX_RADIUS, outline=(255, 255, 255, 90), width=2)
+        # Caja de datos: posición fija ajustada
+        box_left = 220
+        box_top = 594
+        box_right = 1175
+        box_bottom = 678
+        box = [box_left, box_top, box_right, box_bottom]
+
+        pad_x = 24
+        pad_y = 10
+        box_h = box_bottom - box_top
+
+        # Sombra de la caja
+        shadow_offset = 4
+        shadow_box = [box_left + shadow_offset, box_top + shadow_offset,
+                      box_right + shadow_offset, box_bottom + shadow_offset]
+        self.rounded_rect(draw, shadow_box, 16, (0, 0, 0, 100))
+
+        # Caja principal: fondo gris semitransparente, borde dorado #C28C24
+        self.rounded_rect(draw, box, 16, (80, 80, 80, 150))
+        draw.rounded_rectangle(box, radius=16, outline=(0xC2, 0x8C, 0x24, 255), width=2)
 
         # ===== Datos del contacto =====
         date_str = self.fmt_date(qso)
@@ -481,55 +491,63 @@ class QSLGenerator:
         qth = qso.get('QTH', '')
         grid = qso.get('GRIDSQUARE', '')
 
-        # Líneas de contenido en la zona superior de la caja
-        inner_top = box[1] + pad_y + BOX_TOP_EXTRA
-        line_h = LINE_H
+        # Fuentes
+        font_line1 = self.get_font(34, bold=True)
+        font_line2 = self.get_font(24)
 
-        font_call = self.get_font(26, bold=True)
-        font_data = self.get_font(18)
-        font_info = self.get_font(16)
+        # Espaciado vertical: centrar bloque de 2 líneas + offset
+        line_gap = 8
+        text_h = font_line1.size + line_gap + font_line2.size
+        block_top = box_top + (box_h - text_h) // 2 + 18
+        y_line1 = block_top
+        y_line2 = block_top + font_line1.size + line_gap
 
-        # Línea 1: Callsign
-        draw.text((box[0] + pad_x, inner_top), call,
-                  font=font_call, fill=(255, 255, 255, 255), anchor="lm")
+        # === LÍNEA 1: Callsign - Nombre - QTH ===
+        x = box_left + pad_x
+        draw.text((x, y_line1), call + " - ", font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+        bbox = draw.textbbox((0, 0), call + " - ", font=font_line1)
+        x += bbox[2] - bbox[0]
 
-        # Línea 2: Fecha + hora
-        draw.text((box[0] + pad_x, inner_top + line_h * 1), f"{date_str}  {time_str or '--:--'}",
-                  font=font_data, fill=(255, 255, 255, 240), anchor="lm")
+        if name:
+            flag_h = font_line1.size
+            x = self.draw_station_flag(overlay, call, x, y_line1, flag_h)
+            draw.text((x, y_line1), name + " - ", font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
+            bbox = draw.textbbox((0, 0), name + " - ", font=font_line1)
+            x += bbox[2] - bbox[0]
 
-        # Línea 3: Banda + modo
-        if band or mode:
-            band_mode = " / ".join(x for x in [band, mode] if x)
-            draw.text((box[0] + pad_x, inner_top + line_h * 2), band_mode,
-                      font=font_data, fill=(255, 255, 255, 240), anchor="lm")
+        if qth:
+            draw.text((x, y_line1), qth, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
-        # Línea 4: nombre / qth / grid (con bandera del país delante)
-        info = "  •  ".join(x for x in [name, qth, grid] if x)
-        if info:
-            y_info = inner_top + line_h * 3
-            fh = font_info.size
-            x_name = box[0] + pad_x
-            # draw_station_flag devuelve la x ya desplazada por la bandera, asi
-            # que el ancho disponible se mide desde ahi.
-            x_name = self.draw_station_flag(overlay, call, x_name, y_info, fh)
-            avail_w = box[2] - pad_x - x_name
-            draw.text((x_name, y_info),
-                      self.fit_text(draw, info, font_info, avail_w),
-                      font=font_info, fill=(255, 255, 255, 230), anchor="lm")
+        # === LÍNEA 2: Fecha - Hora - Banda - Modo - Grid ===
+        x = box_left + pad_x
+        parts2 = []
+        if date_str and date_str != '----':
+            parts2.append(date_str)
+        if time_str and time_str != '--:--':
+            parts2.append(time_str.replace(' UTC', ''))
+        if band:
+            parts2.append(band)
+        if mode:
+            parts2.append(mode)
+        if grid:
+            parts2.append(grid)
 
-        # Casillas de actividades (tilde en la que corresponde)
-        # Actividad 7 (DMR): en lugar de casillas, texto de confirmación
+        line2_text = " - ".join(parts2)
+        draw.text((x, y_line2), line2_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
+
+        # === Casillas de actividades ===
+        # Actividad 7 (DMR): en lugar de casillas, texto "DMR Confirmated"
         if activity == 7:
             font_dmr = self.get_font(20, bold=True)
             dmr_text = DMR_TEXT
             bbox = draw.textbbox((0, 0), dmr_text, font=font_dmr)
             tw = bbox[2] - bbox[0]
-            draw.text((box[2] - pad_x - tw, box[3] - pad_y - BOX_TOP_EXTRA), dmr_text,
+            draw.text((box_right - pad_x - tw, box_bottom - pad_y - 12), dmr_text,
                       font=font_dmr, fill=(255, 255, 255, 235), anchor="lm")
         else:
             checked = {activity} if activity and 1 <= activity <= 6 else set()
-            self.draw_activity_checkboxes(draw, box, checked, pad_x=pad_x, act_label="ACT",
-                                          n=6, cw=26, ch=26, spacing=6)
+            self.draw_activity_checkboxes(draw, box, checked, pad_x=pad_x, pad_y=pad_y,
+                                          n=6, cw=26, ch=26, spacing=6, act_label="ACT")
 
         # Componer
         result = Image.alpha_composite(img, overlay).convert('RGB')
@@ -566,58 +584,64 @@ class QSLGenerator:
         contactó en TODAS las actividades.
 
         Muestra: callsign, nombre, grid locator y las casillas QSL1..QSL6
-        con tilde en las 5 actividades logradas (QSL1..QSL5).
+        con tilde en las 5 actividades logradas (QSL1..QSL5) y bandera España en la 6ª.
         """
         img = self.prepare_background(background_path)
         overlay = Image.new('RGBA', (self.WIDTH, self.HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
-        # Caja más grande: 20% alto y 62% ancho (postal de record)
-        box_h = int(self.HEIGHT * BOX_H_RATIO_RECORD)
-        box_w = int(self.WIDTH * BOX_W_RATIO_RECORD)
-        pad_x = BOX_PAD_X_RECORD
-        pad_y = BOX_PAD_Y
-        m = int(self.WIDTH * BOX_MARGIN_X_RATIO)
-        box = [m, self.HEIGHT - box_h - m, m + box_w, self.HEIGHT - m]
-        self.rounded_rect(draw, box, BOX_RADIUS_RECORD, (0, 0, 0, 160))
-        draw.rounded_rectangle(box, radius=BOX_RADIUS_RECORD,
-                               outline=(245, 166, 35, 255), width=3)
+        # Caja: misma posición que las normales
+        box_left = 220
+        box_top = 594
+        box_right = 1175
+        box_bottom = 678
+        box = [box_left, box_top, box_right, box_bottom]
 
-        font_call = self.get_font(36, bold=True)
-        font_data = self.get_font(24)
+        pad_x = 24
+        pad_y = 10
+        box_h = box_bottom - box_top
 
-        # Zona superior: datos (call, nombre, locator)
-        top_area = box[1] + pad_y + BOX_TOP_EXTRA
-        line_h = LINE_H_RECORD
-        y_call = top_area
-        y_name = y_call + line_h
-        y_loc = y_name + line_h
+        # Sombra
+        shadow_offset = 4
+        shadow_box = [box_left + shadow_offset, box_top + shadow_offset,
+                      box_right + shadow_offset, box_bottom + shadow_offset]
+        self.rounded_rect(draw, shadow_box, 16, (0, 0, 0, 100))
 
-        # Línea 1: Callsign (dorado, llamativo)
-        draw.text((box[0] + pad_x, y_call), call,
-                  font=font_call, fill=(245, 166, 35, 255), anchor="lm")
+        # Caja principal
+        self.rounded_rect(draw, box, 16, (80, 80, 80, 150))
+        draw.rounded_rectangle(box, radius=16, outline=(0xC2, 0x8C, 0x24, 255), width=2)
 
-        # Línea 2: Nombre (con bandera del país delante)
+        # Fuentes
+        font_line1 = self.get_font(34, bold=True)
+        font_line2 = self.get_font(24)
+
+        line_gap = 8
+        text_h = font_line1.size + line_gap + font_line2.size
+        block_top = box_top + (box_h - text_h) // 2 + 18
+        y_line1 = block_top
+        y_line2 = block_top + font_line1.size + line_gap
+
+        # === LÍNEA 1: Callsign (dorado) - Nombre (con bandera) ===
+        x = box_left + pad_x
+        draw.text((x, y_line1), call + " - ", font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+        bbox = draw.textbbox((0, 0), call + " - ", font=font_line1)
+        x += bbox[2] - bbox[0]
+
         if name:
-            fh = font_data.size
-            x_name = box[0] + pad_x
-            x_name = self.draw_station_flag(overlay, call, x_name, y_name, fh)
-            draw.text((x_name, y_name),
-                      self.fit_text(draw, name, font_data, box[2] - pad_x - x_name),
-                      font=font_data, fill=(255, 255, 255, 240), anchor="lm")
+            flag_h = font_line1.size
+            x = self.draw_station_flag(overlay, call, x, y_line1, flag_h)
+            draw.text((x, y_line1), name, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
-        # Línea 3: Grid locator
+        # === LÍNEA 2: Grid locator ===
+        x = box_left + pad_x
         if grid:
             loc_text = f"Locator: {grid}"
-            draw.text((box[0] + pad_x, y_loc),
-                      self.fit_text(draw, loc_text, font_data,
-                                    box[2] - pad_x - (box[0] + pad_x)),
-                      font=font_data, fill=(255, 255, 255, 240), anchor="lm")
+            draw.text((x, y_line2), loc_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
 
-        # Casillas QSL1..QSL6: tilde en las 5 actividades logradas + bandera de España en la 6ª
+        # === Casillas QSL1..QSL6: tilde en 1-5, bandera España en 6ª ===
         self.draw_activity_checkboxes(draw, box, checked={1, 2, 3, 4, 5},
-                                      pad_x=pad_x, act_label="ACT", n=6, cw=28, ch=28,
-                                      spacing=6, flag_box=6)
+                                      pad_x=pad_x, pad_y=pad_y,
+                                      n=6, cw=26, ch=26, spacing=6, act_label="ACT", flag_box=6)
 
         result = Image.alpha_composite(img, overlay).convert('RGB')
         return result
