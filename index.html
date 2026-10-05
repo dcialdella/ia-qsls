@@ -52,6 +52,10 @@
     background: #0b0e13; border: 1px solid var(--line); cursor: zoom-in;
   }
   .thumb.err { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; cursor: default; }
+  /* La miniatura es un enlace real a Drive (teclado y lector de pantalla),
+     no un <img> con onclick. */
+  .thumblink { display: block; flex: 0 0 auto; line-height: 0; border-radius: 8px; }
+  .thumblink:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .meta { flex: 1 1 auto; min-width: 0; }
   .fname { font: 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; word-break: break-all; color: var(--fg); }
   .tag {
@@ -67,6 +71,10 @@
     border-radius: 9px; border: 1px solid var(--line); color: var(--fg); background: #1e242d; white-space: nowrap;
   }
   .actions a.dl { background: var(--gold); color: #1a1206; border-color: var(--gold); font-weight: 700; }
+  .more { display: flex; justify-content: center; padding: 22px 0 4px; }
+  .more button { padding: 12px 22px; font-size: 14px; }
+  #status .err { color: #ff9a8b; margin-bottom: 10px; }
+  #status a { color: var(--accent); }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
   .empty code {
     display: inline-block; margin: 3px; padding: 3px 9px; border-radius: 6px;
@@ -102,19 +110,35 @@
 
 <footer>
   <span id="fmeta"><span id="updated">–</span> · <span id="total"></span></span><br>
-  EG9MM · Melilla · 2026 · email: eg9mm.mail@gmail.com
+  EG9MM · Melilla · <span id="year"></span> · email: eg9mm.mail@gmail.com
 </footer>
 
 <script>
-const THUMB = id => `https://lh3.googleusercontent.com/d/${id}=w600`;
-const VIEW  = id => `https://drive.google.com/file/d/${id}/view`;
-const DL    = id => `https://drive.google.com/uc?export=download&id=${id}`;
+// Un id de Drive es [A-Za-z0-9_-]{25,44}. Cualquier otra cosa no se interpola
+// en la URL ni en un atributo: se descarta la entrada.
+const ID_RE = /^[A-Za-z0-9_-]{10,64}$/;
+const safeId = id => (typeof id === 'string' && ID_RE.test(id)) ? id : null;
+
+// encodeURIComponent sobre un id ya validado es identidad en la práctica, pero
+// mantiene la invariante aunque la validación se relajara en el futuro.
+const THUMB = id => `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w600`;
+const VIEW  = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
+const DL    = id => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
+
+// Máximo de tarjetas por búsqueda (D5). Con miles de postcards, prefijos como
+// "EA4" generaban cientos de <img> simultáneos y bloqueaban el hilo.
+const PAGE_SIZE = 50;
+const ID_MIN = 4;         // mínimo de caracteres para buscar
+
+$('#year').textContent = String(new Date().getFullYear());
 
 const $ = s => document.querySelector(s);
 const results = $('#results'), statusEl = $('#status'), input = $('#q');
 let index = null;
+let byCall = new Map();   // indicativo normalizado -> [entradas]
+let shown = PAGE_SIZE;    // cuántas tarjetas se están pintando (D5)
 
-// Normaliza lo que escribe la persona: mayúsculas y sin espacios.
+// Normaliza lo que escribe la persona: mayúsculas y sin espacios ni separadores.
 const norm = s => s.toUpperCase().replace(/[\s\-_]+/g, '');
 
 function kb(bytes) {
@@ -127,67 +151,117 @@ function escapeHtml(s) {
 }
 
 function itemRow(e) {
-  const title = (index.activities[e.act] || {}).title || e.act;
+  const id = safeId(e.id);
+  if (!id) return '';           // id con formato inesperado: no se enlaza ni se pinta
+  const acts = index.activities || {};
+  const title = (acts[e.act] || {}).title || e.act || '?';
   const isRec = e.act === 'qsl6';
+  const mod = typeof e.modified === 'string' ? e.modified.slice(0, 10) : '';
   return `<li class="item">
-    <img class="thumb" src="${THUMB(e.id)}" alt="Postcard QSL de ${escapeHtml(e.call)}"
-         loading="lazy" onclick="window.open('${VIEW(e.id)}','_blank')"
-         onerror="this.outerHTML='<div class=thumb err>sin vista previa</div>'">
+    <a class="thumblink" href="${VIEW(id)}" target="_blank" rel="noopener noreferrer"
+       aria-label="Abrir la postcard de ${escapeHtml(e.call)} en Google Drive">
+      <img class="thumb" src="${THUMB(id)}" alt="Postcard QSL de ${escapeHtml(e.call)}"
+           loading="lazy"
+           onerror="this.outerHTML='<div class=thumb err>sin vista previa</div>'">
+    </a>
     <div class="meta">
       <div class="fname">${escapeHtml(e.name)}</div>
-      <span class="tag${isRec ? ' rec' : ''}">${escapeHtml(e.act.toUpperCase())} · ${escapeHtml(title)}</span>
-      <div class="size">${kb(e.size)} · ${escapeHtml((e.modified || '').slice(0, 10))}</div>
+      <span class="tag${isRec ? ' rec' : ''}">${escapeHtml(String(e.act || '').toUpperCase())} · ${escapeHtml(title)}</span>
+      <div class="size">${escapeHtml(kb(e.size))}${mod ? ' · ' + escapeHtml(mod) : ''}</div>
     </div>
-      <div class="actions">
-        <a class="dl" href="${DL(e.id)}">Descargar</a>
-      </div>
+    <div class="actions">
+      <a class="dl" href="${DL(id)}" download>Descargar</a>
+      <a class="open" href="${VIEW(id)}" target="_blank" rel="noopener noreferrer">Abrir</a>
+    </div>
   </li>`;
 }
 
-// Agrupa por indicativo y ordena: coincidencia exacta primero, luego A→Z.
-function render(term) {
-  results.innerHTML = '';
-  const t = norm(term).trim();
-  if (!t || t.length < 4 || !index) {
-    statusEl.textContent = index && index.total ? index.total.toLocaleString('es') + ' postcards indexadas.' : '';
-    return;
-  }
+function sortItems(a, b) {
+  const na = parseInt((String(a.act).match(/qsl(\d+)/) || [0, 0])[1]);
+  const nb = parseInt((String(b.act).match(/qsl(\d+)/) || [0, 0])[1]);
+  if (na !== nb) return na - nb;
+  return String(a.name).localeCompare(String(b.name));
+}
 
-  const groups = new Map();
-  for (const e of (index.entries || [])) {
-    const prefix = norm(e.name).split('_')[0];
-    if (!prefix.startsWith(t)) continue;
-    if (!groups.has(e.call)) groups.set(e.call, []);
-    groups.get(e.call).push(e);
-  }
-
-  if (!groups.size) {
-    statusEl.textContent = `Sin resultados para "${term}".`;
-    results.innerHTML = '';
-    return;
-  }
-
-  const names = [...groups.keys()].sort();
-  names.sort((a, b) => (a === t ? -1 : b === t ? 1 : 0));
-  const files = names.reduce((n, c) => n + groups.get(c).length, 0);
-  statusEl.textContent = `${names.length} indicativo(s) · ${files} postcard(s) para "${term}".`;
-
-  for (const call of names) {
-    const items = groups.get(call).sort((a, b) => {
-      const na = parseInt((a.act.match(/qsl(\d+)/) || [0,0])[1]);
-      const nb = parseInt((b.act.match(/qsl(\d+)/) || [0,0])[1]);
-      if (na !== nb) return na - nb;
-      return a.name.localeCompare(b.name);
-    });
+// Pinta las tarjetas ya agrupadas. `limit` acota cuántas se muestran (D5).
+function paint(names, t) {
+  const upto = names.slice(0, shown);
+  const frag = document.createDocumentFragment();
+  for (const call of upto) {
+    const items = byCall.get(call).slice().sort(sortItems);
     const div = document.createElement('div');
     div.className = 'card' + (norm(call) === t ? ' exact' : '');
     div.innerHTML = `<div class="chead"><span class="call">${escapeHtml(call)}</span>
         <span class="count">${items.length} postcard(s)</span></div>
       <ul class="items">${items.map(itemRow).join('')}</ul>`;
-    results.appendChild(div);
+    frag.appendChild(div);
   }
-  if (names.includes(term.trim().toUpperCase())) {
-    results.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  results.appendChild(frag);
+
+  if (shown < names.length) {
+    const more = document.createElement('div');
+    more.className = 'more';
+    const btn = document.createElement('button');
+    btn.textContent = `Ver más (mostrando ${upto.length} de ${names.length} indicativos)`;
+    btn.addEventListener('click', () => {
+      shown += PAGE_SIZE;
+      results.innerHTML = '';
+      paint(names, t);
+    });
+    more.appendChild(btn);
+    results.appendChild(more);
+  }
+}
+
+// Agrupa por indicativo y ordena: coincidencia exacta primero, luego A→Z.
+function render(term) {
+  results.innerHTML = '';
+  const raw = String(term || '').trim();
+  const t = norm(raw);
+
+  if (!index) {
+    statusEl.textContent = '';
+    return;
+  }
+  if (!t) {
+    shown = PAGE_SIZE;
+    statusEl.textContent = index.total.toLocaleString('es') + ' postcards indexadas.';
+    return;
+  }
+  if (t.length < ID_MIN) {
+    // Antes, con 2 caracteres escritos, la página mostraba "N postcards
+    // indexadas", que parece un resultado de búsqueda. Ahora lo dice.
+    statusEl.textContent = `Escribe al menos ${ID_MIN} caracteres para buscar.`;
+    return;
+  }
+
+  // La búsqueda usa el campo `call` del índice, no el nombre del fichero: el
+  // nombre incluye el stem del ADI, así que buscar "EST1" devolvía tarjetas de
+  // todos los indicativos.
+  const groups = new Map();
+  for (const [nc, entries] of byCall) {
+    if (nc.startsWith(t)) groups.set(entries[0].call, entries);
+  }
+
+  shown = PAGE_SIZE;
+
+  if (!groups.size) {
+    statusEl.textContent = `Sin resultados para "${raw}".`;
+    return;
+  }
+
+  const names = [...groups.keys()].sort();
+  names.sort((a, b) => (norm(a) === t ? -1 : norm(b) === t ? 1 : 0));
+  const files = names.reduce((n, c) => n + groups.get(c).length, 0);
+  const tail = names.length > shown ? ` (mostrando ${shown})` : '';
+  statusEl.textContent = `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`;
+
+  paint(names, t);
+
+  // El scroll usaba `term` sin normalizar, así que "EA4-HJZ" no arrival.
+  if (names.some(c => norm(c) === t)) {
+    const first = results.firstElementChild;
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
@@ -197,16 +271,45 @@ async function load() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     index = await res.json();
   } catch (err) {
-    // Sin qsl_index.json no hay postcards: la página se queda en blanco,
-    // sin mensajes de error ni avisos.
+    // Antes: sin qsl_index.json la página se quedaba en blanco, sin un solo
+    // mensaje. "Cargando índice…" desaparecía y no había ni rastro del fallo.
     index = null;
-    statusEl.textContent = '';
+    byCall = new Map();
+    statusEl.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.className = 'err';
+    msg.textContent = 'No se pudo cargar el índice de postcards (' + (err && err.message ? err.message : 'error desconocido') + ').';
+    const link = document.createElement('a');
+    link.href = 'qsl_index.json';
+    link.textContent = 'Abrir qsl_index.json';
+    statusEl.appendChild(msg);
+    statusEl.appendChild(link);
     $('#fmeta').style.display = 'none';
     return;
   }
+
+  // Índice con forma inesperada: se normaliza una vez aquí para que ni el pie
+  // ni la búsqueda_each launchen un TypeError silencioso.
+  if (!index || typeof index !== 'object') {
+    index = { total: 0, activities: {}, entries: [] };
+  }
+  const acts = index.activities && typeof index.activities === 'object' ? index.activities : {};
+  const entries = Array.isArray(index.entries) ? index.entries : [];
+  const total = Number.isFinite(index.total) ? index.total : entries.length;
+
+  byCall = new Map();
+  for (const e of entries) {
+    if (!e || typeof e !== 'object') continue;
+    const call = typeof e.call === 'string' && e.call ? e.call : '?';
+    const nc = norm(call);
+    if (!nc) continue;
+    if (!byCall.has(nc)) byCall.set(nc, []);
+    byCall.get(nc).push(e);
+  }
+
   $('#updated').textContent = 'Índice actualizado: ' + (index.generated_at || '?');
-  $('#total').textContent = index.total.toLocaleString('es') + ' postcards en ' +
-    Object.keys(index.activities || {}).length + ' actividades';
+  $('#total').textContent = total.toLocaleString('es') + ' postcards en ' +
+    Object.keys(acts).length + ' actividades';
   render(input.value.trim());
   if (!input.value.trim()) input.focus();
 }

@@ -21,6 +21,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import ClassVar
@@ -34,11 +35,27 @@ from PIL import Image, ImageDraw, ImageFont
 #     "EG9MM - Melilla" en la esquina inferior derecha.
 GENERATOR_VERSION = "4"
 
-# Estación propia que se muestra en la esquina inferior derecha de cada postal.
-# En desuso: STATION_TEXT y sus funciones de dibujo siguen en el código, pero
-# compose() y compose_act6() ya no las invocan. Basta con descomentar los
-# bloques comentados para volver a dibujarlas.
-STATION_TEXT = "EG9MM - Melilla"
+# ---------- Geometría de las cajas de datos ----------
+# Proporciones respecto al alto/ancho de la postal (1200x800).
+BOX_H_RATIO = 0.22          # alto de la caja en compose()
+BOX_W_RATIO = 0.55          # ancho de la caja en compose()
+BOX_H_RATIO_RECORD = 0.20   # alto de la caja en compose_act6() (postal de record)
+BOX_W_RATIO_RECORD = 0.62   # ancho de la caja en compose_act6()
+BOX_MARGIN = 25             # margen exterior de la caja (compose)
+BOX_MARGIN_X_RATIO = 0.04   # margen exterior en compose_act6()
+BOX_RADIUS = 16             # radio de las esquinas de la caja
+BOX_RADIUS_RECORD = 18      # radio en compose_act6()
+BOX_PAD_X = 24              # padding horizontal dentro de la caja
+BOX_PAD_X_RECORD = 30       # padding horizontal en compose_act6()
+BOX_PAD_Y = 10              # padding vertical dentro de la caja
+BOX_TOP_EXTRA = 12          # desplazamiento extra del primer texto
+LINE_H = 24                 # alto de línea del texto de datos (compose)
+LINE_H_RECORD = 30          # alto de línea en compose_act6()
+DMR_TEXT = "DMR Confirmated"
+
+# Manifiesto con el nº de .adi por actividad. Lo escribe main() al terminar y lo
+# lee drive_index.py para no publicar actividades vaciadas.
+MANIFEST_NAME = "qsl_manifest.json"
 
 # Rangos de banda (MHz) para derivar BAND desde FREQ (evita reconstruir la lista)
 BAND_RANGES = [
@@ -149,12 +166,27 @@ class QSLGenerator:
     WIDTH = 1200
     HEIGHT = 800
 
+    # Rutas de fuentes del sistema, por variante, en orden de preferencia.
+    # Las .ttc son colecciones: el índice 0 es Regular y el 1 Bold.
+    _FONT_CANDIDATES: ClassVar[dict] = {
+        True: [
+            '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+            '/System/Library/Fonts/Helvetica.ttc',
+            '/System/Library/Fonts/Supplemental/Verdana Bold.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        ],
+        False: [
+            '/System/Library/Fonts/Supplemental/Arial.ttf',
+            '/System/Library/Fonts/Helvetica.ttc',
+            '/System/Library/Fonts/Supplemental/Verdana.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        ],
+    }
+    _font_warned: ClassVar[bool] = False
+
     def __init__(self):
         self.fonts = {}
-        self._flag_img = None
-        self._flag_tile = None      # bandera ya redimensionada (5% x 5% de la postal)
         self._bg_cache = {}         # path -> RGBA ya escalado a 'cover' (evita reescalar 5000x)
-        self._flag_text_cache = {}  # (texto, tamaño fuente) -> imagen RGBA lista para pegar
         self._station_flag_cache = {}  # (iso2, alto) -> imagen RGBA pequeña de bandera
         self._country_map = None    # country_map.json cargado bajo demanda (lazy)
 
@@ -170,20 +202,6 @@ class QSLGenerator:
                 prepped = self.cover_fit(bg, self.WIDTH, self.HEIGHT).convert('RGBA')
             self._bg_cache[key] = prepped
         return self._bg_cache[key]
-
-    def get_flag_image(self):
-        """Carga la bandera de España desde FLAGS/es.png (cacheado).
-
-        Si no existe, devuelve None y el renderizado cae al dibujo por franjas.
-        """
-        if self._flag_img is None:
-            path = Path(__file__).with_name('FLAGS') / 'es.png'
-            if path.exists():
-                try:
-                    self._flag_img = Image.open(path).convert('RGBA')
-                except OSError:
-                    self._flag_img = None
-        return self._flag_img
 
     def _load_country_map(self):
         """Carga country_map.json (prefijos -> ISO2) una sola vez.
@@ -269,24 +287,36 @@ class QSLGenerator:
         return self._station_flag_cache[key]
 
     def get_font(self, size, bold=False):
-        """Obtiene una fuente del sistema (cacheada)"""
+        """Obtiene una fuente del sistema del tamaño pedido (cacheada).
+
+        Si el host no tiene ninguna fuente de la lista (Linux pelado, Docker,
+        CI), cae a la fuente por defecto de Pillow **escalada al tamaño
+        pedido**: `load_default(size=size)`. Antes se llamaba sin argumento y
+        devolvía un bitmap de ~11 px, lo que degradaba textos de hasta 52 px
+        sin ningún aviso.
+
+        Las .ttc son colecciones de varios estilos: se usa el índice 1 (Bold)
+        para `bold=True` y el 0 (Regular) para el caso normal.
+        """
         key = (size, bold)
         if key not in self.fonts:
-            candidates = [
-                '/System/Library/Fonts/Supplemental/Arial Bold.ttf' if bold else '/System/Library/Fonts/Supplemental/Arial.ttf',
-                '/System/Library/Fonts/Helvetica.ttc',
-                '/System/Library/Fonts/Supplemental/Verdana Bold.ttf' if bold else '/System/Library/Fonts/Supplemental/Verdana.ttf',
-                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            ]
-            for path in candidates:
-                if os.path.exists(path):
-                    try:
-                        self.fonts[key] = ImageFont.truetype(path, size)
-                        break
-                    except OSError:
-                        continue
-            else:
-                self.fonts[key] = ImageFont.load_default()
+            self.fonts[key] = None
+            for path in self._FONT_CANDIDATES[bold]:
+                if not os.path.exists(path):
+                    continue
+                index = 1 if (bold and path.lower().endswith('.ttc')) else 0
+                try:
+                    self.fonts[key] = ImageFont.truetype(path, size, index=index)
+                    break
+                except OSError:
+                    continue
+            if self.fonts[key] is None:
+                if not QSLGenerator._font_warned:
+                    QSLGenerator._font_warned = True
+                    print("AVISO: no hay ninguna fuente del sistema disponible; "
+                          "se usa la fuente por defecto de Pillow. El texto de "
+                          "las postcards puede verse distinto.", file=sys.stderr)
+                self.fonts[key] = ImageFont.load_default(size=size)
         return self.fonts[key]
 
     @staticmethod
@@ -374,68 +404,6 @@ class QSLGenerator:
         draw.text((int(act_x), cb_y + ch / 2), act_label,
                   font=font_act, fill=(255, 255, 255, 235), anchor="lm")
 
-    def draw_spanish_flag(self, draw, margin=10):
-        """Dibuja la bandera de España en la esquina superior derecha.
-
-        Usa FLAGS/es.png si existe; si no, dibuja las franjas 1:2:1 como
-        fallback. Tamaño 5% x 5% de la postal.
-        """
-        fw = int(self.WIDTH * 0.05)
-        fh = int(self.HEIGHT * 0.05)
-        bx0 = self.WIDTH - fw - margin
-        by0 = margin
-        bx1, by1 = bx0 + fw, by0 + fh
-        flag = self.get_flag_image()
-        if flag is not None:
-            if self._flag_tile is None:
-                self._flag_tile = flag.resize((fw, fh), Image.LANCZOS)
-            # Necesitamos pegar sobre la misma imagen que usa `draw`
-            draw._image.paste(self._flag_tile.convert('RGB'), (bx0, by0))
-        else:
-            self._draw_spanish_flag_rects(draw, bx0, by0, bx1, by1, fh)
-        draw.rectangle([bx0, by0, bx1, by1], outline=(0, 0, 0, 255), width=2)
-
-    @staticmethod
-    def _draw_spanish_flag_rects(draw, bx0, by0, bx1, by1, fh):
-        """Banderita por franjas (fallback si no existe FLAGS/es.png)."""
-        rojo = (198, 11, 30, 255)
-        amarillo = (255, 200, 0, 255)
-        third_y = by0 + fh / 4
-        draw.rectangle([bx0, by0, bx1, third_y], fill=rojo)
-        draw.rectangle([bx0, third_y, bx1, by1 - fh / 4], fill=amarillo)
-        draw.rectangle([bx0, by1 - fh / 4, bx1, by1], fill=rojo)
-
-    def draw_flag_color_text(self, overlay, pos, text, font):
-        """Dibuja `text` con la silueta coloreada como la bandera de España:
-        franja superior e inferior rojas y centro amarillo (1:2:1).
-
-        `pos` = (x, y) con y = centro vertical del texto (anchor "lm").
-        Recorta los colores usando una máscara del glifo y solo trabaja sobre
-        el bounding box del texto (no sobre toda la postal de 1200x800).
-        """
-        key = (text, font.size, pos)
-        if key not in self._flag_text_cache:
-            mask = Image.new('L', (self.WIDTH, self.HEIGHT), 0)
-            ImageDraw.Draw(mask).text(pos, text, font=font, fill=255, anchor="lm")
-            bb = mask.getbbox()
-            if not bb:
-                return
-            x0, y0, x1, y1 = bb
-            th = y1 - y0
-            sep = th / 4
-            rojo = (198, 11, 30, 255)
-            amarillo = (255, 200, 0, 255)
-            # Capa del tamaño del bbox, no de toda la postal
-            flag = Image.new('RGBA', (x1 - x0, y1 - y0), (0, 0, 0, 0))
-            fd = ImageDraw.Draw(flag)
-            fd.rectangle([0, 0, x1 - x0, sep], fill=rojo)
-            fd.rectangle([0, sep, x1 - x0, th - sep], fill=amarillo)
-            fd.rectangle([0, th - sep, x1 - x0, th], fill=rojo)
-            flag.putalpha(mask.crop(bb))
-            self._flag_text_cache[key] = (flag, (x0, y0))
-        flag, (x0, y0) = self._flag_text_cache[key]
-        overlay.alpha_composite(flag, dest=(x0, y0))
-
     @staticmethod
     def fmt_date(qso):
         """Formatea QSO_DATE a DD/MM/AAAA tolerando YYYYMMDD o YYYY-MM-DD."""
@@ -492,18 +460,15 @@ class QSLGenerator:
         draw = ImageDraw.Draw(overlay)
 
         # Caja de datos: 22% alto (17% + 5% para que entre el texto), 55% ancho
-        box_h = int(self.HEIGHT * 0.22)
-        box_w = int(self.WIDTH * 0.55)
-        pad_x = 24
-        pad_y = 10
-        box = [25, self.HEIGHT - box_h - 25, 25 + box_w, self.HEIGHT - 25]
-        self.rounded_rect(draw, box, 16, (0, 0, 0, 150))
+        box_h = int(self.HEIGHT * BOX_H_RATIO)
+        box_w = int(self.WIDTH * BOX_W_RATIO)
+        pad_x = BOX_PAD_X
+        pad_y = BOX_PAD_Y
+        box = [BOX_MARGIN, self.HEIGHT - box_h - BOX_MARGIN,
+               BOX_MARGIN + box_w, self.HEIGHT - BOX_MARGIN]
+        self.rounded_rect(draw, box, BOX_RADIUS, (0, 0, 0, 150))
         # Borde sutil de la caja
-        draw.rounded_rectangle(box, radius=16, outline=(255, 255, 255, 90), width=2)
-
-        # Bandera de España en la esquina superior derecha: desactivada
-        # (quedaba self.draw_spanish_flag(draw))
-        # Sello de estación "EG9MM - Melilla" abajo a la derecha: desactivado
+        draw.rounded_rectangle(box, radius=BOX_RADIUS, outline=(255, 255, 255, 90), width=2)
 
         # ===== Datos del contacto =====
         date_str = self.fmt_date(qso)
@@ -517,8 +482,8 @@ class QSLGenerator:
         grid = qso.get('GRIDSQUARE', '')
 
         # Líneas de contenido en la zona superior de la caja
-        inner_top = box[1] + pad_y + 12
-        line_h = 24
+        inner_top = box[1] + pad_y + BOX_TOP_EXTRA
+        line_h = LINE_H
 
         font_call = self.get_font(26, bold=True)
         font_data = self.get_font(18)
@@ -527,23 +492,6 @@ class QSLGenerator:
         # Línea 1: Callsign
         draw.text((box[0] + pad_x, inner_top), call,
                   font=font_call, fill=(255, 255, 255, 255), anchor="lm")
-
-        # Esquina inferior derecha: operador de la estación, en colores de bandera,
-        # dentro de una minicaja con contraste (igual estilo que la caja de datos).
-        # Desactivado por ahora: no se dibuja el sello de estación.
-        # station_text = STATION_TEXT
-        # font_station = self.get_font(52, bold=True)
-        # sbox = draw.textbbox((0, 0), station_text, font=font_station)
-        # sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
-        # spx, spy = 16, 10
-        # sxy = [self.WIDTH - 25 - sw - spx * 2,
-        #        self.HEIGHT - 25 - sh - spy * 2,
-        #        self.WIDTH - 25,
-        #        self.HEIGHT - 25]
-        # self.rounded_rect(draw, sxy, 12, (0, 0, 0, 150))
-        # draw.rounded_rectangle(sxy, radius=12, outline=(255, 255, 255, 90), width=2)
-        # self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
-        #                           station_text, font_station)
 
         # Línea 2: Fecha + hora
         draw.text((box[0] + pad_x, inner_top + line_h * 1), f"{date_str}  {time_str or '--:--'}",
@@ -555,24 +503,28 @@ class QSLGenerator:
             draw.text((box[0] + pad_x, inner_top + line_h * 2), band_mode,
                       font=font_data, fill=(255, 255, 255, 240), anchor="lm")
 
-        # Línea 4: nombre / qth / grid / tu callsign (con bandera del país delante)
+        # Línea 4: nombre / qth / grid (con bandera del país delante)
         info = "  •  ".join(x for x in [name, qth, grid] if x)
         if info:
             y_info = inner_top + line_h * 3
             fh = font_info.size
             x_name = box[0] + pad_x
+            # draw_station_flag devuelve la x ya desplazada por la bandera, asi
+            # que el ancho disponible se mide desde ahi.
             x_name = self.draw_station_flag(overlay, call, x_name, y_info, fh)
-            draw.text((x_name, y_info), info,
+            avail_w = box[2] - pad_x - x_name
+            draw.text((x_name, y_info),
+                      self.fit_text(draw, info, font_info, avail_w),
                       font=font_info, fill=(255, 255, 255, 230), anchor="lm")
 
         # Casillas de actividades (tilde en la que corresponde)
         # Actividad 7 (DMR): en lugar de casillas, texto de confirmación
         if activity == 7:
             font_dmr = self.get_font(20, bold=True)
-            dmr_text = "DMR Confirmated"
+            dmr_text = DMR_TEXT
             bbox = draw.textbbox((0, 0), dmr_text, font=font_dmr)
             tw = bbox[2] - bbox[0]
-            draw.text((box[2] - pad_x - tw, box[3] - pad_y - 12), dmr_text,
+            draw.text((box[2] - pad_x - tw, box[3] - pad_y - BOX_TOP_EXTRA), dmr_text,
                       font=font_dmr, fill=(255, 255, 255, 235), anchor="lm")
         else:
             checked = {activity} if activity and 1 <= activity <= 6 else set()
@@ -582,6 +534,32 @@ class QSLGenerator:
         # Componer
         result = Image.alpha_composite(img, overlay).convert('RGB')
         return result
+
+    @staticmethod
+    def fit_text(draw, text, font, max_w):
+        """Recorta `text` con puntos suspensivos para que quepa en `max_w` px.
+
+        Sin esto, un nombre largo ("QTH · grid locator") se salía de la caja,
+        que solo ocupa el 55% del ancho de la postal, y se escribía sobre el
+        fondo sin ningún recorte ni aviso.
+        """
+        if max_w <= 0 or not text:
+            return ''
+        if draw.textlength(text, font=font) <= max_w:
+            return text
+        ell = '…'
+        ell_w = draw.textlength(ell, font=font)
+        if ell_w > max_w:
+            return ''
+        # Binary search sobre cuántos caracteres caben con elipsis.
+        lo, hi = 0, len(text)
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            if draw.textlength(text[:mid], font=font) + ell_w <= max_w:
+                lo = mid
+            else:
+                hi = mid - 1
+        return text[:lo].rstrip() + ell
 
     def compose_act6(self, background_path, call, name, grid):
         """Compone la postal de Actividad 6: reconoce a una estación que
@@ -594,25 +572,23 @@ class QSLGenerator:
         overlay = Image.new('RGBA', (self.WIDTH, self.HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
-        # Caja más grande: 20% alto (la mitad) y 62% ancho (postal de record)
-        box_h = int(self.HEIGHT * 0.20)
-        box_w = int(self.WIDTH * 0.62)
-        pad_x = 30
-        pad_y = 10
-        box = [int(self.WIDTH * 0.04), self.HEIGHT - box_h - int(self.WIDTH * 0.04),
-               int(self.WIDTH * 0.04) + box_w, self.HEIGHT - int(self.WIDTH * 0.04)]
-        self.rounded_rect(draw, box, 18, (0, 0, 0, 160))
-        draw.rounded_rectangle(box, radius=18, outline=(245, 166, 35, 255), width=3)
-
-        # Bandera de España en la esquina superior derecha: desactivada
-        # (quedaba self.draw_spanish_flag(draw))
+        # Caja más grande: 20% alto y 62% ancho (postal de record)
+        box_h = int(self.HEIGHT * BOX_H_RATIO_RECORD)
+        box_w = int(self.WIDTH * BOX_W_RATIO_RECORD)
+        pad_x = BOX_PAD_X_RECORD
+        pad_y = BOX_PAD_Y
+        m = int(self.WIDTH * BOX_MARGIN_X_RATIO)
+        box = [m, self.HEIGHT - box_h - m, m + box_w, self.HEIGHT - m]
+        self.rounded_rect(draw, box, BOX_RADIUS_RECORD, (0, 0, 0, 160))
+        draw.rounded_rectangle(box, radius=BOX_RADIUS_RECORD,
+                               outline=(245, 166, 35, 255), width=3)
 
         font_call = self.get_font(36, bold=True)
         font_data = self.get_font(24)
 
         # Zona superior: datos (call, nombre, locator)
-        top_area = box[1] + pad_y + 12
-        line_h = 30
+        top_area = box[1] + pad_y + BOX_TOP_EXTRA
+        line_h = LINE_H_RECORD
         y_call = top_area
         y_name = y_call + line_h
         y_loc = y_name + line_h
@@ -621,34 +597,21 @@ class QSLGenerator:
         draw.text((box[0] + pad_x, y_call), call,
                   font=font_call, fill=(245, 166, 35, 255), anchor="lm")
 
-        # Esquina inferior derecha: operador de la estación, en colores de bandera,
-        # dentro de una minicaja con contraste (igual estilo que la caja de datos).
-        # Desactivado por ahora: no se dibuja el sello de estación.
-        # station_text = STATION_TEXT
-        # font_station = self.get_font(36, bold=True)
-        # sbox = draw.textbbox((0, 0), station_text, font=font_station)
-        # sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
-        # spx, spy = 12, 8
-        # sxy = [self.WIDTH - 25 - sw - spx * 2,
-        #        self.HEIGHT - 25 - sh - spy * 2,
-        #        self.WIDTH - 25,
-        #        self.HEIGHT - 25]
-        # self.rounded_rect(draw, sxy, 10, (0, 0, 0, 150))
-        # draw.rounded_rectangle(sxy, radius=10, outline=(255, 255, 255, 90), width=2)
-        # self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
-        #                           station_text, font_station)
-
         # Línea 2: Nombre (con bandera del país delante)
         if name:
             fh = font_data.size
             x_name = box[0] + pad_x
             x_name = self.draw_station_flag(overlay, call, x_name, y_name, fh)
-            draw.text((x_name, y_name), name,
+            draw.text((x_name, y_name),
+                      self.fit_text(draw, name, font_data, box[2] - pad_x - x_name),
                       font=font_data, fill=(255, 255, 255, 240), anchor="lm")
 
         # Línea 3: Grid locator
         if grid:
-            draw.text((box[0] + pad_x, y_loc), f"Locator: {grid}",
+            loc_text = f"Locator: {grid}"
+            draw.text((box[0] + pad_x, y_loc),
+                      self.fit_text(draw, loc_text, font_data,
+                                    box[2] - pad_x - (box[0] + pad_x)),
                       font=font_data, fill=(255, 255, 255, 240), anchor="lm")
 
         # Casillas QSL1..QSL6: tilde en las 5 actividades logradas + bandera de España en la 6ª
@@ -1063,9 +1026,14 @@ def main():
     total_nuevos = 0
     total_sin = 0
     total_regenerados = 0
+    # Nº de .adi por actividad. Se escribe como manifiesto para que drive_index.py
+    # pueda excluir de la web las actividades que ya no tienen ningun .adi: si no,
+    # las postcards_old seguirian en Drive y la web las seguiria ofreciendo.
+    adi_counts = {}
 
     for i in range(1, 8):
         folder = base_dir / f"qsl{i}"
+        adi_counts[f"qsl{i}"] = len(find_adi_files(folder)) if folder.exists() else 0
         if not folder.exists():
             continue
 
@@ -1099,10 +1067,20 @@ def main():
         total_sin += sin_cambios
         total_regenerados += regenerados
 
+    # Manifiesto de actividades activas (lo consume drive_index.py).
+    manifest = {
+        'generated_at': now_iso(),
+        'generador': GENERATOR_VERSION,
+        'adi_counts': adi_counts,
+    }
+    (base_dir / MANIFEST_NAME).write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
     print("\n" + "=" * 60)
     print(f"  RESUMEN: {total_nuevos} procesados, {total_regenerados} regenerados, "
           f"{total_sin} sin cambios")
     print("  Log por carpeta: qslN/qsl_log.json")
+    print(f"  Manifiesto: {MANIFEST_NAME} ({', '.join(f'{k}={v}' for k, v in adi_counts.items())})")
     print("=" * 60)
 
 

@@ -8,6 +8,11 @@ mcp_filesystem.log
 qsl*/QSLS/
 qsl*/qsl_log.json
 
+# Manifiesto de actividades activas: se regenera en cada ejecución de
+# qsl_generator.py. No se versiona para que el índice web nunca dependa de
+# aceptar un commit solo por un JSON derivado.
+qsl_manifest.json
+
 # Credenciales de Google Drive (NUNCA subir la clave de la cuenta de servicio)
 drive_creds.json
 *.drive-creds.json

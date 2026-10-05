@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Ejecuta el proceso completo: genera QSLs + sincroniza Drive + actualiza web + push a GitHub
-# Uso: ./run_all.sh
+# Uso: ./run_all.sh [opciones de generar.sh]
+#   p.ej. ./run_all.sh --keep-empty-drive
+#         ./run_all.sh --no-sync-drive
 
 set -euo pipefail
 
@@ -10,7 +12,9 @@ cd "$SCRIPT_DIR"
 echo "🚀 Ejecutando proceso completo QSL..."
 echo
 
-./generar.sh --auto
+# --auto primero; "$@" al final puede desactivarlo (p.ej. --no-sync-drive) o
+# añadir flags como --keep-empty-drive.
+./generar.sh --auto "$@"
 
 echo
 echo "✅ Proceso completo finalizado"

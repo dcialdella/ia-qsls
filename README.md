@@ -112,9 +112,13 @@ a su actividad (la tabla del final de esta sección indica cuál) y luego bórra
 `TEST DATA/` para no duplicar.
 
 **Para vaciar una actividad** por completo (dejar `qsl1` sin contactos y sin
-postcards), hay que hacer las dos cosas — borrar solo los `.adi` **no** borra las
-postales, porque `main()` hace `continue` en las carpetas sin `.adi` y la poda
-(`prune_orphan_pngs`) solo se llama desde `process_folder` y `process_act6`:
+postcards), lo normal es **borrar los `.adi` y correr `./run_all.sh`**. El generador
+elimina las postcards huérfanas (`prune_orphan_pngs`), `rsync --delete` propaga el
+borrado a Drive y `drive_index.py` deja de ofrecerlas en la web (lee el manifiesto,
+ver más abajo). Es decir: **lo que está en Drive y en la web es exactamente lo que
+dice el conjunto actual de `.adi`**.
+
+Si además quieres reempezar esa actividad desde cero (sin conservar su log):
 
 ```bash
 find qsl[1-7] -maxdepth 1 -name '*.adi' -delete   # quita los .adi de las actividades
@@ -125,9 +129,13 @@ find qsl[1-7] -maxdepth 1 -name '*.adi' -delete   # quita los .adi de las activi
 > Usa `find` y no `rm qsl*/*.adi`: en zsh un glob sin coincidencias aborta el comando con
 > `no matches found` en vez de ser un no-op.
 
-> **Importante:** `--from-scratch` es obligatorio en el paso 2. Si solo borras los `.adi` y
-> ejecutas el generador, las postcards **no se borran**. `qsl6` es la única actividad que
-> se limpia sola en cada pasada.
+> **Importante:** `--from-scratch` es necesario solo si además quieres **borrar el log**
+> de esa actividad. Si solo borras los `.adi` y ejecutas el generador, las postcards se
+> podan igual. `qsl6` es la única actividad que se limpia sola en cada pasada.
+
+> **Excepción:** si quieres conservar en Drive lo que ya no tenga `.adi` en local (p.ej.
+> archivar el histórico de una actividad cerrada), usa `./run_all.sh --keep-empty-drive`:
+> no vacía esa carpeta de Drive, pero la web **sí** dejará de ofrecerla.
 
 `qsl6` (postales de record) no necesita `.adi` propios: se alimenta de los contactos ya
 registrados en las actividades 1–5 (ver §3.b). Por eso el `qsl6/qsl6_extra1.adi` que hay
@@ -210,9 +218,12 @@ Contenido actual de `TEST DATA/` (contactos según `<CALL:`):
    caja.
 7. **Limpieza de código:** eliminados `load_backgrounds()` (obsoleto), el chequeo global
    de fondos, y los parámetros `my_callsign`/`label_color`/`--callsign`. El rendering usa
-   **solo los datos del contacto**; el sello fijo de estación `STATION_TEXT`
-   (`"EG9MM - Melilla"`, `qsl_generator.py:41`) se dibujaba en la esquina inferior
-   derecha de todas las postcards, pero **ya no se dibuja desde la v4** (ver punto 20).
+   **solo los datos del contacto**. El sello fijo de estación `STATION_TEXT`
+   (`"EG9MM - Melilla"`) se dibujaba en la esquina inferior derecha de todas las postcards,
+   pero **ya no se dibuja desde la v4** (ver punto 20); en esta revisión se borraron también
+   su constante y las funciones de dibujo, que quedaban muertas (`get_flag_image`,
+   `draw_spanish_flag`, `draw_flag_color_text` y sus cachés, ~65 líneas). Viven en el
+   historial de git si hacen falta.
 8. **Bandera del país delante del nombre de cada estación:** el país se deriva del prefijo
    del callsign con `country_map.json` (845 prefijos → ISO2, mejor coincidencia por
    longest-match). La bandera se pinta con la misma altura que el texto:
@@ -260,11 +271,10 @@ Contenido actual de `TEST DATA/` (contactos según `<CALL:`):
        el texto relleno con los colores de la bandera, `draw_flag_color_text()`) ya no
        se dibuja.
 
-     Se quitaron **las llamadas**, no el código: `draw_spanish_flag()`,
+     Se quitaron las llamadas y, más tarde, **el código muerto**: `draw_spanish_flag()`,
      `_draw_spanish_flag_rects()`, `draw_flag_color_text()`, `get_flag_image()` y la
-     constante `STATION_TEXT` siguen existiendo, con los bloques de dibujo comentados
-     dentro de `compose()` y `compose_act6()`. Para volver a dibujarlas basta con
-     descomentar.
+     constante `STATION_TEXT` **ya no existen** en el fichero (punto 7). Si hay que
+     recuperarlos están en el historial de git, en el commit anterior a esta revisión.
      *Se conservan* (no son el sello de estación): la **bandera del país** delante del
      nombre de cada estación, y la **bandera de España dentro de la casilla 6** de las
      postcards de record de QSL6.
@@ -288,6 +298,7 @@ ia-qsls/
 ├── drive_index.py         <- Genera qsl_index.json para la web (§7)
 ├── index.html             <- Página web de descarga (GitHub Pages)
 ├── qsl_index.json         <- Índice web (total 67, 36 indicativos)
+├── qsl_manifest.json      <- nº de .adi por actividad (generado, ignorado por git)
 ├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
 ├── update_adi_dates.py    <- Ayudante de una sola vez (ya usado; ver §1.1)
 ├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 249 países
@@ -387,7 +398,17 @@ sirve para casos puntuales (regenerar todo, probar sin tocar Drive, etc.).
 ./generar.sh --clean            # alias de --from-scratch
 ./generar.sh --index            # además regenera qsl_index.json (índice web, ver §7)
 ./generar.sh --index-only       # solo regenera qsl_index.json (no toca las postcards)
+./generar.sh --keep-empty-drive # NO vacía en Drive las actividades sin .adi (por defecto SÍ)
+./generar.sh --folder-id <ID>   # indexa otra carpeta de Google Drive
 ```
+
+Cualquier flag se puede pasar también a `./run_all.sh`, que los reenvía:
+`./run_all.sh --keep-empty-drive`, `./run_all.sh --no-sync-drive`.
+
+> **Actividades vaciadas.** Por defecto, una actividad sin `.adi` **sí** se vacía en Drive
+> (antes se saltaba el sync y las postcards se quedaban ahí para siempre, y la web seguía
+> ofreciéndolas aunque ya no existieran en local). Con `--keep-empty-drive` se conserva lo
+> que hay en Drive, pero la web deja de ofrecer esa actividad igualmente.
 
 Salida típica cuando **nada ha cambiado** desde la última corrida (el caso habitual del
 flujo diario, §2.0). Lo que ves es el setup de `generar.sh` y luego la salida del
@@ -514,6 +535,28 @@ sincronizada por la app de Google Drive:
   **eg9mm.mail@gmail.com**; la ruta del CloudStorage debe existir (la carpeta `QSL/QSLs`
   con las subcarpetas qsl1–qsl7 se crea sola la primera vez que se sincroniza).
 - Para generar **sin** sincronizar Drive: `./generar.sh --no-sync-drive`.
+- Para **no vaciar** en Drive una actividad que ya no tiene `.adi`: `--keep-empty-drive`.
+- Si un `rsync` falla a mitad, el script **aborta con un aviso explícito** que dice qué
+  carpetas llegaron a sincronizarse, que no se ha commiteado nada y que basta con
+  repetir `./generar.sh --auto` (todo el proceso es incremental: no se pierde trabajo).
+
+### El manifiesto de actividades (`qsl_manifest.json`)
+
+`qsl_generator.py` escribe al terminar `qsl_manifest.json` con cuántos `.adi` hay en cada
+actividad:
+
+```json
+{ "generated_at": "…", "generador": "4",
+  "adi_counts": {"qsl1": 5, "qsl2": 5, "qsl3": 5, "qsl4": 5,
+                 "qsl5": 4, "qsl6": 1, "qsl7": 4} }
+```
+
+`drive_index.py` lo lee y **excluye del índice las actividades con 0 `.adi`**, aunque sus
+PNG sigan todavía en Drive. Así la web no ofrece postcards de una actividad vaciada, que
+era el modo en que la web ofrecía ficheros que ya no existían en local.
+
+El fichero está en `.gitignore`: es salida derivada, se regenera en cada corrida y no
+merece un commit propio.
 
 ---
 
@@ -751,9 +794,17 @@ público: la persona escribe su **indicativo** y la página muestra sus postcard
 con miniatura y dos botones, **Descargar** y **Abrir** en Google Drive. Los PNG
 siguen viviendo en tu carpeta de Drive; la web solo pone los enlaces.
 
-La búsqueda es por **inicio del nombre del archivo** (que empieza por el indicativo,
-ver `unique_filenames`): escribir `EA4` lista todas las estaciones EA4, y la
-coincidencia exacta se resalta y se trae arriba.
+La búsqueda es por **inicio del indicativo**, usando el campo `call` del índice (no el
+nombre del archivo, que además incluye el nombre del ADI): escribir `EA4` lista todas las
+estaciones EA4, y la coincidencia exacta se resalta y se trae arriba. Se muestran como
+mucho **50 indicativos** por búsqueda, con un botón **"Ver más"** que amplía de 50 en 50.
+
+> **Por qué el campo `call` y no el nombre del fichero:** `drive_index.py` deriva el
+> indicativo partiendo el nombre por el último `_` (`{indicativo}_{nombre_adi}.png`) y
+> **reconstruye la `/`** que el generador codifica como `_` al sanitizar: `EA5_XZZ` se
+> publica como `EA5/XZZ`. Antes se partía por el primer `_`, así que un indicativo
+> portátil se agrupaba bajo el prefijo (`EA5`) y dos indicativos distintos podían caer
+> en la misma tarjeta.
 
 > **Por qué hace falta un índice:** los enlaces de descarga de Drive siempre llevan
 > el *file id* (`.../uc?export=download&id=<ID>`), nunca el nombre del archivo.
@@ -771,8 +822,8 @@ coincidencia exacta se resalta y se trae arriba.
 `My Drive/QSL/QSLs` → <https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy>
 
 - ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy`, hardcodeado en la constante
-  `DEFAULT_FOLDER_ID` de `drive_index.py`. **No hay flag para cambiarlo**: para indexar otra
-  carpeta hay que editar esa constante.
+  `DEFAULT_FOLDER_ID` de `drive_index.py`. Se puede cambiar sin editar código:
+  `./generar.sh --folder-id <ID>` (o `python3 drive_index.py --folder-id <ID>`).
 - Contiene `qsl1`…`qsl7`. Dentro de cada una, los PNG se llaman
   `{indicativo}_{nombre_adi}.png`, así que **el prefijo del nombre es el indicativo**.
 - Acceso: *Cualquier persona con el enlace* → Lector. **Ya está hecho** (verificado:
@@ -860,8 +911,18 @@ web lo mostraría sin errores visibles — ver §7 "Seguridad".
   Es coherente con que las QSL son públicas, pero tenlo en cuenta si añades
   datos personales (nombre/QTH) que no quieras exponer.
 - Corolario de usar HTML público: si algún día Drive deja de renderizar esos `<a>` en su
-  HTML, el índice saldría vacío **sin error visible**. Si `total: 0` de repente, es lo
-  primero a mirar.
+  HTML, el parseo devolvería 0 ficheros. `drive_index.py` **se niega a escribir** un índice
+  con 0 entradas, o con menos entradas que el anterior sin que el manifiesto justifique la
+  pérdida, y avisa por stderr: el JSON bueno en disco no se pisa. Si ves ese error, lo
+  de arriba a mirar es el HTML de Drive, no las postcards.
+- La web no inserta el `id` de Drive sin más: `index.html` lo valida contra
+  `/^[A-Za-z0-9_-]{10,64}$/` y lo mete en las URLs con `encodeURIComponent`, y escapa
+  `name`, `call` y `act` con `escapeHtml`. Una entrada con un id inesperado se descarta en
+  vez de inyectarse en un atributo.
+- Los tamaños del índice se piden con peticiones **HEAD** en paralelo (8 a la vez), no con
+  GET: a ~1,4 s por fichero en serie, 5000 postcards serían unas 2 horas. Drive puede
+  responder con una página HTML de intersticio en lugar de la imagen; se detecta
+  comprobando el `Content-Type` y se guarda tamaño `0`.
 
 ---
 
@@ -884,16 +945,18 @@ sincronizadas y publicadas. Queda pendiente:
    datos de prueba sigue el orden **alfabético** del nombre de fichero, no el cronológico
    (`est1.adi`, `est_extra1.adi`, `qsl1_ejemplo.adi`…). Cosmético, pero si algún día se
    quiere que las horas simulen una sesión real habría que ordenarlos.
-5. **Bug latente en `generar.sh:158`.** Invoca `drive_index.py` con
-   `"${DRIVE_INDEX_ARGS_ARR[@]}"`, pero `DRIVE_INDEX_ARGS_ARR` no se asigna en ningún
-   sitio, así que `DRIVE_INDEX_ARGS="--folder-id <ID>" ./generar.sh --index-only` no
-   funciona. Para indexar otra carpeta hay que editar `DEFAULT_FOLDER_ID` en
-   `drive_index.py:6`.
+5. ~~**Bug latente en `generar.sh:158`**~~ — **resuelto**: `drive_index.py` acepta ahora
+   `--folder-id` de verdad y `generar.sh` lo propaga con su propio `--folder-id`, así que
+   ya no hace falta editar `DEFAULT_FOLDER_ID`.
 6. (Opcional) Añadir banderas para los 4 códigos sin PNG en `FLAGS/`: `un` (sede de la
    UIT, prefijo `4U`), `xi` (Irlanda del Norte), `xk` (Kosovo) y `zz` (Orden de Malta).
    Hoy esas estaciones se quedan sin bandera.
 7. Cuando quieras **activar contactos masivos** (p.ej. Eladio/DAC con Ham2K o Smart
    Logger), dejar sus `.adi` en la carpeta de su actividad y ejecutar `./run_all.sh`.
+8. **Tests.** El proyecto no tiene ninguno, y los arreglos de este ciclo (poda de PNG
+   huérfanos, parser ADIF, derivación del indicativo) son justo lo que un test debería
+   proteger. El candidato más barato: un test que ejecute el generador sobre `TEST DATA/`
+   y compare el `qsl_log.json` resultante con un esperado.
 
 ---
 
