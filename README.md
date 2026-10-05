@@ -334,11 +334,20 @@ Ojo con los nombres que llevan **espacio** (`TEST DATA/probe copy.adi`): entreco
      que encadena generar → sync a Drive → regenerar `qsl_index.json` → `git add -A`
      → commit → push. Ver §2.0.
 22. **Fechas y horas distintas en los `.adi`.** Los ADI de `qsl1`–`qsl7` usaban las
-     mismas fechas y horas en varios ficheros (`20240901`/`100000` en todos los de
-     qsl1, `20240902`/`100000` en todos los de qsl2, etc.), así que postcards distintas
-     mostraban datos idénticos. Ahora cada actividad tiene su día (`20240901`…
-     `20240907`) y cada QSO su hora, avanzando 5 minutos por contacto dentro de la
-     actividad. Se regeneró todo el set.
+      mismas fechas y horas en varios ficheros (`20240901`/`100000` en todos los de
+      qsl1, `20240902`/`100000` en todos los de qsl2, etc.), así que postcards distintas
+      mostraban datos idénticos. Ahora cada actividad tiene su día (`20240901`…
+      `20240907`) y cada QSO su hora, avanzando 5 minutos por contacto dentro de la
+      actividad. Se regeneró todo el set.
+23. **Nuevo diseño de la caja de texto (v5).** Rediseño completo de la zona de datos:
+      - Caja fija en posición `x=220–1175, y=594–678` (954×84 px), sombra 4px, fondo gris semitransparente `(80,80,80,150)`, borde dorado `#C28C24`.
+      - **2 líneas de texto** (separadores `-` en lugar de `|`):
+        - Línea 1 (34pt bold): callsign dorado + bandera país + nombre + QTH.
+        - Línea 2 (24pt): fecha - hora - banda - modo - grid.
+      - Texto centrado verticalmente en la caja + offset 18px.
+      - Checkboxes ACT alineados a la derecha (26×26 px, 6 casillas).
+      - QSL1–5/7: tilde en su actividad; QSL6: tildes 1–5 + bandera España en casilla 6; QSL7: texto "DMR Confirmated" sin checkboxes.
+      - Fuentes y `compose` / `compose_act6` reescritos.
 
 ### Estructura actual en disco
 
