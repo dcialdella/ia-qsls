@@ -130,10 +130,13 @@ const DL    = id => `https://drive.google.com/uc?export=download&id=${encodeURIC
 const PAGE_SIZE = 50;
 const ID_MIN = 4;         // mínimo de caracteres para buscar
 
-$('#year').textContent = String(new Date().getFullYear());
-
 const $ = s => document.querySelector(s);
 const results = $('#results'), statusEl = $('#status'), input = $('#q');
+
+// Va DESPUÉS de declarar `$`: si se llama antes, salta el ReferenceError del
+// TDZ ("Cannot access '$' before initialization"), el script entero muere y la
+// página se queda en "Cargando índice…" para siempre.
+$('#year').textContent = String(new Date().getFullYear());
 let index = null;
 let byCall = new Map();   // indicativo normalizado -> [entradas]
 let shown = PAGE_SIZE;    // cuántas tarjetas se están pintando (D5)
@@ -223,42 +226,42 @@ function render(term) {
     statusEl.textContent = '';
     return;
   }
-  if (!t) {
-    shown = PAGE_SIZE;
-    statusEl.textContent = index.total.toLocaleString('es') + ' postcards indexadas.';
-    return;
-  }
-  if (t.length < ID_MIN) {
-    // Antes, con 2 caracteres escritos, la página mostraba "N postcards
-    // indexadas", que parece un resultado de búsqueda. Ahora lo dice.
+  // Con 1-3 caracteres escritos se avisa en vez de fingir un resultado.
+  if (t && t.length < ID_MIN) {
     statusEl.textContent = `Escribe al menos ${ID_MIN} caracteres para buscar.`;
     return;
   }
+  const searching = t.length >= ID_MIN;
 
   // La búsqueda usa el campo `call` del índice, no el nombre del fichero: el
   // nombre incluye el stem del ADI, así que buscar "EST1" devolvía tarjetas de
   // todos los indicativos.
   const groups = new Map();
   for (const [nc, entries] of byCall) {
-    if (nc.startsWith(t)) groups.set(entries[0].call, entries);
+    if (!searching || nc.startsWith(t)) groups.set(entries[0].call, entries);
   }
 
   shown = PAGE_SIZE;
 
   if (!groups.size) {
-    statusEl.textContent = `Sin resultados para "${raw}".`;
+    statusEl.textContent = searching
+      ? `Sin resultados para "${raw}".`
+      : 'El índice no contiene ninguna postcard.';
     return;
   }
 
   const names = [...groups.keys()].sort();
   names.sort((a, b) => (norm(a) === t ? -1 : norm(b) === t ? 1 : 0));
   const files = names.reduce((n, c) => n + groups.get(c).length, 0);
-  const tail = names.length > shown ? ` (mostrando ${shown})` : '';
-  statusEl.textContent = `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`;
+  const tail = names.length > shown ? ` (mostrando ${shown} de ${names.length})` : '';
+  statusEl.textContent = searching
+    ? `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`
+    : `${files} postcard(s) en ${names.length} indicativo(s)${tail}. ` +
+      `Escribe al menos ${ID_MIN} caracteres para filtrar.`;
 
   paint(names, t);
 
-  // El scroll usaba `term` sin normalizar, así que "EA4-HJZ" no arrival.
+  // El scroll usaba `term` sin normalizar, así que "EA4-HJZ" no llegaba.
   if (names.some(c => norm(c) === t)) {
     const first = results.firstElementChild;
     if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -289,7 +292,7 @@ async function load() {
   }
 
   // Índice con forma inesperada: se normaliza una vez aquí para que ni el pie
-  // ni la búsqueda_each launchen un TypeError silencioso.
+  // ni la búsqueda lance un TypeError silencioso.
   if (!index || typeof index !== 'object') {
     index = { total: 0, activities: {}, entries: [] };
   }
