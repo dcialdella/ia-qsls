@@ -226,27 +226,32 @@ function render(term) {
     statusEl.textContent = '';
     return;
   }
+  // Sin texto buscado no se muestra ninguna tarjeta: la lista completa se
+  // reserva a lo que la persona ha pedido. Solo el contador, para saber que
+  // el índice está cargado.
+  if (!t) {
+    shown = PAGE_SIZE;
+    statusEl.textContent = index.total.toLocaleString('es') + ' postcards indexadas.';
+    return;
+  }
   // Con 1-3 caracteres escritos se avisa en vez de fingir un resultado.
-  if (t && t.length < ID_MIN) {
+  if (t.length < ID_MIN) {
     statusEl.textContent = `Escribe al menos ${ID_MIN} caracteres para buscar.`;
     return;
   }
-  const searching = t.length >= ID_MIN;
 
   // La búsqueda usa el campo `call` del índice, no el nombre del fichero: el
   // nombre incluye el stem del ADI, así que buscar "EST1" devolvía tarjetas de
   // todos los indicativos.
   const groups = new Map();
   for (const [nc, entries] of byCall) {
-    if (!searching || nc.startsWith(t)) groups.set(entries[0].call, entries);
+    if (nc.startsWith(t)) groups.set(entries[0].call, entries);
   }
 
   shown = PAGE_SIZE;
 
   if (!groups.size) {
-    statusEl.textContent = searching
-      ? `Sin resultados para "${raw}".`
-      : 'El índice no contiene ninguna postcard.';
+    statusEl.textContent = `Sin resultados para "${raw}".`;
     return;
   }
 
@@ -254,10 +259,8 @@ function render(term) {
   names.sort((a, b) => (norm(a) === t ? -1 : norm(b) === t ? 1 : 0));
   const files = names.reduce((n, c) => n + groups.get(c).length, 0);
   const tail = names.length > shown ? ` (mostrando ${shown} de ${names.length})` : '';
-  statusEl.textContent = searching
-    ? `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`
-    : `${files} postcard(s) en ${names.length} indicativo(s)${tail}. ` +
-      `Escribe al menos ${ID_MIN} caracteres para filtrar.`;
+  statusEl.textContent =
+    `${names.length} indicativo(s) · ${files} postcard(s) para "${raw}"${tail}.`;
 
   paint(names, t);
 
