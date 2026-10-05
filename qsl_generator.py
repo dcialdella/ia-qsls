@@ -30,9 +30,14 @@ from PIL import Image, ImageDraw, ImageFont
 # Versión del generador: si un ADI ya registrado en el log se generó con otra
 # versión, se reprocesa (permite que cambios de código se reflejen al ejecutar
 # en modo incremental sin necesidad de --from-scratch).
-GENERATOR_VERSION = "3"
+# v4: sin bandera de España en la esquina superior derecha ni sello de estación
+#     "EG9MM - Melilla" en la esquina inferior derecha.
+GENERATOR_VERSION = "4"
 
-# Estación propia que se muestra en la esquina inferior derecha de cada postal
+# Estación propia que se muestra en la esquina inferior derecha de cada postal.
+# En desuso: STATION_TEXT y sus funciones de dibujo siguen en el código, pero
+# compose() y compose_act6() ya no las invocan. Basta con descomentar los
+# bloques comentados para volver a dibujarlas.
 STATION_TEXT = "EG9MM - Melilla"
 
 # Rangos de banda (MHz) para derivar BAND desde FREQ (evita reconstruir la lista)
@@ -496,8 +501,9 @@ class QSLGenerator:
         # Borde sutil de la caja
         draw.rounded_rectangle(box, radius=16, outline=(255, 255, 255, 90), width=2)
 
-        # Bandera de España, esquina superior derecha (5% x 5%)
-        self.draw_spanish_flag(draw)
+        # Bandera de España en la esquina superior derecha: desactivada
+        # (quedaba self.draw_spanish_flag(draw))
+        # Sello de estación "EG9MM - Melilla" abajo a la derecha: desactivado
 
         # ===== Datos del contacto =====
         date_str = self.fmt_date(qso)
@@ -523,20 +529,21 @@ class QSLGenerator:
                   font=font_call, fill=(255, 255, 255, 255), anchor="lm")
 
         # Esquina inferior derecha: operador de la estación, en colores de bandera,
-        # dentro de una minicaja con contraste (igual estilo que la caja de datos)
-        station_text = STATION_TEXT
-        font_station = self.get_font(52, bold=True)
-        sbox = draw.textbbox((0, 0), station_text, font=font_station)
-        sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
-        spx, spy = 16, 10
-        sxy = [self.WIDTH - 25 - sw - spx * 2,
-               self.HEIGHT - 25 - sh - spy * 2,
-               self.WIDTH - 25,
-               self.HEIGHT - 25]
-        self.rounded_rect(draw, sxy, 12, (0, 0, 0, 150))
-        draw.rounded_rectangle(sxy, radius=12, outline=(255, 255, 255, 90), width=2)
-        self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
-                                  station_text, font_station)
+        # dentro de una minicaja con contraste (igual estilo que la caja de datos).
+        # Desactivado por ahora: no se dibuja el sello de estación.
+        # station_text = STATION_TEXT
+        # font_station = self.get_font(52, bold=True)
+        # sbox = draw.textbbox((0, 0), station_text, font=font_station)
+        # sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
+        # spx, spy = 16, 10
+        # sxy = [self.WIDTH - 25 - sw - spx * 2,
+        #        self.HEIGHT - 25 - sh - spy * 2,
+        #        self.WIDTH - 25,
+        #        self.HEIGHT - 25]
+        # self.rounded_rect(draw, sxy, 12, (0, 0, 0, 150))
+        # draw.rounded_rectangle(sxy, radius=12, outline=(255, 255, 255, 90), width=2)
+        # self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
+        #                           station_text, font_station)
 
         # Línea 2: Fecha + hora
         draw.text((box[0] + pad_x, inner_top + line_h * 1), f"{date_str}  {time_str or '--:--'}",
@@ -597,8 +604,8 @@ class QSLGenerator:
         self.rounded_rect(draw, box, 18, (0, 0, 0, 160))
         draw.rounded_rectangle(box, radius=18, outline=(245, 166, 35, 255), width=3)
 
-        # Bandera de España, esquina superior derecha (5% x 5%)
-        self.draw_spanish_flag(draw)
+        # Bandera de España en la esquina superior derecha: desactivada
+        # (quedaba self.draw_spanish_flag(draw))
 
         font_call = self.get_font(36, bold=True)
         font_data = self.get_font(24)
@@ -615,20 +622,21 @@ class QSLGenerator:
                   font=font_call, fill=(245, 166, 35, 255), anchor="lm")
 
         # Esquina inferior derecha: operador de la estación, en colores de bandera,
-        # dentro de una minicaja con contraste (igual estilo que la caja de datos)
-        station_text = STATION_TEXT
-        font_station = self.get_font(36, bold=True)
-        sbox = draw.textbbox((0, 0), station_text, font=font_station)
-        sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
-        spx, spy = 12, 8
-        sxy = [self.WIDTH - 25 - sw - spx * 2,
-               self.HEIGHT - 25 - sh - spy * 2,
-               self.WIDTH - 25,
-               self.HEIGHT - 25]
-        self.rounded_rect(draw, sxy, 10, (0, 0, 0, 150))
-        draw.rounded_rectangle(sxy, radius=10, outline=(255, 255, 255, 90), width=2)
-        self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
-                                  station_text, font_station)
+        # dentro de una minicaja con contraste (igual estilo que la caja de datos).
+        # Desactivado por ahora: no se dibuja el sello de estación.
+        # station_text = STATION_TEXT
+        # font_station = self.get_font(36, bold=True)
+        # sbox = draw.textbbox((0, 0), station_text, font=font_station)
+        # sw, sh = sbox[2] - sbox[0], sbox[3] - sbox[1]
+        # spx, spy = 12, 8
+        # sxy = [self.WIDTH - 25 - sw - spx * 2,
+        #        self.HEIGHT - 25 - sh - spy * 2,
+        #        self.WIDTH - 25,
+        #        self.HEIGHT - 25]
+        # self.rounded_rect(draw, sxy, 10, (0, 0, 0, 150))
+        # draw.rounded_rectangle(sxy, radius=10, outline=(255, 255, 255, 90), width=2)
+        # self.draw_flag_color_text(overlay, (sxy[0] + spx, sxy[1] + spy + sh / 2),
+        #                           station_text, font_station)
 
         # Línea 2: Nombre (con bandera del país delante)
         if name:
