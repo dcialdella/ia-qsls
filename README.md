@@ -790,14 +790,17 @@ Tipo | Tamaño caja | Contenido | Casillas
 ### Qué hace
 
 `index.html` (en la raíz del repo, servido por **GitHub Pages**) es un buscador
-público: la persona escribe su **indicativo** y la página muestra sus postcards
-con miniatura y dos botones, **Descargar** y **Abrir** en Google Drive. Los PNG
-siguen viviendo en tu carpeta de Drive; la web solo pone los enlaces.
+público: la persona escribe su **indicativo completo** y la página muestra sus
+postcards con miniatura y un único botón, **Descargar/Download**. Los PNG siguen
+viviendo en tu carpeta de Drive; la web solo pone los enlaces. La miniatura sigue
+siendo un enlace a la vista previa en Drive.
 
-La búsqueda es por **inicio del indicativo**, usando el campo `call` del índice (no el
-nombre del archivo, que además incluye el nombre del ADI): escribir `EA4` lista todas las
-estaciones EA4, y la coincidencia exacta se resalta y se trae arriba. Se muestran como
-mucho **50 indicativos** por búsqueda, con un botón **"Ver más"** que amplía de 50 en 50.
+La búsqueda es de **coincidencia exacta** del indicativo, usando el campo `call` del
+índice (no el nombre del archivo, que además incluye el nombre del ADI): escribir
+`EA4XX1` muestra solo las postcards de esa estación. Si el indicativo no existe, no se
+muestra ninguna postcard y se indica cuáles empiezan por lo tecleado. Con el buscador
+vacío no se pinta nada: solo el contador de postcards indexadas. No hay paginación,
+porque nunca se muestran más postcards que las de un indicativo.
 
 > **Por qué el campo `call` y no el nombre del fichero:** `drive_index.py` deriva el
 > indicativo partiendo el nombre por el último `_` (`{indicativo}_{nombre_adi}.png`) y
