@@ -463,7 +463,7 @@ class QSLGenerator:
         box_left = 220
         box_top = 594
         box_right = 1175
-        box_bottom = 678
+        box_bottom = 686
         box = [box_left, box_top, box_right, box_bottom]
 
         pad_x = 24
@@ -498,7 +498,7 @@ class QSLGenerator:
         # Espaciado vertical: centrar bloque de 2 líneas + offset
         line_gap = 8
         text_h = font_line1.size + line_gap + font_line2.size
-        block_top = box_top + (box_h - text_h) // 2 + 18
+        block_top = box_top + (box_h - text_h) // 2 + 16
         y_line1 = block_top
         y_line2 = block_top + font_line1.size + line_gap
 
@@ -594,7 +594,7 @@ class QSLGenerator:
         box_left = 220
         box_top = 594
         box_right = 1175
-        box_bottom = 678
+        box_bottom = 686
         box = [box_left, box_top, box_right, box_bottom]
 
         pad_x = 24
@@ -617,7 +617,7 @@ class QSLGenerator:
 
         line_gap = 8
         text_h = font_line1.size + line_gap + font_line2.size
-        block_top = box_top + (box_h - text_h) // 2 + 18
+        block_top = box_top + (box_h - text_h) // 2 + 16
         y_line1 = block_top
         y_line2 = block_top + font_line1.size + line_gap
 
