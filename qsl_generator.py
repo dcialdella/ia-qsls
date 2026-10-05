@@ -1030,6 +1030,11 @@ def main():
     # pueda excluir de la web las actividades que ya no tienen ningun .adi: si no,
     # las postcards_old seguirian en Drive y la web las seguiria ofreciendo.
     adi_counts = {}
+    # qsl6 NO tiene .adi propios: sus postcards de record se derivan de los QSO ya
+    # registrados en qsl1-qsl5. Contar sus .adi daba 0 y drive_index excluia qsl6
+    # entero de la web, aunque sus PNG existieran. Para el manifiesto se cuenta lo
+    # que realmente produce, no lo que consume.
+    act6_produced = None
 
     for i in range(1, 8):
         folder = base_dir / f"qsl{i}"
@@ -1040,6 +1045,7 @@ def main():
         # ===== Actividad 6: QSL de record, no usa ADIs propios =====
         if i == 6:
             nuevos, regenerados, sin_cambios = process_act6(base_dir, generator)
+            act6_produced = nuevos + regenerados
             total_nuevos += nuevos
             total_regenerados += regenerados
             total_sin += sin_cambios
@@ -1066,6 +1072,10 @@ def main():
         total_nuevos += nuevos
         total_sin += sin_cambios
         total_regenerados += regenerados
+
+    # qsl6 no tiene .adi: lo que cuenta es cuantas postcards produjo.
+    if act6_produced is not None:
+        adi_counts["qsl6"] = act6_produced
 
     # Manifiesto de actividades activas (lo consume drive_index.py).
     manifest = {

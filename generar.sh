@@ -63,6 +63,7 @@ BUILD_INDEX=false
 INDEX_ONLY=false
 AUTO_PUSH=false
 KEEP_EMPTY_DRIVE=false
+FORCE_INDEX=false
 FOLDER_ID=""
 INDEX_ARGS=()
 while [ $# -gt 0 ]; do
@@ -76,11 +77,16 @@ while [ $# -gt 0 ]; do
     --index) BUILD_INDEX=true ;;
     --index-only) BUILD_INDEX=true; INDEX_ONLY=true ;;
     --auto) BUILD_INDEX=true; SYNC_DRIVE=true; AUTO_PUSH=true ;;
+    # Necesario cuando el recorte del indice es intencionado (p.ej. se han
+    # vaciado actividades a proposito): drive_index.py se niega a escribir un
+    # indice con menos entradas que el anterior si el manifiesto no lo explica.
+    --force-index) FORCE_INDEX=true ;;
     *) echo "Argumento desconocido: $1" >&2; exit 1 ;;
   esac
   shift
 done
 [ -n "$FOLDER_ID" ] && INDEX_ARGS+=("--folder-id" "$FOLDER_ID")
+[ "$FORCE_INDEX" = true ] && INDEX_ARGS+=("--force")
 
 echo "============================================================"
 echo "  GENERADOR QSL — setup automático"
