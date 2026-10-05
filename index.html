@@ -119,7 +119,10 @@ const safeId = id => (typeof id === 'string' && ID_RE.test(id)) ? id : null;
 
 // encodeURIComponent sobre un id ya validado es identidad en la práctica, pero
 // mantiene la invariante aunque la validación se relajara en el futuro.
-const THUMB = id => `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w600`;
+const THUMB = (id, v) => {
+  const vid = v ? `&v=${encodeURIComponent(String(v))}` : '';
+  return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w600${vid}`;
+};
 const VIEW  = id => `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const DL    = id => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
 
@@ -156,7 +159,7 @@ function itemRow(e) {
   return `<li class="item">
     <a class="thumblink" href="${VIEW(id)}" target="_blank" rel="noopener noreferrer"
        aria-label="Abrir la postcard de ${escapeHtml(e.call)} en Google Drive">
-      <img class="thumb" src="${THUMB(id)}" alt="Postcard QSL de ${escapeHtml(e.call)}"
+      <img class="thumb" src="${THUMB(id, index?.generated_at)}" alt="Postcard QSL de ${escapeHtml(e.call)}"
            loading="lazy"
            onerror="this.outerHTML='<div class=thumb err>sin vista previa</div>'">
     </a>
