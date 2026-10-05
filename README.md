@@ -59,9 +59,14 @@ postales generadas.
 
 ## 1. Estado actual del proyecto
 
-> **Estado actual: en producción.** Las actividades `qsl1`–`qsl5` y `qsl7` tienen sus
-> `.adi` poblados, las 67 postcards están generadas, sincronizadas con Google Drive y
+> **Estado actual: en producción, con datos de prueba reducidos.** Las actividades
+> `qsl1`–`qsl5` y `qsl7` tienen **un único `.adi` cada una** (`TEST.adi`, la estación
+> `EG9MM`), y las 7 postcards resultantes están sincronizadas con Google Drive y
 > publicadas en <https://dcialdella.github.io/ia-qsls/>. El flujo diario está en §2.0.
+>
+> Los datos de ejemplo que hubo antes (`estN.adi`, `stationsN.adi`, `qslN_ejemplo.adi`,
+> `qslN_extra1.adi`) y las 67 postcards que generaban **se quitaron a propósito**. Siguen
+> recuperables con `git log -- qsl1/est1.adi` si hicieran falta.
 
 - ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "4"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
@@ -69,22 +74,24 @@ postales generadas.
 - ✅ Las 7 carpetas con su fondo: qsl1 (`f1.png`), qsl2 (`f2.png`), qsl3 (`f3.png`),
   qsl4 (`f4.png`), qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`) — la convención es
   `f<n>.png`, el número coincide con la actividad
-- ✅ **Datos poblados y 67 postcards generadas:**
+- ✅ **Datos reducidos a un `.adi` de prueba por actividad:**
 
   | Actividad | `.adi` | Contactos | Postcards en `QSLS/` |
   |---|---|---|---|
-  | `qsl1` | 5 | 14 | 14 |
-  | `qsl2` | 5 | 12 | 12 |
-  | `qsl3` | 5 | 10 | 10 |
-  | `qsl4` | 5 | 10 | 10 |
-  | `qsl5` | 4 | 9 | 9 |
-  | `qsl6` | 1 (ignorado) | — | 2 (records) |
-  | `qsl7` | 4 | 10 | 10 |
-  | **Total** | **28 (+1 ignorado)** | **65** | **67** |
+  | `qsl1` | 1 (`TEST.adi`) | 1 | 1 |
+  | `qsl2` | 1 (`TEST.adi`) | 1 | 1 |
+  | `qsl3` | 1 (`TEST.adi`) | 1 | 1 |
+  | `qsl4` | 1 (`TEST.adi`) | 1 | 1 |
+  | `qsl5` | 1 (`TEST.adi`) | 1 | 1 |
+  | `qsl6` | **0 (no lleva `.adi`)** | — | 1 (record) |
+  | `qsl7` | 1 (`TEST.adi`) | 1 | 1 |
+  | **Total** | **6** | **6** | **7** |
 
-  Los 2 records de `qsl6` no son contactos propios: son `EA3JAQ` y `EA4HUK`, las dos
-  estaciones que aparecen en las 5 primeras actividades (ver §3.b).
-- ✅ `qsl_index.json` coherente con lo publicado: `total: 67`, 36 indicativos distintos
+  `qsl6` **no lleva ningún `.adi`** y no debe llevar ninguno: sus postcards de record se
+  derivan de los QSO ya registrados en `qsl1`–`qsl5` (ver §3.b). Por eso el manifiesto
+  cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
+  `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
+- ✅ `qsl_index.json` coherente con lo publicado: `total: 7`, 1 indicativo (`EG9MM`)
 - ✅ Los 10 `.adi` de ejemplo siguen aparcados en `TEST DATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`). Ahora las actividades tienen además sus propios
   `.adi` de trabajo (`estN.adi`, `qslN_ejemplo.adi`, `qslN_extra1.adi`,
