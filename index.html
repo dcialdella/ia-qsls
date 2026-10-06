@@ -108,7 +108,8 @@
 
 <footer>
   <span id="fmeta"><span id="updated">–</span> · <span id="total"></span></span><br>
-  EG9MM · Melilla · <span id="year"></span> · email: eg9mm.mail@gmail.com
+  <span id="version" style="color: var(--muted); font-size: 12px;"></span><br>
+  EG6MM · Melilla · <span id="year"></span> · email: eg9mm.mail@gmail.com
 </footer>
 
 <script>
@@ -272,6 +273,7 @@ async function load() {
   $('#updated').textContent = 'Índice actualizado: ' + (index.generated_at || '?');
   $('#total').textContent = total.toLocaleString('es') + ' postcards en ' +
     Object.keys(acts).length + ' actividades';
+  $('#version').textContent = 'Automatic Deployments V: ' + (index.generador || '?');
   render(input.value.trim());
   if (!input.value.trim()) input.focus();
 }
