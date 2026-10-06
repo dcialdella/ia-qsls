@@ -210,7 +210,12 @@ def load_manifest(path):
     counts = data.get('adi_counts')
     if not isinstance(counts, dict):
         return None
-    return {k: v for k, v in counts.items() if k in ACTIVITY_TITLES}
+    # Filtrar solo actividades válidas, pero mantener todo el dict para acceder a 'generador'
+    filtered = {k: v for k, v in counts.items() if k in ACTIVITY_TITLES}
+    # Añadir generador si existe
+    if 'generador' in data:
+        filtered['generador'] = data['generador']
+    return filtered
 
 
 def build_index(folder_id, manifest=None, base=None, generator_version=None):
