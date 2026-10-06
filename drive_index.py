@@ -213,7 +213,7 @@ def load_manifest(path):
     return {k: v for k, v in counts.items() if k in ACTIVITY_TITLES}
 
 
-def build_index(folder_id, manifest=None, base=None):
+def build_index(folder_id, manifest=None, base=None, generator_version=None):
     """Construye el diccionario del indice leyendo Drive.
 
     Si `manifest` no es None, las actividades con 0 .adi se omiten por completo
@@ -264,7 +264,7 @@ def build_index(folder_id, manifest=None, base=None):
             entries = list(ex.map(with_size, entries))
 
     entries.sort(key=lambda e: (e['call'], e['act'], e['name']))
-    return {
+    result = {
         'version': 2,
         'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'folder_id': folder_id,
@@ -273,7 +273,10 @@ def build_index(folder_id, manifest=None, base=None):
         'counts': counts,
         'total': len(entries),
         'entries': entries,
-    }, failed, empty
+    }
+    if generator_version:
+        result['generador'] = generator_version
+    return result, failed, empty
 
 
 def read_existing(path):
@@ -309,8 +312,11 @@ def main():
         print(f"AVISO: sin manifiesto válido en {args.manifest}; "
               f"se publica todo lo que haya en Drive.")
 
+    # Extraer versión del generador del manifiesto
+    generator_version = manifest.get('generador') if manifest else None
+
     try:
-        idx, failed, _empty = build_index(args.folder_id, manifest, base=SCRIPT_DIR)
+        idx, failed, _empty = build_index(args.folder_id, manifest, base=SCRIPT_DIR, generator_version=generator_version)
     except FetchError as ex:
         print(f"ERROR: no se pudo leer la carpeta de Drive: {ex}", file=sys.stderr)
         print("       Revisa el --folder-id y la conexión, y reintenta.", file=sys.stderr)
