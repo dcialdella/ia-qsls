@@ -1,6 +1,8 @@
 # Generación de ADI por Actividad
 
-Proceso que lee los archivos ADI de cada carpeta `qsl1`–`qsl5` y genera archivos ADI en la subcarpeta `ACTIVIDADES/` de cada una, con el formato específico que necesita cada actividad para su subida a las webs correspondientes.
+Proceso que lee los archivos ADI de las carpetas `qsl1`–`qsl5` y genera, en la subcarpeta `ACTIVIDADES/` de cada una, un archivo por cada actividad configurada, con el formato específico que necesita cada una para su subida a las webs correspondientes.
+
+**Alcance:** solo `qsl1`–`qsl5`. Las carpetas `qsl6` y `qsl7` **no se procesan** (no están en `CONFIG` y no se les borra ni crea nada).
 
 ## Script
 
@@ -12,16 +14,35 @@ python3 qsl_generar_adis.py
 
 ## Flujo
 
-1. **Limpia** la carpeta `ACTIVIDADES/` de cada QSL (borra todo lo anterior).
-2. **Lee** todos los `.adi` de la carpeta `QSLn/`.
+1. **Limpia** la carpeta `ACTIVIDADES/` de cada QSL procesada (borra todo lo anterior).
+2. **Lee todos** los `.adi` de la carpeta `qslN/` (en el futuro puede haber varios; cada uno se procesa por separado).
 3. **Valida** cada QSO:
    - `CALL` y `QSO_DATE` presentes.
-   - `STATION_CALLSIGN` = `EG9MM`.
+   - `STATION_CALLSIGN` = `EG9MM` (única estación permitida en el log).
    - `OPERATOR` ∈ `ea4huk`, `ea4iwx`, `ea4ghh`, `ea3jaq` (sin importar mayúsculas).
-4. **Genera** un archivo por cada formato configurado, con nombre `<original>-<formato>.adi`.
+4. **Genera** un archivo por cada formato configurado, con nombre `<nombre-del-input>-<formato>.adi`.
 5. Si la validación de estación/operador falla, el archivo se genera completo pero con una primera línea:
    `REVISAR EL FORMATO DE OPERADOR y STATION`
    (además se imprime un aviso por registro en consola).
+
+## Archivos de entrada (estado actual)
+
+Cada carpeta `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contiene un único input:
+
+```
+QSL-DEMO-EG9MM.adi   ← 1 solo QSO, CALL/STATION = EG9MM, OPERATOR = EA4HUK
+```
+
+Salidas (ejemplo con el input actual):
+
+```
+qsl1/ACTIVIDADES/QSL-DEMO-EG9MM-tota.adi
+qsl2/ACTIVIDADES/QSL-DEMO-EG9MM-tota.adi
+qsl2/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
+qsl3/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
+qsl4/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
+qsl5/ACTIVIDADES/QSL-DEMO-EG9MM-llota.adi
+```
 
 ## Formatos por actividad
 
@@ -79,28 +100,41 @@ Los ADI de entrada pueden venir de cualquiera de estos programas (todos compatib
 | Ham2K Logger | `t2-ham2k.adi` |
 | WSJT-X | `t3-wsjtdx.adi` |
 
-Input canónico de pruebas: `TESTDATA/input-qsl1.adi` (copiado como `input-qsl1.adi` en qsl1–qsl5).
+`TESTDATA/` contiene solo muestras de formato (6 QSOs, `CALL` y estaciones de ejemplo); no es un input del proceso.
 
 ## Estructura
 
 ```
 qsl1/
-├── input-qsl1.adi         ← entrada
+├── QSL-DEMO-EG9MM.adi            ← entrada (1 QSO, EG9MM)
 ├── ACTIVIDADES/
-│   └── input-qsl1-tota.adi ← salida
+│   └── QSL-DEMO-EG9MM-tota.adi   ← salida
 ├── f1.png
 └── QSLS/
 qsl2/
-├── input-qsl1.adi
+├── QSL-DEMO-EG9MM.adi
 ├── ACTIVIDADES/
-│   ├── input-qsl1-tota.adi
-│   └── input-qsl1-pota.adi
+│   ├── QSL-DEMO-EG9MM-tota.adi
+│   └── QSL-DEMO-EG9MM-pota.adi
 ...
+qsl7/
+├── QSL-DEMO-EG9MM.adi            ← existe, pero NO se procesa
+```
+
+Si en el futuro hay varios `.adi` en una carpeta, cada uno genera sus salidas:
+
+```
+qsl1/
+├── QSL-DEMO-EG9MM.adi
+├── OTRO-LOG.adi
+└── ACTIVIDADES/
+    ├── QSL-DEMO-EG9MM-tota.adi
+    └── OTRO-LOG-tota.adi
 ```
 
 ## Configuración
 
-La configuración de formatos por QSL está en el diccionario `CONFIG` al inicio de `qsl_generar_adis.py`:
+La configuración de formatos por QSL está en el diccionario `CONFIG` al inicio de `qsl_generar_adis.py` (las claves determinan qué carpetas se procesan; `qsl6`/`qsl7` no están):
 
 ```python
 CONFIG = {
