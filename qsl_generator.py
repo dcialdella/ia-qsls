@@ -33,7 +33,8 @@ from PIL import Image, ImageDraw, ImageFont
 # en modo incremental sin necesidad de --from-scratch).
 # v4: sin bandera de España en la esquina superior derecha ni sello de estación
 #     "EG9MM - Melilla" en la esquina inferior derecha.
-GENERATOR_VERSION = "4"
+# v5: nuevo diseño caja de texto (posición fija, 2 líneas, separadores -, checkboxes ACT)
+GENERATOR_VERSION = "5"
 
 # ---------- Geometría de las cajas de datos ----------
 # Proporciones respecto al alto/ancho de la postal (1200x800).
