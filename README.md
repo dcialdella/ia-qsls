@@ -348,6 +348,7 @@ Ojo con los nombres que llevan **espacio** (`TEST DATA/probe copy.adi`): entreco
       - Checkboxes ACT alineados a la derecha (26×26 px, 6 casillas).
       - QSL1–5/7: tilde en su actividad; QSL6: tildes 1–5 + bandera España en casilla 6; QSL7: texto "DMR Confirmated" sin checkboxes.
       - Fuentes y `compose` / `compose_act6` reescritos.
+      - **Generador v5**: subida de versión para forzar regeneración incremental de todas las actividades.
 24. **PENDIENTE: Modificación futura de QSL específica** — ver notas en issue/roadmap para ajustes adicionales en el diseño de alguna actividad concreta.
 
 ### Estructura actual en disco
