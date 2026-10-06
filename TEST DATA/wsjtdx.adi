@@ -1,0 +1,10 @@
+ADIF Export
+<adif_ver:5>3.1.1
+<created_timestamp:15>20250830 133500
+<programid:6>WSJT-X - ARCHIVO LOCAL
+<programversion:5>2.8.0
+<eoh>
+
+<call:8>SP318RAF <qso_date_off:8>20250905 <qso_date:8>20250905 <time_on:6>152507 <time_off:6>152507 <band:3>20m <freq:9>14.081300 <mode:4>MFSK <submode:3>FT4 <rst_sent:3>+01 <rst_rcvd:3>-09 <app_rumlog_qsl:1>W <qsl_rcvd:1>N <qsl_sent:1>R <dxcc:3>269 <cqz:2>15 <ituz:2>28 <cont:2>EU <comment:25>FT4  Sent: +01  Rcvd: -09 <tx_pwr:3>100 <app_rumlog_power:3>100 <eqsl_qsl_rcvd:1>N <eqsl_qsl_sent:1>N <lotw_qsl_rcvd:1>N <lotw_qsl_sent:1>Y <pfx:5>SP318 <clublog_qso_upload_status:1>Y <app_rumlog_colorcode:1>0 <eor>
+<call:5>DK5ZU <qso_date_off:8>20250905 <qso_date:8>20250905 <time_on:6>152352 <time_off:6>152352 <band:3>20m <freq:9>14.081300 <mode:4>MFSK <submode:3>FT4 <rst_sent:3>-05 <rst_rcvd:3>-01 <app_rumlog_qsl:1>W <qsl_rcvd:1>N <qsl_sent:1>R <dxcc:3>230 <cqz:2>14 <ituz:2>28 <cont:2>EU <comment:25>FT4  Sent: -05  Rcvd: -01 <gridsquare:6>JN58QQ <tx_pwr:3>100 <app_rumlog_power:3>100 <eqsl_qsl_rcvd:1>N <eqsl_qsl_sent:1>N <lotw_qsl_rcvd:1>N <lotw_qsl_sent:1>Y <pfx:3>DK5 <clublog_qso_upload_status:1>Y <app_rumlog_colorcode:1>0 <eor>
+<call:5>M0OVG <qso_date_off:8>20250905 <qso_date:8>20250905 <time_on:6>152145 <time_off:6>152145 <band:3>20m <freq:9>14.081300 <mode:4>MFSK <submode:3>FT4 <rst_sent:3>-08 <rst_rcvd:3>+11 <app_rumlog_qsl:1>W <qsl_rcvd:1>N <qsl_sent:1>R <dxcc:3>223 <cqz:2>14 <ituz:2>27 <cont:2>EU <comment:25>FT4  Sent: -08  Rcvd: +11 <gridsquare:6>IO90HX <tx_pwr:3>100 <app_rumlog_power:3>100 <eqsl_qsl_rcvd:1>N <eqsl_qsl_sent:1>N <lotw_qsl_rcvd:1>N <lotw_qsl_sent:1>Y <pfx:2>M0 <clublog_qso_upload_status:1>Y <app_rumlog_colorcode:1>0 <eor>
