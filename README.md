@@ -35,9 +35,9 @@ postales generadas.
 2. **Los archivos `.adi` son parte del proyecto: se versionan en Git y se suben al
    repo.** No contienen información sensible (datos públicos de radioaficionado:
    indicativo, nombre, grid locator, banda/modo). Van en la carpeta de su actividad
-   (`qslN/*.adi`) y los de prueba en `TEST DATA/`. No deben borrarse ni excluirse
+   (`qslN/*.adi`) y los de prueba en `TESTDATA/`. No deben borrarse ni excluirse
    del control de versiones. *Hoy hay 6 `.adi` en las carpetas de actividad —un
-   `TEST.adi` en `qsl1`–`qsl5` y `qsl7`— y los 10 de ejemplo en `TEST DATA/` (§1).
+   `TEST.adi` en `qsl1`–`qsl5` y `qsl7`— y los 10 de ejemplo en `TESTDATA/` (§1).
    `qsl6/` no lleva ninguno (§1).*
 3. **En `qslN/QSLS/` no se versiona ningún PNG.** Es salida generada y está en
    `.gitignore` (`qsl*/QSLS/`).
@@ -95,7 +95,7 @@ postales generadas.
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
   `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
 - ✅ `qsl_index.json` coherente con lo publicado: `total: 7`, 1 indicativo (`EG9MM`)
-- ✅ Los 10 `.adi` de ejemplo siguen aparcados en `TEST DATA/` y **no se procesan**
+- ✅ Los 10 `.adi` de ejemplo siguen aparcados en `TESTDATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`). Lo que se procesa de verdad es el `TEST.adi`
   de cada actividad, un `.adi` por QSO.
 - ✅ `TEST.adi` es un **contacto de relleno**, no un dato real: en cuanto haya
@@ -162,10 +162,10 @@ Cuatro cosas que conviene saber antes de hacerlo:
 `qsl6` **no** es un destino para `.adi` reales: es la actividad de record y se deriva sola
 de lo que haya en `qsl1`–`qsl5` (§3.b).
 
-**Los `.adi` de `TEST DATA/`** son datos de ejemplo/prueba, no datos de producción, y
+**Los `.adi` de `TESTDATA/`** son datos de ejemplo/prueba, no datos de producción, y
 el generador no los toca mientras estén ahí. Si algún día quieres procesarlos, cópialos
 a su actividad (la tabla del final de esta sección indica cuál) y luego bórralos de
-`TEST DATA/` para no duplicar.
+`TESTDATA/` para no duplicar.
 
 **Para vaciar una actividad** por completo (dejar `qsl1` sin contactos y sin
 postcards), lo normal es **borrar los `.adi` y correr `./run_all.sh`**. Es decir: **lo que
@@ -223,18 +223,18 @@ traza histórica de cómo se hizo.
 
 Para provar el generador de punta a punta puedes generar postcards de prueba a partir de
 ellos: copia solo los que te interesen a la carpeta de su actividad y bórralos de
-`TEST DATA/` para no duplicar. Contenido actual de `TEST DATA/` (contactos según `<CALL:`):
+`TESTDATA/` para no duplicar. Contenido actual de `TESTDATA/` (contactos según `<CALL:`):
 
 ```bash
 # --- 1) Copiar los .adi de ejemplo a sus actividades ---
-cp "TEST DATA/activo2.adi"                 qsl2/     # actividad 2
-cp "TEST DATA/actividad3.adi"              qsl3/     # actividad 3
-cp "TEST DATA/probe.adi"                   qsl4/     # 1 contacto (EA4HUK)
-cp "TEST DATA/probe.adi"                   qsl5/     # 1 contacto (EA4HUK)
-cp "TEST DATA/TOTA2222-delta-20260909-1145.adi" \
-   "TEST DATA/faro-echo-20260909-1821.adi" \
-   "TEST DATA/pota1111-delta-20260909-1417.adi" qsl1/   # actividad 1 (1+4+4)
-cp "TEST DATA/ejemplo.adi"                 qsl7/     # actividad 7 (carpeta DMR)
+cp "TESTDATA/activo2.adi"                 qsl2/     # actividad 2
+cp "TESTDATA/actividad3.adi"              qsl3/     # actividad 3
+cp "TESTDATA/probe.adi"                   qsl4/     # 1 contacto (EA4HUK)
+cp "TESTDATA/probe.adi"                   qsl5/     # 1 contacto (EA4HUK)
+cp "TESTDATA/TOTA2222-delta-20260909-1145.adi" \
+   "TESTDATA/faro-echo-20260909-1821.adi" \
+   "TESTDATA/pota1111-delta-20260909-1417.adi" qsl1/   # actividad 1 (1+4+4)
+cp "TESTDATA/ejemplo.adi"                 qsl7/     # actividad 7 (carpeta DMR)
 
 # --- 2) Probar en local SIN tocar Google Drive ni la web ---
 ./generar.sh --no-sync-drive
@@ -244,7 +244,7 @@ cp "TEST DATA/ejemplo.adi"                 qsl7/     # actividad 7 (carpeta DMR)
 ./generar.sh --index
 ```
 
-Ojo con los nombres que llevan **espacio** (`TEST DATA/probe copy.adi`): entrecomíllalos.
+Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecomíllalos.
 
 > Ojo también: `lugar1-delta1-2026-10-04.adi` (2 contactos) es una alternativa a los tres
 > ficheros de qsl1, no un cuarto. Si copias los cuatro a la misma actividad tendrás
@@ -365,7 +365,7 @@ ia-qsls/
 ├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
 ├── update_adi_dates.py    <- Ayudante de una sola vez (ya usado; ver §1.1)
 ├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 249 países
-├── TEST DATA/             <- 10 .adi de ejemplo/prueba (NO se procesan aquí)
+├── TESTDATA/             <- 10 .adi de ejemplo/prueba (NO se procesan aquí)
 ├── .gitignore             <- Excluye venv/, __pycache__, qsl*/QSLS/, qsl*/qsl_log.json
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
 ├── README.md
@@ -383,7 +383,7 @@ Notes sobre esta estructura:
 
 - **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan; ahora uno por
   actividad, `TEST.adi` (1 QSO, `EG9MM`), a la espera de los `.adi` reales. Los 10 de
-  `TEST DATA/` siguen aparcados ahí y no se tocan.
+  `TESTDATA/` siguen aparcados ahí y no se tocan.
 - **`qslN/QSLS/` tiene los PNG generados** (7 en total). No se versionan: están en
   `.gitignore`. La copia que se publica vive en Google Drive.
 - **`qslN/qsl_log.json` existe** en las 7 actividades (se crean solos al primer procesado
@@ -534,7 +534,7 @@ Listo. Busca las imágenes en cada qslN/QSLS/.
 > `→ sincronizando con Google Drive (...)`; y con `--index`, el resumen del indexado.
 > Los bloques de arriba se recortan a lo que aporta `qsl_generator.py`.
 
-La **primera** vez que se procesa un `.adi` (recién copiado de `TEST DATA/`, o sustituyendo
+La **primera** vez que se procesa un `.adi` (recién copiado de `TESTDATA/`, o sustituyendo
 `TEST.adi` por uno real) se anuncia con `⚡`, no con `✓ sin cambios`. Tras un
 `--from-scratch` completo:
 
@@ -1109,7 +1109,7 @@ sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo co
    Hoy esas estaciones se quedan sin bandera.
 8. **Tests.** El proyecto no tiene ninguno, y los arreglos de este ciclo (poda de PNG
    huérfanos, parser ADIF, derivación del indicativo) son justo lo que un test debería
-   proteger. El candidato más barato: un test que ejecute el generador sobre `TEST DATA/`
+   proteger. El candidato más barato: un test que ejecute el generador sobre `TESTDATA/`
    y compare el `qsl_log.json` resultante con un esperado.
 
 ---
@@ -1130,7 +1130,7 @@ sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo co
 - **Git/GitHub:** el proyecto está en `git` (rama `main`) con remote `origin` →
   https://github.com/dcialdella/ia-qsls.git. `qsl*/QSLS/` y los `qsl_log.json` están
   ignorados por `.gitignore` (no se suben). Se commitean los fondos, los `.adi` (tanto los
-  de `TEST DATA/` como los de `qslN/`), `index.html`, `qsl_index.json`,
+  de `TESTDATA/` como los de `qslN/`), `index.html`, `qsl_index.json`,
   `country_map.json`, `FLAGS/`, el código y el README.
 - **Estado Git:** `main` en sync con `origin/main`. Commits recientes, del más nuevo al más
   antiguo:
@@ -1174,7 +1174,7 @@ Apunta al commit `bf02d44`:
 - `qslN/QSLS/` **vacía** en las 7 actividades (0 postcards)
 - **Ningún** `qslN/qsl_log.json` (se crean solos al primer procesado real)
 - **Cero** `.adi` dentro de `qsl1`–`qsl7`
-- Los 10 `.adi` de ejemplo en `TEST DATA/`, sin procesar
+- Los 10 `.adi` de ejemplo en `TESTDATA/`, sin procesar
 - `qsl_index.json` válido pero vacío: `total: 0`, `counts` a 0, `entries: []`
 
 ### Cómo volver a él
