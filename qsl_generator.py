@@ -584,7 +584,8 @@ class QSLGenerator:
         """Compone la postal de Actividad 6: reconoce a una estación que
         contactó en TODAS las actividades.
 
-        Muestra: callsign, nombre, grid locator y las casillas QSL1..QSL6
+        Muestra: callsign, nombre, el texto "Todas las referencias conseguidas"
+        (y locator si existe) y las casillas QSL1..QSL6
         con tilde en las 5 actividades logradas (QSL1..QSL5) y bandera España en la 6ª.
         """
         img = self.prepare_background(background_path)
@@ -624,20 +625,25 @@ class QSLGenerator:
 
         # === LÍNEA 1: Callsign (dorado) - Nombre (con bandera) ===
         x = box_left + pad_x
-        draw.text((x, y_line1), call + " - ", font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
-        bbox = draw.textbbox((0, 0), call + " - ", font=font_line1)
+        draw.text((x, y_line1), call, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+        bbox = draw.textbbox((0, 0), call, font=font_line1)
         x += bbox[2] - bbox[0]
 
         if name:
+            sep = " - "
+            draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+            bbox = draw.textbbox((0, 0), sep, font=font_line1)
+            x += bbox[2] - bbox[0]
             flag_h = font_line1.size
             x = self.draw_station_flag(overlay, call, x, y_line1, flag_h)
             draw.text((x, y_line1), name, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
-        # === LÍNEA 2: Grid locator ===
+        # === LÍNEA 2: mensaje de record + locator si existe ===
         x = box_left + pad_x
+        record_text = "Todas las referencias conseguidas"
         if grid:
-            loc_text = f"Locator: {grid}"
-            draw.text((x, y_line2), loc_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
+            record_text += f" - Locator: {grid}"
+        draw.text((x, y_line2), record_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
 
         # === Casillas QSL1..QSL6: tilde en 1-5, bandera España en 6ª ===
         self.draw_activity_checkboxes(draw, box, checked={1, 2, 3, 4, 5},

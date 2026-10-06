@@ -56,11 +56,11 @@ def read_adi(path):
 
 
 def split_records(content):
-    """Devuelve (header, [record, ...])."""
-    parts = content.split("<EOH>", 1)
+    """Devuelve (header, [record, ...]) — case-insensitive (WSJT-X usa <eoh>/<eor>)."""
+    parts = re.split(r"<EOH>", content, maxsplit=1, flags=re.IGNORECASE)
     header = parts[0] + "<EOH>"
     body = parts[1] if len(parts) > 1 else ""
-    records = [r.strip() for r in body.split("<EOR>") if r.strip()]
+    records = [r.strip() for r in re.split(r"<EOR>", body, flags=re.IGNORECASE) if r.strip()]
     return header, records
 
 

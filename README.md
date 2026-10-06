@@ -354,6 +354,10 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
       - Fuentes y `compose` / `compose_act6` reescritos.
       - **Generador v5**: subida de versión para forzar regeneración incremental de todas las actividades.
 24. **PENDIENTE: Modificación futura de QSL específica** — ver notas en issue/roadmap para ajustes adicionales en el diseño de alguna actividad concreta.
+25. **QSL6 texto de record, fix WSJT-X y footer web** (2026-10-06):
+      - `compose_act6`: la línea 2 de la caja muestra ahora **"Todas las referencias conseguidas"** (y ` - Locator: X` si hay grid); arreglado el guion suelto de la línea 1 cuando no hay nombre.
+      - `qsl_generar_adis.py`: `split_records` ahora es case-insensitive — antes no reconocía `<eoh>`/`<eor>` en minúscula y los exports de **WSJT-X** se saltaban ("sin registros QSO").
+      - `index.html`: footer de créditos IA acortado a *"QSL diseñadas y retocadas con ayuda de IA mediante ChatGPT a partir de fotografías aportadas por el equipo"*.
 
 ### Estructura actual en disco
 

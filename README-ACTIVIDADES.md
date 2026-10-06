@@ -100,7 +100,15 @@ Los ADI de entrada pueden venir de cualquiera de estos programas (todos compatib
 | Ham2K Logger | `t2-ham2k.adi` |
 | WSJT-X | `t3-wsjtdx.adi` |
 
-`TESTDATA/` contiene solo muestras de formato (6 QSOs, `CALL` y estaciones de ejemplo); no es un input del proceso.
+Notas:
+
+- El parser es **case-insensitive**: WSJT-X exporta `<eoh>`/`<eor>` en minúscula y los
+  registros en una sola línea; se procesa igual.
+- Los exports de **WSJT-X no traen `STATION_CALLSIGN` ni `OPERATOR`**, así que esos
+  archivos generan el aviso por registro en consola y la línea
+  `REVISAR EL FORMATO DE OPERADOR y STATION` en la salida (esperado, no es un error).
+
+`TESTDATA/` contiene solo muestras de formato (no es un input del proceso).
 
 ## Estructura
 
