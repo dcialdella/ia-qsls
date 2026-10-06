@@ -358,6 +358,9 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
       - `compose_act6`: la línea 2 de la caja muestra ahora **"Todas las referencias conseguidas"** (y ` - Locator: X` si hay grid); arreglado el guion suelto de la línea 1 cuando no hay nombre.
       - `qsl_generar_adis.py`: `split_records` ahora es case-insensitive — antes no reconocía `<eoh>`/`<eor>` en minúscula y los exports de **WSJT-X** se saltaban ("sin registros QSO").
       - `index.html`: footer de créditos IA acortado a *"QSL diseñadas y retocadas con ayuda de IA mediante ChatGPT a partir de fotografías aportadas por el equipo"*.
+26. **Prueba de carga de la web: 4000 entradas** (2026-10-06) — se publicó un
+    `qsl_index.json` simulado con 4000 entradas (`79c5617`) y la web funcionó bien;
+    se restauró el índice real de 7 (`bf2bfde`). Ver §7.
 
 ### Estructura actual en disco
 
@@ -1049,6 +1052,9 @@ web lo mostraría sin errores visibles — ver §7 "Seguridad".
   sí se lee, vía la redirección `uc?export=download`.
 - La web usa `lh3.googleusercontent.com/d/<id>` para las miniaturas y
   `drive.google.com/uc?export=download&id=<id>` para la descarga.
+- ✅ **Probado con 4000 entradas** (2026-10-06): se publicó un `qsl_index.json` simulado
+  con `total: 4000` (commits `79c5617` → restaurado en `bf2bfde`) y la web funcionó
+  bien — carga, listado y rendimiento sin problemas. El índice real sigue siendo de 7.
 
 ### Seguridad
 
