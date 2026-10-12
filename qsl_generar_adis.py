@@ -9,13 +9,12 @@ BASE = Path(__file__).resolve().parent
 
 # Configuración por QSL: lista de (formato, sig, sig_info)
 # sig/sig_info = None → no se añaden campos de actividad (DME/URE)
-# NOTA: los códigos TOTA cambiarán; estas referencias son provisionales hasta nuevo aviso.
 CONFIG = {
     "qsl1": [
-        ("tota", "TOTA", "EAR-1234"),
+        ("tota", "TOTA", "EAR-1901"),
     ],
     "qsl2": [
-        ("tota", "TOTA", "EAR-1234"),
+        ("tota", "TOTA", "EAR-1902"),
         ("pota", "POTA", "ES-0340"),
     ],
     "qsl3": [

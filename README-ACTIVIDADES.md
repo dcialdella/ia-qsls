@@ -48,14 +48,12 @@ qsl5/ACTIVIDADES/QSL-DEMO-EG9MM-llota.adi
 
 | QSL | Formato | Referencia |
 |-----|---------|------------|
-| QSL1 | TOTA | `EAR-1234` |
-| QSL2 | TOTA | `EAR-1234` |
+| QSL1 | TOTA | `EAR-1901` |
+| QSL2 | TOTA | `EAR-1902` |
 | QSL2 | POTA | `ES-0340` |
 | QSL3 | POTA | `ES-0849` |
 | QSL4 | POTA | `ES-0850` |
 | QSL5 | LLOTA | `LLES-0214` |
-
-> **Nota:** las referencias TOTA son provisionales hasta nuevo aviso.
 
 ## Campos de actividad por formato
 
@@ -63,9 +61,9 @@ Cada campo va en su propia línea, antes de `<EOR>`:
 
 ### TOTA
 ```
-<QSLMSG:13>TOTA EAR-1234
+<QSLMSG:13>TOTA EAR-1901
 <MY_SIG:4>TOTA
-<MY_SIG_INFO:8>EAR-1234
+<MY_SIG_INFO:8>EAR-1901
 ```
 No se genera `MY_TOTA_REF`; el `QSLMSG` es solo para TOTA.
 
@@ -147,10 +145,10 @@ La configuración de formatos por QSL está en el diccionario `CONFIG` al inicio
 ```python
 CONFIG = {
     "qsl1": [
-        ("tota", "TOTA", "EAR-1234"),
+        ("tota", "TOTA", "EAR-1901"),
     ],
     "qsl2": [
-        ("tota", "TOTA", "EAR-1234"),
+        ("tota", "TOTA", "EAR-1902"),
         ("pota", "POTA", "ES-0340"),
     ],
     "qsl3": [("pota", "POTA", "ES-0849")],

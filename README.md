@@ -361,6 +361,17 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
 26. **Prueba de carga de la web: 4000 entradas** (2026-10-06) — se publicó un
     `qsl_index.json` simulado con 4000 entradas (`79c5617`) y la web funcionó bien;
     se restauró el índice real de 7 (`bf2bfde`). Ver §7.
+27. **Referencias TOTA reales para QSL1 y QSL2** (2026-10-11):
+       - `qsl_generar_adis.py` (`CONFIG`): QSL1 pasa de `EAR-1234` a **`EAR-1901`** y
+         QSL2 (Museo) de `EAR-1234` a **`EAR-1902`**. QSL1 sigue generando un único
+         `-tota.adi`; QSL2 sigue generando `-tota.adi` + `-pota.adi` (`ES-0340`).
+       - El cambio es **solo en el log de `ACTIVIDADES/`** (para la subida a las webs
+         TOTA): ni `qsl_generator.py` ni las postales se tocan. Regenerado con
+         `./generar_adis.sh` y verificado (`QSLMSG`, `MY_SIG_INFO` y cabecera con la
+         referencia nueva).
+       - `README-ACTIVIDADES.md`: actualizada la tabla de referencias, el ejemplo de
+         campos TOTA y el ejemplo de `CONFIG`; retirada la nota de referencias
+         provisionales.
 
 ### Estructura actual en disco
 
