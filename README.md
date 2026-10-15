@@ -221,10 +221,10 @@ registrados en las actividades 1–5 (ver §3.b). Por eso **`qsl6/` no lleva nin
 el que hubo allí (`qsl6_extra1.adi`) se borró, y copiarle un `.adi` no serviría de nada,
 porque el generador salta a `process_act6()` para esa actividad y nunca busca ADIs propios.
 
-`update_adi_dates.py` es un ayudante de una sola vez que reasignó fechas y horas
-distintas a los `.adi` (ver cambio 22). **No forma parte del flujo diario**: si se vuelve
-a ejecutar, vuelve a desplazar las horas de todos los ADI. Está versionado solo por
-traza histórica de cómo se hizo.
+> `update_adi_dates.py` fue un ayudante de una sola vez que reasignó fechas y horas
+> distintas a los `.adi` (ver cambio 22), ya aplicado. **Se eliminó** por no formar parte
+> del flujo diario (volver a ejecutarlo desplazaría las horas de todos los ADI); queda en
+> el historial de git por si hiciera falta.
 
 Para provar el generador de punta a punta puedes generar postcards de prueba a partir de
 ellos: copia solo los que te interesen a la carpeta de su actividad y bórralos de
@@ -287,7 +287,8 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
    - Postales normales (`compose`, actividad 1–5/7): delante del texto *nombre • QTH • grid*.
    - Postales de record (`compose_act6`): delante del *nombre* de la estación.
    - **Sin bandera encontrada → no se dibuja nada** (cierta estación no se le pinta
-     bandera errónea). Ej.: `1A0AAA` (Orden de Malta, sin PNG) no muestra bandera.
+     bandera errónea). Ocurre solo si el callsign no resuelve a ningún país; ya están
+     todas las banderas de `country_map.json` (ver §5).
 9. **Regeneración total de QSL6 en cada ejecución:** `process_act6` borra TODAS las
    postales de `qsl6/QSLS/` al empezar y las regenera siempre con la información actual
    (nombres, grids, banderas, versión del generador). No es incremental.
@@ -373,6 +374,11 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
        - `README-ACTIVIDADES.md`: actualizada la tabla de referencias, el ejemplo de
          campos TOTA y el ejemplo de `CONFIG`; retirada la nota de referencias
          provisionales.
+28. **Limpieza y banderas completas** (2026-10-15):
+       - Eliminado `update_adi_dates.py` (ayudante de una sola vez, ya aplicado; ver §1.1).
+       - `FLAGS/` pasa de 249 a **253 PNG**: añadidas las 4 banderas que faltaban (`un`,
+         `xi`, `xk`, `zz`). Ahora los **248** códigos de `country_map.json` tienen bandera
+         y ninguna estación se queda sin ella por falta de PNG (ver §5).
 
 ### Estructura actual en disco
 
@@ -388,8 +394,7 @@ ia-qsls/
 ├── qsl_index.json         <- Índice web (total 7, 1 indicativo)
 ├── qsl_manifest.json      <- nº de fuentes por actividad (generado, ignorado por git)
 ├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
-├── update_adi_dates.py    <- Ayudante de una sola vez (ya usado; ver §1.1)
-├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 249 países
+├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 253 países
 ├── TESTDATA/             <- 6 .adi de muestra de formato (NO se procesan aquí)
 ├── .gitignore             <- Excluye venv/, __pycache__, qsl*/QSLS/, qsl*/qsl_log.json
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
@@ -879,12 +884,14 @@ Tipo | Tamaño caja | Contenido | Casillas
 - **Si no existe bandera para ese país (o la estación no tiene país), NO se dibuja nada**:
   el texto del nombre simplemente arranca en la posición original. Así nunca se pinta una
   bandera incorrecta.
-- Banderas en `FLAGS/`: 249 PNG de flagcdn, en principio ~80×53 px pero en la práctica
-  **24 tamaños distintos** (alturas de 31 a 98 px; solo 109 son 80×53). Da igual: el
-  reescalado a la altura del texto normaliza todas. `country_map.json` tiene 248
-  códigos ISO2 distintos y **faltan 4 banderas**: `un` (sede de la UIT, prefijo `4U`),
-  `xi` (Irlanda del Norte, prefijos `GI`/`GN`/`2I`), `xk` (Kosovo, prefijo `Z6`) y `zz`
-  (Orden Soberana de Malta, p.ej. `1A0AAA`). Esas estaciones se quedan sin bandera.
+- Banderas en `FLAGS/`: 253 PNG, en su mayoría de flagcdn, en principio ~80×53 px pero en
+  la práctica **varios tamaños distintos** (el reescalado a la altura del texto los
+  normaliza todos, así que da igual). `country_map.json` tiene 248 códigos ISO2 distintos
+  y **los 248 tienen bandera**: además de las de flagcdn se añadieron las 4 que faltaban
+  (`un` sede de la UIT, `xi` Irlanda del Norte —de `flagcdn` `gb-nir`—, `xk` Kosovo y `zz`
+  Orden Soberana de Malta —de Wikimedia Commons—). Los 5 PNG extra que no usa
+  `country_map` (`bl`, `gs`, `mf`, `nf`, `re`) resuelven a otros códigos por prefijo
+  (`GP`/`FR`).
 - La **esquina superior derecha** de cada postal **ya no lleva** la bandera de España:
   se retiró en la v4. Antes venía de `FLAGS/es.png` con la franja 1:2:1 dibujada como
   fallback si faltara el archivo.
@@ -1152,8 +1159,9 @@ sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo co
    repetir `./run_all.sh` al minuto. Si molesta, se podría hacer que `run_all.sh`
    reintentara el indexado automáticamente hasta que `total` coincida con el número de
    PNG locales.
-4. **Limpieza de `update_adi_dates.py`.** Es un ayudante de una sola vez, ya aplicado, y
-   volver a ejecutarlo desplazaría las horas de todos los `.adi`. Podría borrarse.
+4. ~~**Limpieza de `update_adi_dates.py`.**~~ — **hecho**: el ayudante de una sola vez
+   (ya aplicado; volver a ejecutarlo desplazaría las horas de todos los `.adi`) se eliminó
+   del repo; queda en el historial de git.
 5. **Ordenar los QSOs por fecha dentro de cada `.adi`.** Ahora la secuencia horaria sigue
    el orden en que aparecen en el fichero, no el cronológico. Cosmético, pero si algún día
    se quiere que las horas simulen una sesión real habría que ordenarlos.
@@ -1161,9 +1169,10 @@ sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo co
    `drive_index.py` acepta ahora `--folder-id` de verdad (`argparse` propio, `main()` en
    `drive_index.py:292`) y `generar.sh` lo propaga con su propio `--folder-id` (y
    `--folder-id=<ID>`), así que ya no hace falta editar `DEFAULT_FOLDER_ID`.
-7. (Opcional) Añadir banderas para los 4 códigos sin PNG en `FLAGS/`: `un` (sede de la
-   UIT, prefijo `4U`), `xi` (Irlanda del Norte), `xk` (Kosovo) y `zz` (Orden de Malta).
-   Hoy esas estaciones se quedan sin bandera.
+7. ~~(Opcional) Añadir banderas para los 4 códigos sin PNG en `FLAGS/`.~~ — **hecho**: se
+   añadieron `un` (sede de la UIT, prefijo `4U`), `xi` (Irlanda del Norte, de `flagcdn`
+   `gb-nir`), `xk` (Kosovo) y `zz` (Orden Soberana de Malta, de Wikimedia Commons). Ya no
+   hay estaciones sin bandera por falta de PNG.
 8. **Tests.** El proyecto no tiene ninguno, y los arreglos de este ciclo (poda de PNG
    huérfanos, parser ADIF, derivación del indicativo) son justo lo que un test debería
    proteger. El candidato más barato: un test que ejecute el generador sobre `TESTDATA/`
