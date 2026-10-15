@@ -34,7 +34,10 @@ from PIL import Image, ImageDraw, ImageFont
 # v4: sin bandera de España en la esquina superior derecha ni sello de estación
 #     "EG9MM - Melilla" en la esquina inferior derecha.
 # v5: nuevo diseño caja de texto (posición fija, 2 líneas, separadores -, checkboxes ACT)
-GENERATOR_VERSION = "5"
+# v5.1: la caja ya no muestra el OPERATOR (operador local); la bandera siempre
+#       corresponde al país del CALL y se dibuja aunque no haya nombre/QTH.
+# v5.2: la bandera va primero: [bandera] - CALL - ... (antes CALL - [bandera]).
+GENERATOR_VERSION = "5.2"
 
 # ---------- Geometría de las cajas de datos ----------
 # Proporciones respecto al alto/ancho de la postal (1200x800).
@@ -488,7 +491,9 @@ class QSLGenerator:
         call = qso.get('CALL', 'N/A')
         band = qso.get('BAND', '') or self.band_from_freq(qso.get('FREQ', ''))
         mode = qso.get('MODE', '')
-        name = qso.get('NAME', qso.get('OPERATOR', ''))
+        # El nombre es solo el del contacto (campo NAME). El OPERATOR es el
+        # operador local de la estación, no del contacto: no se muestra en la QSL.
+        name = qso.get('NAME', '')
         qth = qso.get('QTH', '')
         grid = qso.get('GRIDSQUARE', '')
 
@@ -503,20 +508,36 @@ class QSLGenerator:
         y_line1 = block_top
         y_line2 = block_top + font_line1.size + line_gap
 
-        # === LÍNEA 1: Callsign - Nombre - QTH ===
+        # === LÍNEA 1: Bandera (del CALL) - Callsign - Nombre - QTH ===
         x = box_left + pad_x
-        draw.text((x, y_line1), call + " - ", font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
-        bbox = draw.textbbox((0, 0), call + " - ", font=font_line1)
+
+        # La bandera del CALL va primero; si el prefijo es desconocido no se
+        # dibuja y la línea empieza directamente por el callsign.
+        flag_end = self.draw_station_flag(overlay, call, x, y_line1, font_line1.size)
+        if flag_end != x:
+            x = flag_end
+            sep = " - "
+            draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+            bbox = draw.textbbox((0, 0), sep, font=font_line1)
+            x += bbox[2] - bbox[0]
+
+        draw.text((x, y_line1), call, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+        bbox = draw.textbbox((0, 0), call, font=font_line1)
         x += bbox[2] - bbox[0]
 
+        sep = " - "
         if name:
-            flag_h = font_line1.size
-            x = self.draw_station_flag(overlay, call, x, y_line1, flag_h)
-            draw.text((x, y_line1), name + " - ", font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
-            bbox = draw.textbbox((0, 0), name + " - ", font=font_line1)
+            draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+            bbox = draw.textbbox((0, 0), sep, font=font_line1)
+            x += bbox[2] - bbox[0]
+            draw.text((x, y_line1), name, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
+            bbox = draw.textbbox((0, 0), name, font=font_line1)
             x += bbox[2] - bbox[0]
 
         if qth:
+            draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+            bbox = draw.textbbox((0, 0), sep, font=font_line1)
+            x += bbox[2] - bbox[0]
             draw.text((x, y_line1), qth, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
         # === LÍNEA 2: Fecha - Hora - Banda - Modo - Grid ===
@@ -623,8 +644,18 @@ class QSLGenerator:
         y_line1 = block_top
         y_line2 = block_top + font_line1.size + line_gap
 
-        # === LÍNEA 1: Callsign (dorado) - Nombre (con bandera) ===
+        # === LÍNEA 1: Bandera (del CALL) - Callsign (dorado) - Nombre ===
         x = box_left + pad_x
+
+        # La bandera del CALL va primero; sin bandera, empieza por el callsign.
+        flag_end = self.draw_station_flag(overlay, call, x, y_line1, font_line1.size)
+        if flag_end != x:
+            x = flag_end
+            sep = " - "
+            draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
+            bbox = draw.textbbox((0, 0), sep, font=font_line1)
+            x += bbox[2] - bbox[0]
+
         draw.text((x, y_line1), call, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
         bbox = draw.textbbox((0, 0), call, font=font_line1)
         x += bbox[2] - bbox[0]
@@ -634,8 +665,6 @@ class QSLGenerator:
             draw.text((x, y_line1), sep, font=font_line1, fill=(245, 166, 35, 255), anchor="lm")
             bbox = draw.textbbox((0, 0), sep, font=font_line1)
             x += bbox[2] - bbox[0]
-            flag_h = font_line1.size
-            x = self.draw_station_flag(overlay, call, x, y_line1, flag_h)
             draw.text((x, y_line1), name, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
         # === LÍNEA 2: mensaje de record + locator si existe ===

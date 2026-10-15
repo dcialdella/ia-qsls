@@ -265,8 +265,8 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
         return e
 
     if entries:
-        with ThreadPoolExecutor(max_workers=SIZE_WORKERS) as ex:
-            entries = list(ex.map(with_size, entries))
+        with ThreadPoolExecutor(max_workers=SIZE_WORKERS) as pool:
+            entries = list(pool.map(with_size, entries))
 
     entries.sort(key=lambda e: (e['call'], e['act'], e['name']))
     result = {
