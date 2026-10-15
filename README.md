@@ -77,7 +77,8 @@ postales generadas.
 - ✅ **Proceso diario en un comando:** `./run_all.sh` (ver §2.0)
 - ✅ Las 7 carpetas con su fondo: qsl1 (`f1.png`), qsl2 (`f2.png`), qsl3 (`f3.png`),
   qsl4 (`f4.png`), qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`) — la convención es
-  `f<n>.png`, el número coincide con la actividad
+  `f<n>.png`, el número coincide con la actividad. Reemplazados el 2026-10-12: todos
+  1200×800 px (JPEG con extensión `.png`); detalle en §5 "Fondos actuales".
 - ✅ **Datos reducidos a un `.adi` de prueba por actividad:**
 
   | Actividad | `.adi` | Contactos | Postcards en `QSLS/` |
@@ -763,6 +764,31 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
   ya no existe (p. ej. renombraste el fondo), cae con gracia a `pick_background(...)`: no
   peta, pero la postcard se rehace con otro fondo.
 - **Sin imagen → no se genera nada** (ni QSLS, ni log).
+
+#### Fondos actuales (reemplazados 2026-10-12)
+
+Los 7 fondos `f<n>.png` fueron sustituidos y se regeneró todo con
+`./run_all.sh --from-scratch`. Todos comparten formato:
+
+- **1200×800 px** (3:2, igual que la postal), modo **RGB**.
+- **Codificados en JPEG** aunque la extensión sea `.png` (Pillow los abre por contenido,
+  no por extensión; el generador funciona igual). *Es una rareza conocida: `.png` con
+  bytes de JPEG.*
+- Tamaño en disco:
+
+  | Fondo | Fichero | Tamaño |
+  |---|---|---|
+  | qsl1 | `f1.png` | 490 KB |
+  | qsl2 | `f2.png` | 379 KB |
+  | qsl3 | `f3.png` | 461 KB |
+  | qsl4 | `f4.png` | 450 KB |
+  | qsl5 | `f5.png` | 513 KB |
+  | qsl6 | `f6.png` | 457 KB |
+  | qsl7 | `f7.png` | 422 KB |
+  | **Total** | | **≈3,1 MB** |
+
+- Al medir ya 1200×800, `cover_fit()` los deja **sin recorte**. Se pueden dejar así; el
+  escalado "cover" solo recortaría si la proporción no fuera 3:2.
 
 ---
 
