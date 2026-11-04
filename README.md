@@ -7,8 +7,9 @@ postales generadas.
 
 > **Resumen:** lee archivos de contactos en formato ADI, deriva el país de cada estación
 > desde el prefijo del callsign (y dibuja su bandera **delante del callsign**), y genera
-> una postal QSL por contacto con los datos (**bandera, callsign, nombre, QTH**, fecha,
-> banda/modo, grid — nunca el `OPERATOR`, que es el operador local) y las casillas
+> una postal QSL por contacto con los datos (**bandera, callsign destinatario, nombre,
+> QTH**, fecha, banda/modo, grid) más la **estación originante** (`OPERATOR`, una de
+> `EA4HUK`/`EA4GHH`/`EA3JAQ`/`EA4IWX`) al inicio de la línea 2, y las casillas
 > de las 6 actividades (con la QSL6 de "record" para quien completó las 5). Funciona en
 > modo incremental (solo regenera lo que cambió).
 
@@ -73,13 +74,15 @@ postales generadas.
 > `git log -- qsl1/est1.adi` si hicieran falta, y hay una copia completa en
 > `../ia-qsls-backup-20261005-110936`.
 
-- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "5.2"`)
+- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "5.3"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ **Proceso diario en un comando:** `./run_all.sh` (ver §2.0)
-- ✅ Las 7 carpetas con su fondo: qsl1 (`f1.png`), qsl2 (`f2.png`), qsl3 (`f3.png`),
-  qsl4 (`f4.png`), qsl5 (`f5.png`), qsl6 (`f6.png`), qsl7 (`f7.png`) — la convención es
-  `f<n>.png`, el número coincide con la actividad. Reemplazados el 2026-10-12: todos
-  1200×800 px (JPEG con extensión `.png`); detalle en §5 "Fondos actuales".
+- ✅ Las 7 carpetas con **un único** fondo cada una: qsl1 (`QSL-1.png`), qsl2 (`QSL-2.png`),
+  qsl3 (`QSL-3.png`), qsl4 (`QSL-4.png`), qsl5 (`QSL-5.png`), qsl6 (`f6.png`),
+  qsl7 (`f7.png`). El nombre **no** importa: el generador usa el único PNG de la raíz de
+  cada carpeta y se queja si hay más de uno. Todos 1200×800 px; qsl1–qsl5 son PNG reales
+  (2026-11-04) y qsl6–qsl7 JPEG con extensión `.png` (2026-10-12); detalle en
+  §5 "Fondos actuales".
 - ✅ **Datos reducidos a un `.adi` de prueba por actividad:**
 
   | Actividad | `.adi` | Contactos | Postcards en `QSLS/` |
@@ -109,7 +112,7 @@ postales generadas.
 - ✅ No quedan archivos `.adi.TEST` (fueron eliminados; los renombrados pasan a `.adi`)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
 - ✅ **Bandera del país delante del callsign** en la caja de datos, siempre visible
-  (incluso sin nombre/QTH; ver "Banderas" más abajo y changelog v5.1/v5.2).
+  (incluso sin nombre/QTH; ver "Banderas" más abajo y changelog v5.1/v5.2/v5.3).
 - ✅ **Sin bandera de España en la esquina** ni **sello `EG9MM`** abajo a la derecha
   (retirados en la v4; su código se borró del repo, está en el historial de git).
 - ✅ Repositorio Git con remote en **GitHub** (`dcialdella/ia-qsls`, rama `main`).
@@ -352,7 +355,7 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
       - Caja fija en posición `x=220–1175, y=594–686` (955×92 px), sombra 4px, fondo gris semitransparente `(80,80,80,150)`, borde dorado `#C28C24`.
       - **2 líneas de texto** (separadores `-` en lugar de `|`):
         - Línea 1 (34pt bold): callsign dorado + bandera país + nombre + QTH.
-        - Línea 2 (24pt): fecha - hora - banda - modo - grid.
+        - Línea 2 (24pt): origen - fecha - hora - banda - modo - grid (desde v5.3).
       - Texto centrado verticalmente en la caja + offset 16px.
       - Checkboxes ACT alineados a la derecha (26×26 px, 6 casillas).
       - QSL1–5/7: tilde en su actividad; QSL6: tildes 1–5 + bandera España en casilla 6; QSL7: texto "DMR Confirmated" sin checkboxes.
@@ -385,7 +388,9 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
 29. **v5.1: la caja ya no muestra el `OPERATOR`** (2026-10-15):
        - `compose()`: el nombre de la línea 1 ya **no cae al fallback `OPERATOR`** — antes,
          al no haber campo `NAME`, la caja dibujaba el operador local (p. ej. `EA4HUK`).
-         Ahora solo se muestran campos del contacto: `CALL`, `NAME` y `QTH`.
+         Ahora solo se muestran campos del contacto: `CALL`, `NAME` y `QTH`
+         (la v5.3 reintroduce `OPERATOR` con otro significado: estación originante;
+         ver punto 31).
        - La **bandera del CALL se dibuja siempre** en la caja, aunque no haya nombre ni
          QTH (antes solo se dibujaba si había nombre).
 30. **v5.2: la bandera va primero en la caja** (2026-10-15):
@@ -401,6 +406,27 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
          (`qsl_index.json`) lista solo esas. Tras purgar nombres viejos en Drive,
          repetir `./run_all.sh` un minuto después si el HTML público tarda en
          propagar el borrado (ver §2.0 y §7).
+31. **v5.3: originante y destinatario en la postal** (2026-11-04):
+       - La **estación destinataria** sigue siendo el `CALL` del contacto (línea 1,
+         con su bandera y nombre/QTH).
+       - La **estación originante** es el `OPERATOR` del ADI (una de las 4 válidas:
+         `EA4HUK`, `EA4GHH`, `EA3JAQ`, `EA4IWX`) y se muestra al principio de la
+         línea 2 como **`De EA4HUK - fecha - …`**, tanto en `compose()` como en
+         `compose_act6()`. En la QSL6 de record se listan los operadores únicos de
+         las 5 actividades.
+       - `qsl_generator.py` avisa por consola si un ADI no trae `OPERATOR` o trae uno
+         fuera de la lista válida (no aborta: la postal se genera igual).
+       - `fit_text()` vuelve a usarse para recortar la línea 2 si no cabe en la caja.
+       - `process_act6()` ya no falla si falta una carpeta `qsl1`–`qsl5`: avisa y no
+         genera records (evita inventar estaciones que no contactaron en todas).
+       - **Fondo único por carpeta:** `folder_backgrounds()` devuelve una sola imagen
+         (el contrato del proyecto); si hay varias usa la de `mtime` más reciente y
+         avisa. Se eliminaron `pick_background()` y `count_registered_pngs()` (ya no
+         se alterna entre fondos).
+       - El log guarda **`fondo_hash`** (sha256): si cambias el PNG de una carpeta,
+         la próxima ejecución regenera sus postales automáticamente.
+       - **`GENERATOR_VERSION = "5.3"`**: fuerza la regeneración incremental de todas
+         las postales con solo correr `./run_all.sh`.
 
 ### Estructura actual en disco
 
@@ -423,11 +449,11 @@ ia-qsls/
 ├── README.md
 ├── README-ACTIVIDADES.md  <- Documentación del proceso de ADI por actividad
 ├── LICENSE                <- Todos los derechos reservados
-├── qsl1/  f1.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
-├── qsl2/  f2.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
-├── qsl3/  f3.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
-├── qsl4/  f4.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
-├── qsl5/  f5.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
+├── qsl1/  QSL-1.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
+├── qsl2/  QSL-2.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
+├── qsl3/  QSL-3.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
+├── qsl4/  QSL-4.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
+├── qsl5/  QSL-5.png + QSL-DEMO-EG9MM.adi + ACTIVIDADES/ + QSLS/ (1 PNG) + qsl_log.json
 ├── qsl6/  f6.png + (sin .adi) + QSLS/ (1 PNG, se regenera siempre)
 └── qsl7/  f7.png + QSL-DEMO-EG9MM.adi + QSLS/ (1 PNG) + qsl_log.json
 ```
@@ -557,10 +583,10 @@ generador:
   GENERADOR DE POSTALES QSL (incremental)
 ============================================================
 
-📂 QSL1  (fondos: f1.png)
+📂 QSL1  (fondo: QSL-1.png)
    ✓ QSL-DEMO-EG9MM.adi: sin cambios (1 contactos ya generados)
    …
-📂 QSL6  (fondos: f6.png)
+📂 QSL6  (fondo: f6.png)
    🗑️  QSL6/QSLS: 1 postal/es regenerada/s desde cero
    🏆 1 estación/es contactaron en las 5 actividades
    ⚡ act6: 1 record(s) -> XYZ123 → xyz123_act6.png
@@ -604,10 +630,10 @@ el relleno por uno real) se anuncia con `⚡`, no con `✓ sin cambios`. Tras un
 `--from-scratch` completo:
 
 ```
-📂 QSL1  (fondos: f1.png)
+📂 QSL1  (fondo: QSL-1.png)
    ⚡ QSL-DEMO-EG9MM.adi: 1 contactos -> xyz123_qsl-demo-eg9mm.png
    …  (igual en QSL2..QSL5 y QSL7)
-📂 QSL6  (fondos: f6.png)
+📂 QSL6  (fondo: f6.png)
    🏆 1 estación/es contactaron en las 5 actividades
    ⚡ act6: 1 record(s) -> XYZ123 → xyz123_act6.png
 ============================================================
@@ -623,7 +649,7 @@ el relleno por uno real) se anuncia con `⚡`, no con `✓ sin cambios`. Tras un
 Y en la segunda, con todo ya generado:
 
 ```
-📂 QSL1  (fondos: f1.png)
+📂 QSL1  (fondo: QSL-1.png)
    ✓ QSL-DEMO-EG9MM.adi: sin cambios (1 contactos ya generados)
    …
 ============================================================
@@ -729,11 +755,13 @@ procesaría dos veces.
 1. `main()` itera `qsl1` … `qsl7`.
 2. Para cada carpeta busca archivos ADI con `find_adi_files()`.
    - Si no hay → imprime "sin archivos .adi, nada que generar" y salta.
-3. Toma los fondos de la carpeta: `*.png`, `*.jpg`, `*.jpeg` en la raíz de ESA carpeta
-   (`folder_backgrounds`). Si no hay fondo → avisa "no tiene imagen de fondo propia"
-   y **salta sin generar nada** (no se crean archivos en QSLS).
-4. Con ADI + fondo → llama a `process_folder(...)` que genera/verifica las postales
-   en `qslN/QSLS/`.
+3. Toma el fondo de la carpeta: busca `*.png` en la raíz de ESA carpeta; si no hay,
+   prueba `*.jpg`/`*.jpeg` (`folder_backgrounds`). Contrato: **una sola imagen de fondo
+   por carpeta**. Si encuentra varias usa la de `mtime` más reciente y avisa por consola.
+   Si no hay fondo → avisa "no tiene imagen de fondo propia" y **salta sin generar nada**
+   (no se crean archivos en QSLS).
+4. Con ADI + fondo → llama a `process_folder(folder, generator, backgrounds)` que
+   genera/verifica las postales en `qslN/QSLS/`.
 5. **qsl6 es especial:** no procesa sus propios ADIs sino que llama a `process_act6`
    (ver sección 3.b).
 
@@ -757,10 +785,11 @@ Cada carpeta tiene `qsl_log.json` con, por archivo ADI:
 {
   "pota1111-delta-20260909-1417.adi": {
     "sha256": "bac65c…",
-    "generador": "3",
+    "generador": "5.3",
+    "fondo_hash": "0197e7…",
     "contactos": [
       { "call": "EA4HJZ", "archivo": "ea4hjz_pota1111-delta-20260909-1417.png",
-        "fondo": "f1.png", "generado_en": "2026-09-09T11:31:37Z" },
+        "fondo": "QSL-1.png", "generado_en": "2026-09-09T11:31:37Z" },
       ...
     ],
     "procesado_en": "2026-09-09T11:31:37Z"
@@ -773,8 +802,9 @@ Cada carpeta tiene `qsl_log.json` con, por archivo ADI:
 | ADI **nuevo** en la carpeta | Se procesa completo (todos sus contactos) |
 | ADI **modificado** (sha256 cambió) | Se reprocesa completo |
 | ADI con **versión de generador distinta** (`generador`) | Se reprocesa completo |
+| **Fondo cambiado** (`fondo_hash` distinto) | Se reprocesa completo con el nuevo fondo |
 | ADI ya procesado y todos sus PNG existen | Se omite ("sin cambios") |
-| ADI ya procesado pero falta algún PNG | Se regenera **solo** ese PNG (reusa su fondo previo) |
+| ADI ya procesado pero falta algún PNG | Se regenera **solo** ese PNG con el fondo actual |
 | ADI borrado de la carpeta | Se elimina del log + se podan sus PNG huérfanos |
 | PNG en QSLS/ no referenciado en el log | Se elimina (poda de huérfanos) |
 
@@ -790,41 +820,37 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 - Actividad 6: `{callsign}_act6.png` (ej. `ea4huk_act6.png`).
 
 ### Fondos
-- Cada carpeta usa **sus propios** fondos (los de su raíz), con la convención **`f<n>.png`
-  donde `n` es el número de actividad**: QSL1 → `f1.png`, QSL2 → `f2.png`… QSL7 → `f7.png`.
-  El nombre es solo convención: el generador **no** lo hardcodea, hace
-  `glob('*.png')` sobre la carpeta (`folder_backgrounds`), así que cualquier otro nombre
-  funciona igual mientras sea el único PNG de la raíz.
-- Si una carpeta tiene varios fondos se alternan por contacto (`index % len(fondos)`).
-- Al regenerar un faltante se **reusa el fondo** guardado en el log (`fondo`). Si ese nombre
-  ya no existe (p. ej. renombraste el fondo), cae con gracia a `pick_background(...)`: no
-  peta, pero la postcard se rehace con otro fondo.
+- **Una carpeta = un fondo.** Cada actividad usa la **única** imagen que haya en la raíz
+  de su carpeta. El generador busca `*.png` (`folder_backgrounds`); si no hay, prueba
+  `*.jpg`/`*.jpeg`. El nombre **no** importa: `QSL-1.png`, `f6.png` o `mi-foto.png`
+  funcionan igual.
+- Si por error hay **varias** imágenes, se usa la de `mtime` más reciente y se avisa por
+  consola (`⚠️ qsl1: hay 2 imágenes de fondo ...; se usa la más reciente`). No se alterna
+  entre fondos.
+- El log guarda `fondo_hash` (sha256 del fondo). Si cambias la imagen, el próximo
+  `./generar.sh` **reprocesa** todas las postales de esa carpeta automáticamente.
+- Al regenerar un PNG faltante se usa el fondo **actual** de la carpeta (no el histórico).
 - **Sin imagen → no se genera nada** (ni QSLS, ni log).
 
-#### Fondos actuales (reemplazados 2026-10-12)
+#### Fondos actuales
 
-Los 7 fondos `f<n>.png` fueron sustituidos y se regeneró todo con
-`./run_all.sh --from-scratch`. Todos comparten formato:
+| Fondo | Fichero | Formato real | Tamaño |
+|---|---|---|---|
+| qsl1 | `QSL-1.png` | PNG 1200×800 RGB | 2,2 MB |
+| qsl2 | `QSL-2.png` | PNG 1200×800 RGB | 1,9 MB |
+| qsl3 | `QSL-3.png` | PNG 1200×800 RGB | 2,1 MB |
+| qsl4 | `QSL-4.png` | PNG 1200×800 RGB | 2,1 MB |
+| qsl5 | `QSL-5.png` | PNG 1200×800 RGB | 2,2 MB |
+| qsl6 | `f6.png` | JPEG 1200×800 (ext. `.png`) | 457 KB |
+| qsl7 | `f7.png` | JPEG 1200×800 (ext. `.png`) | 422 KB |
+| **Total** | | | **≈11 MB** |
 
-- **1200×800 px** (3:2, igual que la postal), modo **RGB**.
-- **Codificados en JPEG** aunque la extensión sea `.png` (Pillow los abre por contenido,
-  no por extensión; el generador funciona igual). *Es una rareza conocida: `.png` con
-  bytes de JPEG.*
-- Tamaño en disco:
-
-  | Fondo | Fichero | Tamaño |
-  |---|---|---|
-  | qsl1 | `f1.png` | 490 KB |
-  | qsl2 | `f2.png` | 379 KB |
-  | qsl3 | `f3.png` | 461 KB |
-  | qsl4 | `f4.png` | 450 KB |
-  | qsl5 | `f5.png` | 513 KB |
-  | qsl6 | `f6.png` | 457 KB |
-  | qsl7 | `f7.png` | 422 KB |
-  | **Total** | | **≈3,1 MB** |
-
-- Al medir ya 1200×800, `cover_fit()` los deja **sin recorte**. Se pueden dejar así; el
-  escalado "cover" solo recortaría si la proporción no fuera 3:2.
+- qsl1–qsl5: PNG reales incorporados el **2026-11-04**; el generador los usa solos.
+- qsl6–qsl7: siguen siendo los de 2026-10-12, **codificados en JPEG** aunque la extensión
+  sea `.png` (Pillow los abre por contenido, no por extensión).
+- Todos miden 1200×800 (3:2), así que `cover_fit()` los deja **sin recorte**.
+- Los antiguos `f1.png`…`f5.png` se borraron el **2026-11-04**; ahora cada carpeta
+  qsl1–qsl5 tiene exactamente **una** imagen de fondo y el generador no avisa.
 
 ---
 
@@ -874,8 +900,8 @@ Los 7 fondos `f<n>.png` fueron sustituidos y se regeneró todo con
 
 Tipo | Tamaño caja | Contenido | Casillas
 ---|---|---|---
-**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | **bandera del CALL + callsign dorado** + nombre•QTH (si el ADI los trae; **sin `OPERATOR`**); 2ª línea: fecha+UTC, banda/modo, grid | "ACT" + 6 casillas con números; tilde en la suya
-**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | **bandera del CALL + callsign** (dorado) + nombre, locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
+**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre•QTH (si el ADI los trae); 2ª línea: **`De OPERATOR`** + fecha+UTC, banda/modo, grid | "ACT" + 6 casillas con números; tilde en la suya
+**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre; 2ª línea: **`De OPERATOR`** + "Todas las referencias conseguidas" + locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
 **DMR qsl7** (`compose`, activity=7) | 22% alto × 55% ancho | igual que la normal | NO muestra casillas: texto "DMR Confirmated"
 
 - Tamaño: `WIDTH=1200` × `HEIGHT=800` (proporción 3:2). Se puede cambiar en la clase.
@@ -957,17 +983,15 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `QSLGenerator.compose(bg, qso, activity=None)` | Postal normal (call, fecha, banda/modo, bandera+info + casillas; activity=7 → "DMR Confirmated") |
 | `QSLGenerator.compose_act6(bg, call, name, grid)` | Postal de record (bandera del CALL + call dorado, locator + casillas con bandera) |
 | `find_adi_files(folder)` | Detecta ADI/ADIF por extensión, sin duplicados, cualquier nombre |
-| `folder_backgrounds(folder)` | Fondos de UNA carpeta |
-| `pick_background(backgrounds, idx)` | Alterna `fondos[idx % n]` |
+| `folder_backgrounds(folder)` | Devuelve el fondo único de UNA carpeta (avisa si hay varios y usa el más reciente) |
 | `sanitize_filename_component(text)` | Limpia un componente de nombre de archivo |
-| `sha256_file(path)` | Hash del ADI para detectar cambios |
+| `sha256_file(path)` | Hash del ADI (y del fondo) para detectar cambios |
 | `load_log(folder)` / `save_log(folder, log)` | Leer/escribir `qsl_log.json` |
 | `now_iso()` | Timestamp UTC |
 | `png_valid(path)` | Comprueba PNG abrible |
 | `prune_orphan_pngs(folder, log, label)` | Poda PNG de QSLS/ no referenciados en el log |
-| `count_registered_pngs(folder)` | PNGs ya registrados (para secuencia fondos) |
 | `unique_filenames(qsos, adi_stem)` | Nombres `{call}_{stem}.png` únicos |
-| `process_folder(folder, gen, bgs, seq)` | Lógica incremental por carpeta |
+| `process_folder(folder, gen, bgs)` | Lógica incremental por carpeta (usa `bgs[0]` y `fondo_hash`) |
 | `process_act6(base_dir, gen)` | Limpia QSL6/QSLS + detecta estaciones en las 5 actividades + genera QSL de record |
 | `main()` | Orquesta las 7 carpetas (qsl6 especial) y escribe `qsl_manifest.json` |
 | `drive_index.py` → `fetch/split_blocks/parse_folders/parse_files/fsize/calln/main` | **Scraping del HTML público** de la carpeta de Drive con `urllib` (sin API, sin credenciales) y escribe `qsl_index.json` con los *file ids* |
@@ -1272,7 +1296,9 @@ git show inicio-fresco           # contenido exacto del tag
 
 Apunta al commit `bf02d44`:
 
-- `qsl1`–`qsl7` con **solo su fondo**: `f1.png` … `f7.png` (convención `f<n>.png`)
+- `qsl1`–`qsl7` con **solo su fondo**: en ese commit `f1.png` … `f7.png` (convención
+  `f<n>.png`). **Nota:** hoy qsl1–qsl5 usan `QSL-1.png`…`QSL-5.png`; el tag conserva los
+  antiguos.
 - `qslN/QSLS/` **vacía** en las 7 actividades (0 postcards)
 - **Ningún** `qslN/qsl_log.json` (se crean solos al primer procesado real)
 - **Cero** `.adi` dentro de `qsl1`–`qsl7`
@@ -1300,7 +1326,8 @@ git clean -fdX qsl1 qsl2 qsl3 qsl4 qsl5 qsl6 qsl7   # borra QSLS/*.png y qsl_log
 
 > `git reset --hard` **descarta** cualquier cambio sin commitear. Haz `git status` antes.
 > El `git clean -fdX` solo borra lo ignorado (`QSLS/`, `qsl_log.json`); el `-X` es lo que
-> limita el borrado a los ficheros ignorados, así que no toca `f<n>.png` ni los `.adi`.
+> limita el borrado a los ficheros ignorados, así que no toca las imágenes de fondo
+> (`f<n>.png`, `QSL-N.png`) ni los `.adi`.
 
 ### Lo que el tag NO guarda
 

@@ -115,7 +115,7 @@ qsl1/
 ├── QSL-DEMO-EG9MM.adi            ← entrada (1 QSO, EG9MM)
 ├── ACTIVIDADES/
 │   └── QSL-DEMO-EG9MM-tota.adi   ← salida
-├── f1.png
+├── QSL-1.png                     ← fondo único de la actividad
 └── QSLS/
 qsl2/
 ├── QSL-DEMO-EG9MM.adi

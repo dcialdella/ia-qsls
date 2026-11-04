@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generador de Postales QSL desde archivos ADI (ADIF)
-Usa f1.png..f7.png como fondos y superpone los datos de contacto.
+Usa la imagen de fondo única de cada carpeta qslN y superpone los datos de contacto.
 
 Lógica inteligente:
   - Cada carpeta qslN tiene su log (qslN/qsl_log.json).
@@ -22,7 +22,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import ClassVar
 
@@ -34,10 +34,17 @@ from PIL import Image, ImageDraw, ImageFont
 # v4: sin bandera de España en la esquina superior derecha ni sello de estación
 #     "EG9MM - Melilla" en la esquina inferior derecha.
 # v5: nuevo diseño caja de texto (posición fija, 2 líneas, separadores -, checkboxes ACT)
-# v5.1: la caja ya no muestra el OPERATOR (operador local); la bandera siempre
-#       corresponde al país del CALL y se dibuja aunque no haya nombre/QTH.
+# v5.1: la bandera siempre corresponde al país del CALL y se dibuja aunque no
+#       haya nombre/QTH.
 # v5.2: la bandera va primero: [bandera] - CALL - ... (antes CALL - [bandera]).
-GENERATOR_VERSION = "5.2"
+# v5.3: se muestra la estación originante (OPERATOR, una de las 4 válidas) al
+#       principio de la línea 2 como "De EA4HUK"; el CALL sigue siendo la
+#       estación destinataria.
+GENERATOR_VERSION = "5.3"
+
+# Estaciones que pueden originar una QSL (campo OPERATOR del ADI). El CALL de
+# cada contacto es, en cambio, la estación destinataria.
+ALLOWED_OPERATORS = {'EA4HUK', 'EA4GHH', 'EA3JAQ', 'EA4IWX'}
 
 # ---------- Geometría de las cajas de datos ----------
 # Proporciones respecto al alto/ancho de la postal (1200x800).
@@ -491,8 +498,10 @@ class QSLGenerator:
         call = qso.get('CALL', 'N/A')
         band = qso.get('BAND', '') or self.band_from_freq(qso.get('FREQ', ''))
         mode = qso.get('MODE', '')
-        # El nombre es solo el del contacto (campo NAME). El OPERATOR es el
-        # operador local de la estación, no del contacto: no se muestra en la QSL.
+        # OPERATOR es la estación que estableció el contacto (originante); el
+        # CALL es la estación destinataria. Ambos se muestran en la postal.
+        operator = (qso.get('OPERATOR') or '').strip().upper()
+        # El nombre es solo el del contacto (campo NAME).
         name = qso.get('NAME', '')
         qth = qso.get('QTH', '')
         grid = qso.get('GRIDSQUARE', '')
@@ -540,9 +549,11 @@ class QSLGenerator:
             x += bbox[2] - bbox[0]
             draw.text((x, y_line1), qth, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
-        # === LÍNEA 2: Fecha - Hora - Banda - Modo - Grid ===
+        # === LÍNEA 2: De <originante> - Fecha - Hora - Banda - Modo - Grid ===
         x = box_left + pad_x
         parts2 = []
+        if operator:
+            parts2.append(f"De {operator}")
         if date_str and date_str != '----':
             parts2.append(date_str)
         if time_str and time_str != '--:--':
@@ -555,6 +566,7 @@ class QSLGenerator:
             parts2.append(grid)
 
         line2_text = " - ".join(parts2)
+        line2_text = self.fit_text(draw, line2_text, font_line2, box_right - pad_x - x)
         draw.text((x, y_line2), line2_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
 
         # === Casillas de actividades ===
@@ -601,13 +613,14 @@ class QSLGenerator:
                 hi = mid - 1
         return text[:lo].rstrip() + ell
 
-    def compose_act6(self, background_path, call, name, grid):
+    def compose_act6(self, background_path, call, name, grid, operator=""):
         """Compone la postal de Actividad 6: reconoce a una estación que
         contactó en TODAS las actividades.
 
-        Muestra: callsign, nombre, el texto "Todas las referencias conseguidas"
-        (y locator si existe) y las casillas QSL1..QSL6
-        con tilde en las 5 actividades logradas (QSL1..QSL5) y bandera España en la 6ª.
+        Muestra: callsign (destinatario), nombre, la estación originante
+        (`operator`), el texto "Todas las referencias conseguidas" (y locator
+        si existe) y las casillas QSL1..QSL6 con tilde en las 5 actividades
+        logradas (QSL1..QSL5) y bandera España en la 6ª.
         """
         img = self.prepare_background(background_path)
         overlay = Image.new('RGBA', (self.WIDTH, self.HEIGHT), (0, 0, 0, 0))
@@ -667,11 +680,14 @@ class QSLGenerator:
             x += bbox[2] - bbox[0]
             draw.text((x, y_line1), name, font=font_line1, fill=(255, 255, 255, 240), anchor="lm")
 
-        # === LÍNEA 2: mensaje de record + locator si existe ===
+        # === LÍNEA 2: De <originante> - mensaje de record + locator si existe ===
         x = box_left + pad_x
         record_text = "Todas las referencias conseguidas"
+        if operator:
+            record_text = f"De {operator} - {record_text}"
         if grid:
             record_text += f" - Locator: {grid}"
+        record_text = self.fit_text(draw, record_text, font_line2, box_right - pad_x - x)
         draw.text((x, y_line2), record_text, font=font_line2, fill=(255, 255, 255, 220), anchor="lm")
 
         # === Casillas QSL1..QSL6: tilde en 1-5, bandera España en 6ª ===
@@ -695,17 +711,24 @@ def find_adi_files(folder):
 
 
 def folder_backgrounds(folder):
-    """PNG/JPG de fondo propios de una carpeta (los del nivel raíz, no QSLS/)"""
-    return sorted(
-        list(folder.glob('*.png')) + list(folder.glob('*.jpg')) + list(folder.glob('*.jpeg'))
-    )
+    """Devuelve el único fondo de la carpeta (nivel raíz, nunca QSLS/).
 
-
-def pick_background(backgrounds, index):
-    """Alterna entre los fondos disponibles según el índice del contacto"""
-    if not backgrounds:
-        return None
-    return backgrounds[index % len(backgrounds)]
+    Contrato del proyecto: cada actividad tiene **una sola** imagen de fondo.
+    Si por error hay varias, se usa la más reciente y se avisa, para que un
+    cambio de imagen recién guardado no quede silenciosamente ignorado.
+    """
+    candidates = sorted(folder.glob('*.png'))
+    if not candidates:
+        candidates = sorted(
+            list(folder.glob('*.jpg')) + list(folder.glob('*.jpeg'))
+        )
+    if len(candidates) > 1:
+        newest = max(candidates, key=lambda p: (p.stat().st_mtime, p.name))
+        print(f"   ⚠️  {folder.name}: hay {len(candidates)} imágenes de fondo "
+              f"({', '.join(p.name for p in candidates)}); "
+              f"se usa la más reciente: {newest.name}")
+        return [newest]
+    return candidates
 
 
 # ============ Lógica de log ============
@@ -743,7 +766,7 @@ def save_log(folder, log):
 
 
 def now_iso():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def png_valid(path):
@@ -786,15 +809,6 @@ def prune_orphan_pngs(folder, log, label=""):
     return removed
 
 
-def count_registered_pngs(folder):
-    """Cuenta los PNG ya registrados en el log de una carpeta (secuencia de fondos local)"""
-    total = 0
-    log = load_log(folder)
-    for entry in log.values():
-        total += len(entry.get('contactos', []))
-    return total
-
-
 def sanitize_filename_component(text):
     """Convierte un callsign/procedencia en un componente de nombre seguro.
 
@@ -827,8 +841,16 @@ def unique_filenames(qsos, adi_stem):
     return result
 
 
-def process_folder(folder, generator, backgrounds, seq):
-    """Procesa los ADI de una carpeta usando el log."""
+def process_folder(folder, generator, backgrounds):
+    """Procesa los ADI de una carpeta usando el log.
+
+    `backgrounds` debe contener exactamente el fondo único de la actividad.
+    """
+    if not backgrounds:
+        raise ValueError(f"{folder.name}: no tiene imagen de fondo")
+    bg_path = backgrounds[0]
+    bg_hash = sha256_file(bg_path)
+
     output_dir = folder / "QSLS"
     output_dir.mkdir(exist_ok=True)
 
@@ -852,25 +874,8 @@ def process_folder(folder, generator, backgrounds, seq):
     regenerados = 0
     sin_cambios = 0
 
-    def _render(qso, fn, prev_cont):
-        """Renderiza una postal. Reutiliza el fondo previo si existe."""
-        nonlocal seq
-        bg_path = None
-        if prev_cont is not None:
-            pfondo = prev_cont.get('fondo')
-            if isinstance(pfondo, str) and pfondo:
-                cand = folder / pfondo
-                if cand.exists():
-                    bg_path = cand
-                else:
-                    for f in backgrounds:
-                        if f.name == pfondo:
-                            bg_path = f
-                            break
-        if bg_path is None:
-            bg_path = pick_background(backgrounds, seq)
-
-        seq += 1
+    def _render(qso, fn):
+        """Renderiza una postal con el fondo único de la actividad."""
         output_path = output_dir / fn
         postal = generator.compose(bg_path, qso, activity=activity)
         postal.save(output_path, 'PNG')
@@ -884,22 +889,32 @@ def process_folder(folder, generator, backgrounds, seq):
 
     for adi_file in adi_files:
         qsos = ADIFParser.parse(str(adi_file))
+        operadores = {(q.get('OPERATOR') or '').strip().upper() for q in qsos}
+        operadores.discard('')
+        if not operadores:
+            print(f"   ⚠️  {adi_file.name}: sin OPERATOR; la postal no mostrará originante")
+        else:
+            invalidos = sorted(operadores - ALLOWED_OPERATORS)
+            if invalidos:
+                print(f"   ⚠️  {adi_file.name}: OPERATOR fuera de la lista válida: "
+                      f"{', '.join(invalidos)}")
         file_hash = sha256_file(adi_file)
         entry = log.get(adi_file.name)
         prev_contacts = entry.get('contactos', []) if entry else []
 
         if entry is None or entry.get('sha256') != file_hash \
-                or entry.get('generador') != GENERATOR_VERSION:
-            # ===== Nuevo o modificado: reprocesar el ADI completo =====
+                or entry.get('generador') != GENERATOR_VERSION \
+                or entry.get('fondo_hash') != bg_hash:
+            # ===== Nuevo, modificado o fondo cambiado: reprocesar el ADI completo =====
             filenames = unique_filenames(qsos, adi_file.stem)
             contactos = []
             for idx, qso in enumerate(qsos):
-                prev_cont = prev_contacts[idx] if idx < len(prev_contacts) else None
-                contactos.append(_render(qso, filenames[idx], prev_cont))
+                contactos.append(_render(qso, filenames[idx]))
 
             log[adi_file.name] = {
                 'sha256': file_hash,
                 'generador': GENERATOR_VERSION,
+                'fondo_hash': bg_hash,
                 'contactos': contactos,
                 'procesado_en': now_iso(),
             }
@@ -927,7 +942,7 @@ def process_folder(folder, generator, backgrounds, seq):
             idx = next((i for i, c in enumerate(prev_contacts)
                         if c.get('archivo') == cont.get('archivo')), None)
             qso = qsos[idx] if idx is not None else {}
-            nuevo_cont = _render(qso, cont['archivo'], cont)
+            nuevo_cont = _render(qso, cont['archivo'])
             # Actualizar la entrada en el log
             for i, c in enumerate(log[adi_file.name]['contactos']):
                 if c.get('archivo') == cont['archivo']:
@@ -944,7 +959,7 @@ def process_folder(folder, generator, backgrounds, seq):
 
     save_log(folder, log)
     prune_orphan_pngs(folder, log, label=folder.name)
-    return nuevos, sin_cambios, regenerados, seq
+    return nuevos, sin_cambios, regenerados
 
 
 def process_act6(base_dir, generator):
@@ -972,10 +987,11 @@ def process_act6(base_dir, generator):
 
     bgs = folder_backgrounds(qsl6)
     if not bgs:
-        print("\n⚠️  QSL6: no tiene imagen de fondo propia (f6.png). No se generan records.")
+        print("\n⚠️  QSL6: no tiene imagen de fondo propia. No se generan records.")
         return 0, 0, 0
 
-    print(f"\n📂 QSL6  (fondos: {', '.join(b.name for b in bgs)})")
+    print(f"\n📂 QSL6  (fondo: {bgs[0].name})")
+    bg_hash = sha256_file(bgs[0])
 
     limpiadas = _clean_output()
     if limpiadas:
@@ -984,9 +1000,15 @@ def process_act6(base_dir, generator):
     # 1) Recolectar estaciones y su info en cada actividad
     act_names = [f"qsl{n}" for n in range(1, 6)]
     por_actividad = {}
-    info_estacion = {}  # call -> {name, grid}
+    info_estacion = {}  # call -> {name, grid, operators}
     for act in act_names:
         folder = base_dir / act
+        if not folder.exists():
+            # Sin la carpeta no se puede afirmar que la estación contactara en
+            # esa actividad: se fuerza el conjunto vacío para no inventar records.
+            print(f"   ⚠️  {act}: carpeta ausente, no habrá records")
+            por_actividad[act] = set()
+            continue
         calls = set()
         for adi in find_adi_files(folder):
             for qso in ADIFParser.parse(str(adi)):
@@ -996,11 +1018,14 @@ def process_act6(base_dir, generator):
                 call = call.upper()
                 calls.add(call)
                 if call not in info_estacion:
-                    info_estacion[call] = {'name': '', 'grid': ''}
+                    info_estacion[call] = {'name': '', 'grid': '', 'operators': set()}
                 if not info_estacion[call]['name']:
                     info_estacion[call]['name'] = (qso.get('NAME') or '').strip()
                 if not info_estacion[call]['grid']:
                     info_estacion[call]['grid'] = (qso.get('GRIDSQUARE') or '').strip()
+                operator = (qso.get('OPERATOR') or '').strip().upper()
+                if operator:
+                    info_estacion[call]['operators'].add(operator)
         por_actividad[act] = calls
 
     # 2) Intersección de las 5 actividades
@@ -1018,7 +1043,9 @@ def process_act6(base_dir, generator):
 
     # Hash del conjunto actual (para el log)
     firma = "\n".join(sorted(
-        f"{c}|{info_estacion[c]['name']}|{info_estacion[c]['grid']}" for c in comunes
+        f"{c}|{info_estacion[c]['name']}|{info_estacion[c]['grid']}|"
+        f"{','.join(sorted(info_estacion[c]['operators']))}"
+        for c in comunes
     ))
     firma_hash = hashlib.sha256(firma.encode()).hexdigest()
 
@@ -1030,27 +1057,18 @@ def process_act6(base_dir, generator):
     regenerados = 0
     for call in sorted(comunes):
         fn = f"{sanitize_filename_component(call).lower()}_act6.png"
-        info = info_estacion.get(call, {'name': '', 'grid': ''})
+        info = info_estacion.get(call, {'name': '', 'grid': '', 'operators': set()})
+        operator = ", ".join(sorted(info.get('operators') or ()))
         prev = por_archivo.get(fn)
-        # Regenerar (reusando el fondo previo si lo había)
-        bg_path = None
-        if prev and prev.get('fondo'):
-            cand = qsl6 / prev['fondo']
-            if cand.exists():
-                bg_path = cand
-            else:
-                for f in bgs:
-                    if f.name == prev['fondo']:
-                        bg_path = f
-                        break
-        if bg_path is None:
-            bg_path = bgs[0]
-        postal = generator.compose_act6(bg_path, call, info['name'], info['grid'])
+        bg_path = bgs[0]
+        postal = generator.compose_act6(bg_path, call, info['name'], info['grid'],
+                                        operator)
         postal.save(output_dir / fn, 'PNG')
         contactos.append({
             'call': call,
             'archivo': fn,
             'fondo': bg_path.name,
+            'operadores': sorted(info.get('operators') or ()),
             'actividades': act_names,
             'generado_en': now_iso(),
         })
@@ -1062,6 +1080,7 @@ def process_act6(base_dir, generator):
     log["act6"] = {
         'sha256': firma_hash,
         'generador': GENERATOR_VERSION,
+        'fondo_hash': bg_hash,
         'contactos': contactos,
         'procesado_en': now_iso(),
     }
@@ -1116,18 +1135,16 @@ def main():
             print(f"\n📂 {folder.name.upper()}  (sin archivos .adi, nada que generar)")
             continue
 
-        # Fondos propios de la carpeta (los que estén en su raíz como .png/.jpg)
+        # Fondo único de la carpeta (nivel raíz, .png/.jpg/.jpeg)
         folder_bgs = folder_backgrounds(folder)
         if not folder_bgs:
             print(f"\n⚠️  {folder.name.upper()}: no tiene imagen de fondo propia. "
                   f"Coloca una imagen .png en la carpeta.")
             continue
 
-        print(f"\n📂 {folder.name.upper()}  (fondos: {', '.join(b.name for b in folder_bgs)})")
-        # La secuencia de fondos arranca en el nº de PNG ya generados en esta carpeta
-        seq = count_registered_pngs(folder)
-        nuevos, sin_cambios, regenerados, seq = process_folder(
-            folder, generator, folder_bgs, seq
+        print(f"\n📂 {folder.name.upper()}  (fondo: {folder_bgs[0].name})")
+        nuevos, sin_cambios, regenerados = process_folder(
+            folder, generator, folder_bgs
         )
         total_nuevos += nuevos
         total_sin += sin_cambios

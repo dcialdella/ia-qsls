@@ -16,7 +16,7 @@ import re
 import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DEFAULT_FOLDER_ID = "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy"
@@ -271,7 +271,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
     entries.sort(key=lambda e: (e['call'], e['act'], e['name']))
     result = {
         'version': 2,
-        'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'generated_at': datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'folder_id': folder_id,
         'folder_url': FOLDER_URL.format(id=folder_id),
         'activities': acts,
