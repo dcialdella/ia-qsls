@@ -6,8 +6,9 @@ independiente con su propia imagen de fondo, sus propios archivos ADI, y sus pro
 postales generadas.
 
 > **Resumen:** lee archivos de contactos en formato ADI, deriva el país de cada estación
-> desde el prefijo del callsign (y dibuja su bandera), y genera una postal QSL por
-> contacto con los datos (callsign, fecha, banda/modo, nombre, QTH, grid) y las casillas
+> desde el prefijo del callsign (y dibuja su bandera **delante del callsign**), y genera
+> una postal QSL por contacto con los datos (**bandera, callsign, nombre, QTH**, fecha,
+> banda/modo, grid — nunca el `OPERATOR`, que es el operador local) y las casillas
 > de las 6 actividades (con la QSL6 de "record" para quien completó las 5). Funciona en
 > modo incremental (solo regenera lo que cambió).
 
@@ -62,9 +63,9 @@ postales generadas.
 
 > **Estado actual: en producción, con datos de prueba reducidos.** Las actividades
 > `qsl1`–`qsl5` y `qsl7` tienen **un único `.adi` cada una** (`QSL-DEMO-EG9MM.adi`, 1 QSO
-> con `CALL`/`STATION_CALLSIGN` = `EG9MM`), y las 7 postcards resultantes están
-> sincronizadas con Google Drive y publicadas en <https://dcialdella.github.io/ia-qsls/>.
-> El flujo diario está en §2.0.
+> con `CALL` = `XYZ123` y `STATION_CALLSIGN` = `EG9MM`), y las 7 postcards resultantes
+> (`xyz123_*.png`) están sincronizadas con Google Drive y publicadas en
+> <https://dcialdella.github.io/ia-qsls/>. El flujo diario está en §2.0.
 >
 > Los datos de ejemplo que hubo antes (`estN.adi`, `stationsN.adi`, `qslN_ejemplo.adi`,
 > `qslN_extra1.adi`) y las 67 postcards que generaban **se quitaron a propósito** y se
@@ -72,7 +73,7 @@ postales generadas.
 > `git log -- qsl1/est1.adi` si hicieran falta, y hay una copia completa en
 > `../ia-qsls-backup-20261005-110936`.
 
-- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "5"`)
+- ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "5.2"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ **Proceso diario en un comando:** `./run_all.sh` (ver §2.0)
 - ✅ Las 7 carpetas con su fondo: qsl1 (`f1.png`), qsl2 (`f2.png`), qsl3 (`f3.png`),
@@ -96,7 +97,7 @@ postales generadas.
   derivan de los QSO ya registrados en `qsl1`–`qsl5` (ver §3.b). Por eso el manifiesto
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
   `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
-- ✅ `qsl_index.json` coherente con lo publicado: `total: 7`, 1 indicativo (`EG9MM`)
+- ✅ `qsl_index.json` coherente con lo publicado: `total: 7`, 1 indicativo (`XYZ123`)
 - ✅ Los 6 `.adi` de ejemplo siguen aparcados en `TESTDATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`). Lo que se procesa de verdad es el
   `QSL-DEMO-EG9MM.adi` de cada actividad, un `.adi` por QSO.
@@ -107,7 +108,8 @@ postales generadas.
   `README-ACTIVIDADES.md`. Solo procesa `qsl1`–`qsl5`.
 - ✅ No quedan archivos `.adi.TEST` (fueron eliminados; los renombrados pasan a `.adi`)
 - ✅ **Casillas de actividades en TODAS las postales normales** (QSL1..QSL6).
-- ✅ **Bandera del país** delante del nombre de cada estación (ver "Banderas" más abajo).
+- ✅ **Bandera del país delante del callsign** en la caja de datos, siempre visible
+  (incluso sin nombre/QTH; ver "Banderas" más abajo y changelog v5.1/v5.2).
 - ✅ **Sin bandera de España en la esquina** ni **sello `EG9MM`** abajo a la derecha
   (retirados en la v4; su código se borró del repo, está en el historial de git).
 - ✅ Repositorio Git con remote en **GitHub** (`dcialdella/ia-qsls`, rama `main`).
@@ -124,7 +126,8 @@ cp ~/nuevos-contactos.adi qsl1/
 
 #### De los datos de prueba a los ADI reales
 
-`QSL-DEMO-EG9MM.adi` (un único contacto `EG9MM`, repetido en `qsl1`–`qsl5` y `qsl7`) es un
+`QSL-DEMO-EG9MM.adi` (un único contacto, `CALL` = `XYZ123`, repetido en `qsl1`–`qsl5` y
+`qsl7`) es un
 **relleno** para dejar el pipeline probado de punta a punta. Los contactos de verdad van
 en sus propios `.adi`, con los nombres que dé tu logger (Ham2K, Smart Logger, N1MM+…):
 `EA4HUK_20260912.adi`, `cqww-20260913.adi`, `dx-2026-10-01.adi`… El nombre es libre; el
@@ -379,6 +382,25 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
        - `FLAGS/` pasa de 249 a **253 PNG**: añadidas las 4 banderas que faltaban (`un`,
          `xi`, `xk`, `zz`). Ahora los **248** códigos de `country_map.json` tienen bandera
          y ninguna estación se queda sin ella por falta de PNG (ver §5).
+29. **v5.1: la caja ya no muestra el `OPERATOR`** (2026-10-15):
+       - `compose()`: el nombre de la línea 1 ya **no cae al fallback `OPERATOR`** — antes,
+         al no haber campo `NAME`, la caja dibujaba el operador local (p. ej. `EA4HUK`).
+         Ahora solo se muestran campos del contacto: `CALL`, `NAME` y `QTH`.
+       - La **bandera del CALL se dibuja siempre** en la caja, aunque no haya nombre ni
+         QTH (antes solo se dibujaba si había nombre).
+30. **v5.2: la bandera va primero en la caja** (2026-10-15):
+       - El orden de la línea 1 pasa a **`[bandera] - CALL - nombre - QTH`** (antes
+         `CALL - [bandera] - …`) en `compose()` y `compose_act6()`. Si el prefijo del
+         CALL es desconocido no hay bandera y la línea empieza por el callsign.
+       - Los indicativos se **normalizan a mayúsculas** en todo el flujo (parser,
+         bandera, qsl6, nombres de PNG): `ea4hhh` y `EA4HHH` son la misma estación.
+       - **`GENERATOR_VERSION = "5.2"`**: fuerza la regeneración incremental de todas las
+         postales con solo correr `./run_all.sh`.
+       - Demo actual: los `.adi` de relleno llevan `CALL` = `XYZ123` (`STATION_CALLSIGN`
+         = `EG9MM`); las 7 postcards publicadas son `xyz123_*.png` y el índice web
+         (`qsl_index.json`) lista solo esas. Tras purgar nombres viejos en Drive,
+         repetir `./run_all.sh` un minuto después si el HTML público tarda en
+         propagar el borrado (ver §2.0 y §7).
 
 ### Estructura actual en disco
 
@@ -413,7 +435,7 @@ ia-qsls/
 Notes sobre esta estructura:
 
 - **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan; ahora uno por
-  actividad, `QSL-DEMO-EG9MM.adi` (1 QSO, `EG9MM`), a la espera de los `.adi` reales. Los 6 de
+  actividad, `QSL-DEMO-EG9MM.adi` (1 QSO, `CALL` = `XYZ123`), a la espera de los `.adi` reales. Los 6 de
   `TESTDATA/` siguen aparcados ahí y no se tocan.
 - **`qsl1`–`qsl5` tienen además `ACTIVIDADES/`**, con los `.adi` generados por
   `./generar_adis.sh` (ver `README-ACTIVIDADES.md`). Se borran y regeneran en cada
@@ -434,9 +456,10 @@ Notes sobre esta estructura:
 
 ## 2. Cómo ejecutar
 
-### 2.0 El proceso diario normal (lo de cada día)
+### 2.0 El proceso completo: `./run_all.sh` (LO MÁS IMPORTANTE)
 
-Este es el flujo de trabajo de rutina:
+Este es **el único comando que necesitas** en el día a día. Todo lo demás de este README
+es detalle o casos avanzados:
 
 1. **Copiar los `.adi` nuevos a la carpeta de su actividad:** `qsl1`, `qsl2`,
    `qsl3`, `qsl4`, `qsl5` o `qsl7`. No hace falta nada más: el generador los
@@ -448,7 +471,8 @@ Este es el flujo de trabajo de rutina:
    ```
 
    Y ya está. `run_all.sh` es una envoltura de `generar.sh --auto` que encadena
-   todo el proceso en este orden:
+   **todo** el proceso en este orden — genera, sube a Drive, **regenera el índice web
+   (`qsl_index.json`) y lo pushea a GitHub** en cada corrida:
 
    | Paso | Qué hace |
    |---|---|
@@ -471,7 +495,10 @@ Este es el flujo de trabajo de rutina:
 >
 > **Solución: repetir `./run_all.sh` un minuto después.** Reindexa y pushea
 > siempre (la marca de tiempo `generated_at` cambia en cada corrida), así que la
-> segunda pasada recoge lo que la primera se dejó por subir.
+> segunda pasada recoge lo que la primera se dejó por subir. Lo mismo aplica a
+> **borrados/renombrados**: si acabás de purgar postcards viejas, el HTML público
+> de Drive puede tardar en reflejarlo y el primer índice puede quedar con entradas
+> muertas; la segunda pasada lo deja limpio.
 
 > **`qsl6` no recibe `.adi`.** Es la actividad de *record* y se alimenta sola de las
 > estaciones que contactaron en `qsl1`–`qsl5`. Por eso el flujo diario usa las
@@ -503,6 +530,10 @@ sirve para casos puntuales (regenerar todo, probar sin tocar Drive, etc.).
 Cualquier flag se puede pasar también a `./run_all.sh`, que los reenvía:
 `./run_all.sh --keep-empty-drive`, `./run_all.sh --no-sync-drive`.
 
+> **Ojo:** `./generar.sh` **sin `--auto`** solo genera y sincroniza con Drive: **no**
+> regenera `qsl_index.json` ni pushea a GitHub. Para que la web quede correcta, el
+> proceso es siempre `./run_all.sh` (o `./generar.sh --auto`, que es lo mismo).
+
 > **Actividades vaciadas.** Por defecto, una actividad sin `.adi` **sí** se vacía en Drive
 > (antes se saltaba el sync y las postcards se quedaban ahí para siempre, y la web seguía
 > ofreciéndolas aunque ya no existieran en local). Con `--keep-empty-drive` se conserva lo
@@ -532,7 +563,7 @@ generador:
 📂 QSL6  (fondos: f6.png)
    🗑️  QSL6/QSLS: 1 postal/es regenerada/s desde cero
    🏆 1 estación/es contactaron en las 5 actividades
-   ⚡ act6: 1 record(s) -> EG9MM → eg9mm_act6.png
+   ⚡ act6: 1 record(s) -> XYZ123 → xyz123_act6.png
 
 ============================================================
   RESUMEN: 0 procesados, 1 regenerados, 6 sin cambios
@@ -555,7 +586,7 @@ Listo. Busca las imágenes en cada qslN/QSLS/.
 > Todo lo anterior es **literal**, salvo la línea `   …` que resume los cinco
 > `QSL-DEMO-EG9MM.adi` iguales. Ojo a la aritmética: el resumen dice **1 regenerado**
 > (`qsl6`, que se rehace siempre) y **6 sin cambios** (los seis inputs), pero las
-> postcards totales son 7 porque `eg9mm_act6.png` cuenta como una más.
+> postcards totales son 7 porque `xyz123_act6.png` cuenta como una más.
 >
 > El rótulo por carpeta es `   %-6s %s postales` (`generar.sh:163`): dice "postales"
 > también para qsl6 y qsl7, que son postcards de record y de DMR.
@@ -574,11 +605,11 @@ el relleno por uno real) se anuncia con `⚡`, no con `✓ sin cambios`. Tras un
 
 ```
 📂 QSL1  (fondos: f1.png)
-   ⚡ QSL-DEMO-EG9MM.adi: 1 contactos -> eg9mm_qsl-demo-eg9mm.png
+   ⚡ QSL-DEMO-EG9MM.adi: 1 contactos -> xyz123_qsl-demo-eg9mm.png
    …  (igual en QSL2..QSL5 y QSL7)
 📂 QSL6  (fondos: f6.png)
    🏆 1 estación/es contactaron en las 5 actividades
-   ⚡ act6: 1 record(s) -> EG9MM → eg9mm_act6.png
+   ⚡ act6: 1 record(s) -> XYZ123 → xyz123_act6.png
 ============================================================
   RESUMEN: 7 procesados, 0 regenerados, 0 sin cambios
 ============================================================
@@ -843,8 +874,8 @@ Los 7 fondos `f<n>.png` fueron sustituidos y se regeneró todo con
 
 Tipo | Tamaño caja | Contenido | Casillas
 ---|---|---|---
-**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | callsign, fecha+UTC, banda/modo, **bandera + nombre•QTH•grid** | "ACT" + 6 casillas con números; tilde en la suya
-**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | callsign (dorado), **bandera + nombre**, locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
+**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | **bandera del CALL + callsign dorado** + nombre•QTH (si el ADI los trae; **sin `OPERATOR`**); 2ª línea: fecha+UTC, banda/modo, grid | "ACT" + 6 casillas con números; tilde en la suya
+**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | **bandera del CALL + callsign** (dorado) + nombre, locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
 **DMR qsl7** (`compose`, activity=7) | 22% alto × 55% ancho | igual que la normal | NO muestra casillas: texto "DMR Confirmated"
 
 - Tamaño: `WIDTH=1200` × `HEIGHT=800` (proporción 3:2). Se puede cambiar en la clase.
@@ -870,9 +901,14 @@ Tipo | Tamaño caja | Contenido | Casillas
 - Los dos cambios son reversibles, pero volver a esa versión exige rehacer el dibujo desde
   el historial (`git log -- qsl_generator.py`, commits anteriores a `fb9a16e`).
 
-### Banderas de país (delante del nombre)
+### Banderas de país (delante del callsign)
 
-- El país se deriva del **prefijo** del callsign (`ADIFParser` no lee campo COUNTRY).
+- **Posición (v5.2):** en la caja de datos la bandera va **primero**, seguida de ` - `
+  y el callsign: `[bandera] - CALL - nombre - QTH`. Se dibuja **siempre** que el
+  prefijo resuelva a un país, incluso sin nombre ni QTH. Si no resuelve, la línea
+  empieza directamente por el callsign.
+- El país se deriva del **prefijo** del callsign (`ADIFParser` no lee campo COUNTRY;
+  el `CALL` se normaliza a mayúsculas, así que `ea4hhh` y `EA4HHH` resuelven igual).
   `country_map.json` mapea 845 prefijos → código ISO2 (fuente: ADIF DXCC, campo `prefix`,
   con corrección manual del prefijo `E` → España). Solo se contemplan entidades no
   eliminadas y códigos de país de 2 letras.
@@ -882,8 +918,8 @@ Tipo | Tamaño caja | Contenido | Casillas
 - `station_flag(call, height)` carga el PNG de `FLAGS/{cc}.png` (nombre en minúsculas) y
   lo reescala a `altura = la del texto`. Cacheado por `(cc, height)`.
 - **Si no existe bandera para ese país (o la estación no tiene país), NO se dibuja nada**:
-  el texto del nombre simplemente arranca en la posición original. Así nunca se pinta una
-  bandera incorrecta.
+  el callsign simplemente arranca en la posición original (sin el ` - ` inicial). Así
+  nunca se pinta una bandera incorrecta.
 - Banderas en `FLAGS/`: 253 PNG, en su mayoría de flagcdn, en principio ~80×53 px pero en
   la práctica **varios tamaños distintos** (el reescalado a la altura del texto los
   normaliza todos, así que da igual). `country_map.json` tiene 248 códigos ISO2 distintos
@@ -917,9 +953,9 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `QSLGenerator._load_country_map()` | Carga country_map.json indexado por 1ª letra |
 | `QSLGenerator.country_code_for_call(call)` | ISO2 desde prefijo (longest-match, ignora placeholders) |
 | `QSLGenerator.station_flag(call, height)` | PNG de FLAGS/{cc}.png reescalado o None |
-| `QSLGenerator.draw_station_flag(overlay, call, x, cy, height)` | Dibuja bandera delante del nombre; sin bandera no cambia x |
+| `QSLGenerator.draw_station_flag(overlay, call, x, cy, height)` | Dibuja bandera del CALL delante del callsign; sin bandera no cambia x |
 | `QSLGenerator.compose(bg, qso, activity=None)` | Postal normal (call, fecha, banda/modo, bandera+info + casillas; activity=7 → "DMR Confirmated") |
-| `QSLGenerator.compose_act6(bg, call, name, grid)` | Postal de record (call dorado, bandera+nombre, locator + casillas con bandera) |
+| `QSLGenerator.compose_act6(bg, call, name, grid)` | Postal de record (bandera del CALL + call dorado, locator + casillas con bandera) |
 | `find_adi_files(folder)` | Detecta ADI/ADIF por extensión, sin duplicados, cualquier nombre |
 | `folder_backgrounds(folder)` | Fondos de UNA carpeta |
 | `pick_background(backgrounds, idx)` | Alterna `fondos[idx % n]` |
@@ -1065,8 +1101,8 @@ Drive no se puede leer, que se marca como fallida. Regla 1 de §0 sigue vigente 
 las carpetas existen siempre; lo que puede no publicarse es su contenido.
 
 Estado actual del repo: índice **poblado**, con `total: 7`, `counts` a 1 en cada una de
-las 7 actividades y `entries` con una entrada por postcard (las 6 de `EG9MM` en
-`qsl1`–`qsl5`/`qsl7` más `eg9mm_act6.png`). Si algún día saliera vacío (`total: 0`), la
+las 7 actividades y `entries` con una entrada por postcard (las 6 de `XYZ123` en
+`qsl1`–`qsl5`/`qsl7` más `xyz123_act6.png`). Si algún día saliera vacío (`total: 0`), la
 web lo mostraría sin errores visibles — ver §7 "Seguridad".
 
 ```json
@@ -1079,8 +1115,8 @@ web lo mostraría sin errores visibles — ver §7 "Seguridad".
   "counts": {"qsl1": 1, "qsl2": 1, "qsl3": 1, "qsl4": 1, "qsl5": 1, "qsl6": 1, "qsl7": 1},
   "total": 7,
   "entries": [
-    {"call": "EG9MM", "act": "qsl1",
-     "name": "eg9mm_qsl-demo-eg9mm.png",
+    {"call": "XYZ123", "act": "qsl1",
+     "name": "xyz123_qsl-demo-eg9mm.png",
      "id": "1QwErTy...", "size": 210433}
   ]
 }
@@ -1130,8 +1166,8 @@ web lo mostraría sin errores visibles — ver §7 "Seguridad".
 
 Las primeras tareas del proyecto (prueba de humo, revisión visual, sincronización a
 Drive, verificación de la web) ya están **hechas**: las 7 postcards están generadas,
-sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo contacto
-`EG9MM`), a la espera de los `.adi` reales. Queda pendiente:
+sincronizadas y publicadas. El dataset es ahora mínimo a propósito (un solo contacto,
+`CALL` = `XYZ123`), a la espera de los `.adi` reales. Queda pendiente:
 
 1. ~~**Repaso visual de las postcards tras la v4.**~~ La v4 quitó la bandera de España de
    la esquina y el sello `EG9MM`; falta abrir unas cuantas para confirmar el encuadre.

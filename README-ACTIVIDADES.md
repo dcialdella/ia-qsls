@@ -30,7 +30,7 @@ python3 qsl_generar_adis.py
 Cada carpeta `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contiene un único input:
 
 ```
-QSL-DEMO-EG9MM.adi   ← 1 solo QSO, CALL/STATION = EG9MM, OPERATOR = EA4HUK
+QSL-DEMO-EG9MM.adi   ← 1 solo QSO, CALL = XYZ123, STATION_CALLSIGN = EG9MM, OPERATOR = EA4HUK
 ```
 
 Salidas (ejemplo con el input actual):
