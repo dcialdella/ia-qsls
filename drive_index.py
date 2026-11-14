@@ -42,6 +42,7 @@ FOLDER_ENTRY_RE = re.compile(ENTRY_HEAD + re.escape(FOLDER_MIME), re.DOTALL)
 FILE_ENTRY_RE = re.compile(ENTRY_HEAD + r'"image/(?:png|jpeg|webp)"', re.DOTALL)
 LABEL_RE = re.compile(r'\[\[\["(qsl\d+)"')
 FILENAME_RE = re.compile(r'"([^"]+\.(?:png|jpg|jpeg|webp))"')
+IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.webp'}
 # Vista embebida: cada fichero es <div class="flip-entry" id="entry-<id>">...
 # ...<div class="flip-entry-title">nombre.png</div>
 EMBED_ENTRY_RE = re.compile(
@@ -260,6 +261,94 @@ def load_manifest(path):
     return filtered
 
 
+def local_png_counts(base):
+    """Nº de postcards en `<actividad>/QSLS`, por actividad.
+
+    Drive se sincroniza desde estas carpetas con `rsync --delete`, así que los
+    PNG locales son el oráculo de lo que el índice *debería* tener. Sirve para
+    distinguir un recorte real (se borraron .adi y con ellos sus postcards) de
+    un parseo incompleto de Drive, que es justo lo que hay que frenar. Las
+    actividades sin carpeta local se omiten: no hay nada con que comparar.
+    """
+    counts = {}
+    if not base:
+        return counts
+    for act in ACTIVITY_ORDER:
+        d = Path(base) / act / "QSLS"
+        if not d.is_dir():
+            continue
+        counts[act] = sum(1 for f in d.iterdir()
+                          if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES)
+    return counts
+
+
+def check_regression(prev, idx, manifest, local):
+    """Compara el índice nuevo con el anterior. Devuelve (errores, avisos).
+
+    El índice sale de hacer scraping del HTML público de Drive: un cambio de
+    HTML devolvería menos entradas (o 0) y publicaría una web incompleta. Por
+    eso un recorte solo se acepta si está explicado:
+      * la actividad ya no tiene ningún .adi (lo dice el manifiesto), o
+      * el nuevo recuento coincide con los PNG locales, es decir, son
+        postcards que rsync ya ha borrado también en Drive.
+
+    El recorte "dentro" de una actividad que sigue activa (borrar un .adi o
+    reprocesar con menos QSO) antes se confundía con un parseo fallido y
+    bloqueaba el índice para siempre. Ese es el caso que cubre `local`.
+    """
+    errors, notes = [], []
+    if not prev:
+        return errors, notes
+
+    prev_total = prev.get('total')
+    prev_counts = prev.get('counts') if isinstance(prev.get('counts'), dict) else {}
+    prev_acts = set(prev.get('activities') or {})
+    new_acts = set(idx['activities'])
+    lost = prev_acts - new_acts
+
+    # Una actividad retirada solo es una pérdida esperada si el manifiesto la
+    # declara sin .adi. Si desaparece del parseo pero el manifiesto dice que
+    # sigue activa, es un fallo de lectura.
+    if manifest is not None:
+        unexpected_lost = {a for a in lost if int(manifest.get(a, 0) or 0) > 0}
+    else:
+        unexpected_lost = set()
+    expected_lost = lost - unexpected_lost
+    expected_drop = sum(int(prev_counts.get(a, 0) or 0) for a in expected_lost)
+
+    # Recortes dentro de actividades que siguen activas: se dan por buenos si
+    # el nuevo recuento es exactamente el de los PNG locales.
+    verified_drop = 0
+    verified = []
+    for act, prev_n in prev_counts.items():
+        if act in lost:
+            continue
+        prev_n = int(prev_n or 0)
+        new_n = idx['counts'].get(act)
+        if not isinstance(new_n, int) or new_n >= prev_n:
+            continue
+        if local.get(act) == new_n:
+            verified_drop += prev_n - new_n
+            verified.append(f"{act} {prev_n}->{new_n}")
+
+    if verified:
+        notes.append("recorte confirmado por los PNG locales: " + ", ".join(verified))
+    if expected_lost:
+        notes.append("actividades retiradas del índice (sin .adi según el manifiesto): "
+                     f"{', '.join(sorted(expected_lost))} ({expected_drop} entradas)")
+    if unexpected_lost:
+        errors.append("actividades que el manifiesto da por activas pero han "
+                      "desaparecido del índice: "
+                      + ", ".join(sorted(unexpected_lost)) + ".")
+    if (isinstance(prev_total, int)
+            and idx['total'] < prev_total - expected_drop - verified_drop):
+        errors.append(f"el nuevo índice tiene {idx['total']} entradas y el anterior "
+                      f"{prev_total}, y solo {expected_drop + verified_drop} están "
+                      "explicadas por actividades vaciadas o recortes confirmados "
+                      "en el espejo local.")
+    return errors, notes
+
+
 def build_index(folder_id, manifest=None, base=None, generator_version=None):
     """Construye el diccionario del indice leyendo Drive.
 
@@ -371,11 +460,8 @@ def main():
     # --- Salvaguardas: nunca sobrescribir un indice bueno por uno peor ---
     prev = read_existing(out_path)
     if not args.force and prev:
-        prev_total = prev.get('total')
-        prev_counts = prev.get('counts') if isinstance(prev.get('counts'), dict) else {}
         prev_acts = set(prev.get('activities') or {})
         new_acts = set(idx['activities'])
-        lost = prev_acts - new_acts
 
         if failed:
             print(f"ERROR: fallo de red en {', '.join(failed)}; no se escribe el indice.")
@@ -395,20 +481,16 @@ def main():
                   f"ninguna. No se escribe.")
             return 2
 
-        # Lo que el manifiesto declara vaciado es una perdida esperada: no cuenta
-        # como parseo fallido. Sin esto, vaciar una actividad a proposito haria
-        # que el indice se negase a actualizarse nunca mas.
-        expected_drop = sum(int(prev_counts.get(a, 0) or 0) for a in lost)
-        if isinstance(prev_total, int) and idx['total'] < prev_total - expected_drop:
-            print(f"ERROR: el nuevo indice tiene {idx['total']} entradas y el anterior "
-                  f"{prev_total}, y solo {expected_drop} son de actividades vaciadas por "
-                  f"manifiesto. Parece un parseo fallido de Drive; no se escribe.")
-            print("       Usa --force si el recorte es intencionado.")
+        errors, notes = check_regression(prev, idx, manifest,
+                                         local_png_counts(SCRIPT_DIR))
+        for note in notes:
+            print(f"· {note}")
+        if errors:
+            for err in errors:
+                print(f"ERROR: {err}", file=sys.stderr)
+            print("       Parece un parseo fallido de Drive; no se escribe.", file=sys.stderr)
+            print("       Usa --force si el recorte es intencionado.", file=sys.stderr)
             return 2
-
-        if lost:
-            print(f"· actividades retiradas del indice (sin .adi segun el manifiesto): "
-                  f"{', '.join(sorted(lost))} ({expected_drop} entradas)")
 
     if idx['total'] == 0 and not args.force:
         print("ERROR: 0 entradas. No se escribe un indice vacio (Drive pudo cambiar "
