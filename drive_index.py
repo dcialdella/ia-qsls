@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Genera qsl_index.json leyendo el HTML publico de la carpeta de Google Drive.
 
-No usa la API de Drive ni credenciales: parsea los <a> que Drive renderiza en
+No usa la API de Drive ni credenciales: parsea el HTML que Drive renderiza en
 la vista publica de la carpeta. Por eso mismo es fragil: si Drive cambia ese
 HTML, el parseo puede devolver 0 ficheros. Por eso el script se niega a
 escribir un indice que sea poorer que el que ya hay en disco.
+
+Para listar los ficheros de cada actividad se usa `embeddedfolderview`, que
+devuelve la carpeta completa en un unico HTML. La vista normal
+(`/drive/folders/<id>`) solo incluye los primeros 50 ficheros: el resto los
+carga el navegador por peticiones internas que aqui no se hacen. Con la vista
+normal, una actividad con mas de 50 postcards se indexaba a medias.
 
 Tambien acepta un manifiesto local (qsl_manifest.json) para descartar las
 actividades que ya no tienen ningun .adi, de modo que la web no ofrezca
@@ -17,10 +23,12 @@ import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from html import unescape
 from pathlib import Path
 
 DEFAULT_FOLDER_ID = "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy"
 FOLDER_URL = "https://drive.google.com/drive/folders/{id}"
+EMBED_URL = "https://drive.google.com/embeddedfolderview?id={id}#list"
 DOWNLOAD_URL = "https://drive.google.com/uc?export=download&id={id}"
 USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -34,6 +42,12 @@ FOLDER_ENTRY_RE = re.compile(ENTRY_HEAD + re.escape(FOLDER_MIME), re.DOTALL)
 FILE_ENTRY_RE = re.compile(ENTRY_HEAD + r'"image/(?:png|jpeg|webp)"', re.DOTALL)
 LABEL_RE = re.compile(r'\[\[\["(qsl\d+)"')
 FILENAME_RE = re.compile(r'"([^"]+\.(?:png|jpg|jpeg|webp))"')
+# Vista embebida: cada fichero es <div class="flip-entry" id="entry-<id>">...
+# ...<div class="flip-entry-title">nombre.png</div>
+EMBED_ENTRY_RE = re.compile(
+    r'<div class="flip-entry" id="entry-([A-Za-z0-9_-]{10,64})".*?'
+    r'<div class="flip-entry-title">(.*?)</div>', re.DOTALL)
+IMAGE_EXT_RE = re.compile(r'\.(?:png|jpe?g|webp)$', re.I)
 
 # Las 7 actividades reales del proyecto. Un qsl8 en Drive no se publica.
 ACTIVITY_TITLES = {f"qsl{i}": f"Actividad {i}" for i in range(1, 8)}
@@ -108,6 +122,34 @@ def parse_files(html):
         seen.add(fid)
         files.append({'id': fid, 'name': nm.group(1)})
     return files
+
+
+def parse_embedded_files(html):
+    """Lista {id, name} del HTML de `embeddedfolderview` (carpeta completa)."""
+    files = []
+    seen = set()
+    for fid, raw_name in EMBED_ENTRY_RE.findall(html):
+        if fid in seen:
+            continue
+        name = unescape(raw_name).strip()
+        if not IMAGE_EXT_RE.search(name):
+            continue
+        seen.add(fid)
+        files.append({'id': fid, 'name': name})
+    return files
+
+
+def list_files(folder_id):
+    """Devuelve TODOS los ficheros de una carpeta publica de Drive.
+
+    `embeddedfolderview` entrega la lista completa (no pagina), mientras que la
+    vista normal solo trae los primeros 50. Si la vista embebida no devolviera
+    nada (cambio de Drive), se cae a la vista normal para no romper el flujo.
+    """
+    files = parse_embedded_files(fetch(EMBED_URL.format(id=folder_id)))
+    if files:
+        return files
+    return parse_files(fetch(FOLDER_URL.format(id=folder_id)))
 
 
 def fsize(fid):
@@ -243,7 +285,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
             print(f"· {act}: sin .adi (manifiesto) -> no se publica")
             continue
         try:
-            sh = fetch(FOLDER_URL.format(id=fid))
+            fl = list_files(fid)
         except FetchError as ex:
             # Falla una actividad: se avisa y se sigue con las demas, pero la
             # actividad se marca como fallida para no publicar un indice que
@@ -251,7 +293,6 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
             print(f"ERR {act}: {ex}")
             failed.append(act)
             continue
-        fl = parse_files(sh)
         counts[act] = len(fl)
         acts[act] = {'id': fid, 'title': ACTIVITY_TITLES[act]}
         for ff in fl:
