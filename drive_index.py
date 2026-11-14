@@ -208,13 +208,37 @@ def calln(nm, known=None):
     return call.upper() or '?'
 
 
-def load_known_calls(base):
-    """Mapa {nombre_png: indicativo_real} desde los qsl_log.json locales.
+def iso_date(value):
+    """Normaliza 20261113 / 2026-11-13 / 2026/11/13 a '2026-11-13' (o '')."""
+    digits = re.sub(r'[^0-9]', '', str(value or ''))
+    if len(digits) != 8:
+        return ''
+    return f"{digits[0:4]}-{digits[4:6]}-{digits[6:8]}"
 
-    Devuelve {} si no hay logs: drive_index.py sigue funcionando contra Drive,
-    pero pierde los indicativos con '/' (y solo esos).
+
+NAME_DATE_RE = re.compile(r'(20\d{2})[-_]?(0[1-9]|1[0-2])[-_]?(0[1-9]|[12]\d|3[01])')
+
+
+def date_from_name(name):
+    """Fecha ISO que el nombre del PNG hereda del ADI, si la lleva.
+
+    Es solo un respaldo para cuando no hay qsl_log.json (p.ej. otro clon):
+    `..._es-0340-20261113.png` y `..._2026-11-13_...png` dan '2026-11-13'.
     """
-    known = {}
+    m = NAME_DATE_RE.search(str(name or ''))
+    if not m:
+        return ''
+    return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+
+
+def load_local_meta(base):
+    """Mapas desde los qsl_log.json locales: indicativo real y fecha por PNG.
+
+    Devuelve ({nombre_png: indicativo}, {nombre_png: fecha ISO}). Ambos vacíos
+    si no hay logs: drive_index.py sigue funcionando contra Drive, pero pierde
+    los indicativos con '/' y las fechas que no estén en el nombre del fichero.
+    """
+    known, dates = {}, {}
     for act in ACTIVITY_ORDER:          # act ya es 'qsl1'... no un número
         log = Path(base) / act / "qsl_log.json"
         if not log.exists():
@@ -230,9 +254,15 @@ def load_known_calls(base):
             if not isinstance(entry, dict):
                 continue
             for c in entry.get('contactos') or []:
-                if isinstance(c, dict) and c.get('archivo') and c.get('call'):
-                    known[str(c['archivo']).lower()] = str(c['call'])
-    return known
+                if not isinstance(c, dict) or not c.get('archivo'):
+                    continue
+                key = str(c['archivo']).lower()
+                if c.get('call'):
+                    known[key] = str(c['call'])
+                d = iso_date(c.get('fecha'))
+                if d:
+                    dates[key] = d
+    return known, dates
 
 
 def load_manifest(path):
@@ -364,7 +394,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
             if int(manifest.get(act, 0) or 0) == 0:
                 empty.add(act)
 
-    known = load_known_calls(base) if base else {}
+    known, known_dates = load_local_meta(base) if base else ({}, {})
 
     entries = []
     counts = {}
@@ -385,8 +415,16 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
         counts[act] = len(fl)
         acts[act] = {'id': fid, 'title': ACTIVITY_TITLES[act]}
         for ff in fl:
+            key = ff['name'].lower()
             entries.append({'call': calln(ff['name'], known), 'act': act,
-                            'name': ff['name'], 'id': ff['id']})
+                            'name': ff['name'], 'id': ff['id'],
+                            'date': known_dates.get(key) or date_from_name(ff['name'])})
+
+    # Contadores por dia (clave ISO; '' = sin fecha, p.ej. los records de qsl6).
+    days = {}
+    for e in entries:
+        d = e.get('date') or ''
+        days[d] = days.get(d, 0) + 1
 
     # Los tamanos se piden en paralelo: son N peticiones HEAD independientes y
     # a ~1,4 s cada una en serie serían horas con miles de postcards.
@@ -406,6 +444,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
         'folder_url': FOLDER_URL.format(id=folder_id),
         'activities': acts,
         'counts': counts,
+        'days': {k: days[k] for k in sorted(days) if k} | ({'': days['']} if '' in days else {}),
         'total': len(entries),
         'entries': entries,
     }
@@ -500,9 +539,13 @@ def main():
     out_path.write_text(json.dumps(idx, ensure_ascii=False, separators=(',', ':')) + '\n',
                         encoding='utf-8')
     print(f"→ {out_path}  total={idx['total']}")
+    print("   Por actividad:")
     for k in ACTIVITY_ORDER:
         if k in idx['counts']:
-            print(f"   {k}: {idx['counts'][k]}")
+            print(f"     {k}: {idx['counts'][k]}")
+    print("   Por día:")
+    for d, n in idx.get('days', {}).items():
+        print(f"     {d or 'sin fecha'}: {n}")
     return 0
 
 

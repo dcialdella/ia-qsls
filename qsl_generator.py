@@ -40,7 +40,7 @@ from PIL import Image, ImageDraw, ImageFont
 # v5.3: se muestra la estación originante (OPERATOR, una de las 4 válidas) al
 #       principio de la línea 2 como "De EA4HUK"; el CALL sigue siendo la
 #       estación destinataria.
-GENERATOR_VERSION = "5.3"
+GENERATOR_VERSION = "5.4"
 
 # Estaciones que pueden originar una QSL (campo OPERATOR del ADI). El CALL de
 # cada contacto es, en cambio, la estación destinataria.
@@ -884,6 +884,10 @@ def process_folder(folder, generator, backgrounds):
             'call': qso.get('CALL', 'unknown'),
             'archivo': fn,
             'fondo': bg_path.name,
+            # Fecha/hora del QSO (no la de generación): drive_index.py las usa
+            # para los contadores por día de la web.
+            'fecha': (qso.get('QSO_DATE') or '').strip(),
+            'hora': (qso.get('TIME_ON') or '').strip(),
             'generado_en': now_iso(),
         }
 

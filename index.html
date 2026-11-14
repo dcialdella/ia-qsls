@@ -35,6 +35,22 @@
   button.primary { background: var(--gold); color: #1a1206; border-color: var(--gold); font-weight: 700; }
   .hint { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
   .hint code { background: var(--panel); padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line); }
+  #summary { margin: 30px 0 6px; }
+  #summary h2 {
+    margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); text-align: center;
+  }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  .summary-box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .summary-box h3 { margin: 0 0 10px; font-size: 14px; }
+  .summary-box table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-box td { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .summary-box td:last-child {
+    text-align: right; color: var(--gold);
+    font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums;
+  }
+  .summary-box tr.total td { border-bottom: 0; padding-top: 9px; font-weight: 700; color: var(--fg); }
+  .summary-box tr.total td:last-child { color: var(--gold); }
   #status { text-align: center; color: var(--muted); margin: 28px 0 8px; min-height: 22px; }
   #results { display: grid; gap: 14px; padding-bottom: 40px; }
   .card {
@@ -103,6 +119,15 @@
 
 <main>
   <div id="status">Cargando índice…</div>
+
+  <section id="summary" hidden aria-label="Totales de postcards">
+    <h2>Totales por actividad y por día</h2>
+    <div class="summary-grid">
+      <div class="summary-box" id="sum-acts"></div>
+      <div class="summary-box" id="sum-days"></div>
+    </div>
+  </section>
+
   <div id="results"></div>
 </main>
 
@@ -181,6 +206,53 @@ function sortItems(a, b) {
   const nb = parseInt((String(b.act).match(/qsl(\d+)/) || [0, 0])[1]);
   if (na !== nb) return na - nb;
   return String(a.name).localeCompare(String(b.name));
+}
+
+// '2026-11-13' -> '13/11/2026'; cualquier otra cosa -> 'Sin fecha'.
+function fmtDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : 'Sin fecha';
+}
+
+function summaryBox(title, rows, total) {
+  const body = rows.map(([label, n]) =>
+    `<tr><td>${escapeHtml(label)}</td><td>${Number(n).toLocaleString('es')}</td></tr>`).join('');
+  return `<h3>${escapeHtml(title)}</h3>
+    <table><tbody>${body}
+      <tr class="total"><td>Total</td><td>${total.toLocaleString('es')}</td></tr>
+    </tbody></table>`;
+}
+
+// Contadores por actividad y por día. Se calculan del índice para que la
+// página muestre siempre lo mismo que se publica en qsl_index.json.
+function renderSummary() {
+  const box = $('#summary');
+  if (!index) { box.hidden = true; return; }
+
+  const acts = index.activities && typeof index.activities === 'object' ? index.activities : {};
+  const counts = index.counts && typeof index.counts === 'object' ? index.counts : {};
+  const actRows = Object.keys(counts)
+    .filter(k => k !== 'generador')
+    .sort()
+    .map(k => [`${k.toUpperCase()} · ${(acts[k] || {}).title || 'Actividad'}`, counts[k]]);
+
+  // Compatibilidad con índices antiguos sin `days`: se derivan de las entradas.
+  let days = index.days && typeof index.days === 'object' ? index.days : null;
+  if (!days) {
+    days = {};
+    for (const e of (Array.isArray(index.entries) ? index.entries : [])) {
+      const d = typeof e.date === 'string' ? e.date : '';
+      days[d] = (days[d] || 0) + 1;
+    }
+  }
+  const dayRows = Object.keys(days).sort().map(d => [d ? fmtDate(d) : 'Sin fecha', days[d]]);
+
+  if (!actRows.length && !dayRows.length) { box.hidden = true; return; }
+  const total = Number.isFinite(index.total) ? index.total
+    : actRows.reduce((sum, [, n]) => sum + n, 0);
+  $('#sum-acts').innerHTML = summaryBox('Por actividad', actRows, total);
+  $('#sum-days').innerHTML = summaryBox('Por día', dayRows, total);
+  box.hidden = false;
 }
 
 // Pinta la tarjeta de un indicativo y todas sus postcards.
@@ -272,9 +344,12 @@ async function load() {
   }
 
   $('#updated').textContent = 'Índice actualizado: ' + (index.generated_at || '?');
+  const actCount = Object.keys(acts).filter(k => k !== 'generador').length;
+  const dayCount = new Set(entries.map(e => e.date).filter(Boolean)).size;
   $('#total').textContent = total.toLocaleString('es') + ' postcards en ' +
-    Object.keys(acts).length + ' actividades';
+    actCount + ' actividades · ' + dayCount + ' día(s)';
   $('#version').textContent = 'Automatic Deployments V: ' + (index.generador || '?');
+  renderSummary();
   render(input.value.trim());
   if (!input.value.trim()) input.focus();
 }
