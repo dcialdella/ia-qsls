@@ -106,10 +106,41 @@ Backup previo a los espejos:
 
 Script usado: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/espejar_qso.py`
 
+## Cruces entre las tres estaciones del trío
+
+Para que las cuatro estaciones tengan contacto con las cuatro en cada ronda de
+banda, se han añadido los cruces que faltaban entre EA3JAQ, EA4GHH y EA4IWX:
+**60 parejas / 120 registros** (cada pareja queda anotada en los dos logs).
+
+Criterio (elegido por el usuario): **una hora común por carpeta y banda**. Por
+cada carpeta y banda se toma la hora mayoritaria del trío en el log de EA4HUK
+(empate → hora intermedia) y la frecuencia más usada a esa hora. Los QSO de
+EA4HUK con cada estación se han dejado en su hora original.
+
+| Carpeta | Bandas completadas (hora · freq) |
+|---|---|
+| qsl1 | 40m 10:55 · 7.192 — 70cm 10:56 · 443.500 — 2m 10:56 · 145.250 — 20m 10:57 · 14.250 |
+| qsl2 | 20m 14:56 · 14.342 — 2m 14:57 · 145.252 — 70cm 15:00 · 434.200 — 40m 15:01 · 7.166 |
+| qsl3 | 20m 08:56 · 14.323 — 2m 08:57 · 145.225 — 70cm 08:58 · 434.000 — 40m 09:00 · 7.160 |
+| qsl4 | 40m 15:14 · 7.183 — 2m 15:15 · 144.525 — 70cm 15:15 · 434.000 — 20m 15:16 · 14.160 |
+| qsl5 | 2m 11:35 · 145.250 — 70cm 11:36 · 434.300 — 20m 11:37 · 14.250 — 40m 11:38 · 7.194 |
+
+Identidad usada en los registros nuevos (tomada de los logs de EA4HUK):
+EA3JAQ = Eladio Muniz Fernandez / JN11HU · EA4GHH = Manuel / IN80DK ·
+EA4IWX = Iñigo Merchán Pedraja / IN80CQ. `DISTANCE` calculada desde IM85mh
+(JN11HU 874 km, IN80DK 574 km, IN80CQ 602 km).
+
+Verificación: **121/121** comprobaciones OK (20 rondas × 3 cruces del trío + los
+61 QSO de EA4HUK con cada estación en su hora). 0 registros duplicados.
+
+Backup previo (15 ficheros): `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruces_backup_204218/`
+Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruzar_trio.py`
+
 ## Totales
 
-- ADI raíz: 2.743 → **2.819** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos).
-- `ACTIVIDADES/`: 32 ficheros, **3.144** QSO (qsl2 se replica en `pota` y `tota`).
+- ADI raíz: 2.743 → **2.939** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos,
+  +120 cruces del trío).
+- `ACTIVIDADES/`: 32 ficheros, **3.288** QSO (qsl2 se replica en `pota` y `tota`).
 - `audit_adi.py`: sin errores nuevos (0 sin FREQ, BAND canónica, TIME_ON de 4 caracteres,
   sin duplicados internos en los cinco logs).
 
