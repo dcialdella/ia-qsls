@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gráficos · Log completo EA4HUK / EA4GHH / EA4IWX / EA3JAQ</title>
+<meta name="description" content="Gráficos estadísticos de los 2.933 contactos de las cuatro estaciones en las siete actividades QSL.">
+<style>
+  :root {
+    --bg: #0e1116; --panel: #171b22; --panel2: #1d222b; --line: #262c36;
+    --fg: #e8ecf1; --muted: #96a0ae; --gold: #f5a623; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); min-height: 100vh;
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header, main, footer { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  header { padding-top: 44px; text-align: center; position: relative; }
+  .back {
+    position: absolute; left: 20px; top: 20px; color: var(--muted);
+    text-decoration: none; font-size: 14px; border: 1px solid var(--line);
+    background: var(--panel); padding: 7px 12px; border-radius: 10px;
+  }
+  .back:hover { color: var(--fg); border-color: var(--gold); }
+  h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: .4px; }
+  .sub { color: var(--muted); margin: 0 auto; font-size: 15px; max-width: 720px; }
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin: 28px 0 8px;
+  }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 12px; }
+  .stat b {
+    display: block; font: 700 24px ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--gold); font-variant-numeric: tabular-nums; line-height: 1.2;
+  }
+  .stat span { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  h2 {
+    margin: 46px 0 4px; font-size: 13px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; margin-top: 18px; }
+  figure {
+    margin: 0; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden; cursor: zoom-in; transition: border-color .15s, transform .15s;
+  }
+  figure:hover { border-color: var(--gold); transform: translateY(-2px); }
+  figure img { display: block; width: 100%; height: auto; background: #fff; }
+  figcaption { padding: 11px 14px 13px; font-size: 13.5px; color: var(--muted); }
+  figcaption b { display: block; color: var(--fg); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  footer {
+    margin-top: 54px; padding: 26px 20px 60px; text-align: center;
+    color: var(--muted); font-size: 13px; border-top: 1px solid var(--line);
+  }
+  footer code { background: var(--panel); padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line); }
+  #lightbox {
+    position: fixed; inset: 0; background: rgba(6,8,11,.94); display: none;
+    align-items: center; justify-content: center; padding: 24px; z-index: 50;
+  }
+  #lightbox.on { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 92vh; border-radius: 8px; background: #fff; }
+  #lightbox .close {
+    position: fixed; top: 16px; right: 20px; background: var(--panel); color: var(--fg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; cursor: pointer; font-size: 14px;
+  }
+  #lightbox .close:hover { border-color: var(--gold); }
+  @media (max-width: 560px) {
+    .back { position: static; display: inline-block; margin-bottom: 18px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="../">← Postales QSL</a>
+  <h1>Gráficos del log completo</h1>
+  <p class="sub">2.933 contactos de las cuatro estaciones (EA4HUK, EA4GHH, EA4IWX y EA3JAQ)
+     en las siete actividades QSL. Pulsa cualquier gráfico para verlo a tamaño completo.</p>
+
+  <div class="stats">
+    <div class="stat"><b>2.933</b><span>QSO</span></div>
+    <div class="stat"><b>1.109</b><span>indicativos</span></div>
+    <div class="stat"><b>33</b><span>entidades DXCC</span></div>
+    <div class="stat"><b>8</b><span>bandas</span></div>
+    <div class="stat"><b>6</b><span>modos</span></div>
+    <div class="stat"><b>805 km</b><span>distancia media</span></div>
+    <div class="stat"><b>13.955 km</b><span>distancia máxima</span></div>
+  </div>
+</header>
+
+<main>
+  <h2>Análisis general · 17 gráficos</h2>
+  <div class="grid">
+
+    <figure>
+      <img src="thumbs/grafico_dashboard.png" alt="Dashboard resumen" loading="lazy">
+      <figcaption><b>Dashboard resumen</b>Países, modos, bandas, estaciones, horario y distancias en una vista.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_paises.png" alt="Países contactados" loading="lazy">
+      <figcaption><b>Países contactados</b>Top 15 entidades y su peso porcentual en el log.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_dxcc.png" alt="Entidades DXCC" loading="lazy">
+      <figcaption><b>Entidades DXCC</b>Top 20 países reconocidos por ARRL.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_localizadores.png" alt="Localizadores Maidenhead" loading="lazy">
+      <figcaption><b>Localizadores Maidenhead</b>Top 20 cuadrículas más contactadas.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_modos_bandas.png" alt="Modos y bandas" loading="lazy">
+      <figcaption><b>Modos y bandas</b>Reparto de SSB, FT8, FM, DIGITALVOICE, CW y MFSK por banda.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_banda_modo.png" alt="Matriz banda y modo" loading="lazy">
+      <figcaption><b>Matriz banda × modo</b>Cruces de contactos con el valor en cada celda.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_frecuencias.png" alt="Frecuencias usadas" loading="lazy">
+      <figcaption><b>Frecuencias usadas</b>Histograma de frecuencias exactas en MHz por modo.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_estaciones_top.png" alt="Estaciones más contactadas" loading="lazy">
+      <figcaption><b>Estaciones más contactadas</b>Top 20 indicativos por número de QSO.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_distribucion_horaria.png" alt="Distribución horaria" loading="lazy">
+      <figcaption><b>Distribución horaria</b>Actividad por hora UTC en todos los modos.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_fonia_por_hora.png" alt="Fonía por hora" loading="lazy">
+      <figcaption><b>Fonía por hora</b>Contactos de voz (SSB/FM) según la hora UTC.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_heatmap_dia_hora.png" alt="Heatmap día y hora" loading="lazy">
+      <figcaption><b>Heatmap día × hora</b>Franjas de mayor operación durante la semana.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_timeline.png" alt="Timeline de contactos" loading="lazy">
+      <figcaption><b>Timeline</b>QSO acumulados y contactos por día.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_mapa_mundial.png" alt="Mapa mundial" loading="lazy">
+      <figcaption><b>Mapa mundial</b>Dispersión geográfica de los localizadores contactados.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_distancias.png" alt="Distribución de distancias" loading="lazy">
+      <figcaption><b>Distancias</b>Histograma lineal y logarítmico de distancias en km.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_distancia_locator.png" alt="Distancias por localizador" loading="lazy">
+      <figcaption><b>Distancias por localizador</b>Media y dispersión por banda y modo, con potencia.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_potencia_distancia.png" alt="Potencia y distancia" loading="lazy">
+      <figcaption><b>Potencia × distancia</b>Dispersión de potencia y mapa de densidad.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/grafico_zonas.png" alt="Zonas CQ e ITU" loading="lazy">
+      <figcaption><b>Zonas CQ e ITU</b>Reparto por zonas geográficas internacionales.</figcaption>
+    </figure>
+
+  </div>
+
+  <h2>Análisis por operador · 10 gráficos</h2>
+  <div class="grid">
+
+    <figure>
+      <img src="thumbs/operador_resumen.png" alt="Resumen por operador" loading="lazy">
+      <figcaption><b>Resumen por operador</b>Total de contactos y peso de cada estación.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_bandas.png" alt="Bandas por operador" loading="lazy">
+      <figcaption><b>Bandas por operador</b>Matriz de bandas trabajadas por cada estación.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_modos.png" alt="Modos por operador" loading="lazy">
+      <figcaption><b>Modos por operador</b>Qué modo usa cada estación y en qué proporción.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_horas.png" alt="Horas por operador" loading="lazy">
+      <figcaption><b>Horas por operador</b>Franjas horarias de actividad de cada estación.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_comparacion_bandas.png" alt="Comparación de bandas" loading="lazy">
+      <figcaption><b>Comparación de bandas</b>Las cuatro estaciones frente a frente por banda.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_comparacion_modos.png" alt="Comparación de modos" loading="lazy">
+      <figcaption><b>Comparación de modos</b>Las cuatro estaciones frente a frente por modo.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_EA4HUK.png" alt="EA4HUK" loading="lazy">
+      <figcaption><b>EA4HUK</b>948 QSO · la única estación presente en las siete actividades.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_EA4GHH.png" alt="EA4GHH" loading="lazy">
+      <figcaption><b>EA4GHH</b>721 QSO · 301 de ellos en la LLOTA de qsl5.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_EA4IWX.png" alt="EA4IWX" loading="lazy">
+      <figcaption><b>EA4IWX</b>656 QSO · opera como EA4IWX/9, con más peso en 40m.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="thumbs/operador_EA3JAQ.png" alt="EA3JAQ" loading="lazy">
+      <figcaption><b>EA3JAQ</b>608 QSO · el que más DXCC distintos acumula (22 países).</figcaption>
+    </figure>
+
+  </div>
+</main>
+
+<footer>
+  Datos: <code>graficos/TODOS.adi</code>, 2.933 QSO (sin los 6 registros de demostración).
+  Gráficos generados con <code>analizar_adi_grafico.py</code> y <code>analizar_por_operador.py</code>.
+</footer>
+
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="Gráfico ampliado">
+  <button class="close" type="button">Cerrar ✕</button>
+  <img alt="">
+</div>
+
+<script>
+  const box = document.getElementById('lightbox');
+  const big = box.querySelector('img');
+  document.querySelectorAll('figure').forEach(fig => {
+    fig.addEventListener('click', () => {
+      const img = fig.querySelector('img');
+      big.src = img.src.replace('thumbs/', '');
+      big.alt = img.alt;
+      box.classList.add('on');
+    });
+  });
+  function close() { box.classList.remove('on'); big.removeAttribute('src'); }
+  box.addEventListener('click', e => { if (e.target === box || e.target.classList.contains('close')) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+</script>
+
+</body>
+</html>
