@@ -140,22 +140,25 @@ Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruza
 
 ## Totales
 
-- ADI raíz: 2.743 → **2.939** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos,
+- ADI raíz (15/11): 2.743 → **2.939** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos,
   +120 cruces del trío). La cuenta cierra: 2.743 + 16 − 1 + 61 + 120 = 2.939.
+  El 17/11 se añadieron 16 espejos más (sección final), dejando el total en **2.955**.
 - **Bloque aparte (12 QSO en 40/60/80 m, 2026‑11‑15 13:00):** doce contactos en
   7.100 / 5.350 / 3.700 MHz se añadieron al derivado del Escritorio `DME.adi` (que
   contenía 2.678 QSO). **No están en los 31 `.adi` raíz ni en la web**: por eso no
-  entran en el total de 2.939 ni en las 2.982 postales publicadas. `DME.adi` ya no
+  entran en el total de 2.955 ni en las 2.998 postales publicadas. `DME.adi` ya no
   estaba en el Escritorio en la última comprobación (17/11), así que este bloque solo
   consta en la documentación; si el backup `DME-backup-20261115.zip` sigue
   disponible, sería la fuente para recuperarlo.
 - **Otro derivado fuera del repo (17/11):** `~/Desktop/ea4huk-eg9-todo.adi` reúne
-  948 QSO propios de EA4HUK con `STATION_CALLSIGN=EA4HUK/9`, `MY_GRIDSQUARE=IM85`,
-  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 2.939
-  QSO ni en las 2.982 postales.
-- `ACTIVIDADES/`: 32 ficheros, **3.288** QSO (qsl2 se replica en `pota` y `tota`).
-- `audit_adi.py`: sin errores nuevos (0 sin FREQ, BAND canónica, TIME_ON de 4 caracteres,
-  sin duplicados internos en los cinco logs).
+  954 QSO propios de EA4HUK con `STATION_CALLSIGN=EA4HUK/9`, `MY_GRIDSQUARE=IM85`,
+  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 2.955
+  QSO ni en las 2.998 postales.
+- `ACTIVIDADES/`: 32 ficheros, **3.303** QSO (qsl2 se replica en `pota` y `tota`).
+- `audit_adi.py`: 2 avisos de duplicado por una clave que no incluye `FREQ`
+  (7.160 vs 7.150 y 7.183 vs 7.195). Son consecuencia esperada de los espejos del
+  17/11: mismo `CALL`/fecha/hora/banda/modo pero frecuencias distintas en el otro log.
+  No hay duplicados exactos, ni errores de FREQ, BAND o TIME_ON.
 
 ## Reversión
 
@@ -166,3 +169,51 @@ Backup de los cinco ADI previos al cambio:
 ```
 
 Script usado: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/rellenar_trio.py`
+
+## Actualización 17/11: 16 QSO unilaterales detectados en el cruce
+
+Al cruzar de nuevo los 31 `.adi` raíz aparecieron **16 QSO que existían solo en un
+log**: uno de los cuatro indicativos los había anotado y el corresponsal no. Se han
+añadido como **espejos en el log contrario**, clonando un registro del mismo `CALL`
+ya presente en ese fichero y sobrescribiendo `QSO_DATE`, `TIME_ON`, `BAND`, `FREQ`
+y `MODE` con los del registro origen. Se respeta el formato de export de cada
+destino (Smart Logger multilínea en qsl3/qsl4/ea4huk-pota, Ham2K de una línea en
+qsl4/EA4IWX y en qsl7). Backup previo de los 6 ficheros destino:
+`/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/adi-backup-20261117/`.
+Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/add_mirrors.py`.
+
+| Día | Hora | Banda | Operador | Frecuencia | CALL | Fichero ADI de origen | Fichero ADI destino |
+|---|---|---|---|---|---|---|---|
+| 2026-11-13 | 08:55 | 40m | EA4GHH | 7.160 | EA4IWX | `qsl4/EA4IWX-2026-11-13.adi` | `qsl3/EA4GHH @ES-0849-20261113.adi` |
+| 2026-11-13 | 08:57 | 70cm | EA4GHH | 420.000 | EA3JAQ | `qsl4/2026-11-13 EA3JAQ.adi` | `qsl3/EA4GHH @ES-0849-20261113.adi` |
+| 2026-11-13 | 08:55 | 70cm | EA4HUK | 430.200 | EA4IWX | `qsl4/EA4IWX-2026-11-13.adi` | `qsl3/EA4HUK@ES-0849-20261113.adi` |
+| 2026-11-13 | 08:57 | 40m | EA4HUK | 7.150 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl3/EA4HUK@ES-0849-20261113.adi` |
+| 2026-11-13 | 08:57 | 70cm | EA4HUK | 430.320 | EA3JAQ | `qsl4/2026-11-13 EA3JAQ.adi` | `qsl3/EA4HUK@ES-0849-20261113.adi` |
+| 2026-11-13 | 09:06 | 70cm | EA4HUK | 430.200 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl3/EA4HUK@ES-0849-20261113.adi` |
+| 2026-11-13 | 08:57:00 | 40m | EA4IWX | 7.150000 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl4/EA4IWX-2026-11-13.adi` |
+| 2026-11-13 | 08:57:00 | 40m | EA4IWX | 7.000000 | EA3JAQ | `qsl4/2026-11-13 EA3JAQ.adi` | `qsl4/EA4IWX-2026-11-13.adi` |
+| 2026-11-13 | 08:57:00 | 2m | EA4IWX | 145.400000 | EA3JAQ | `qsl4/2026-11-13 EA3JAQ.adi` | `qsl4/EA4IWX-2026-11-13.adi` |
+| 2026-11-13 | 08:59:00 | 70cm | EA4IWX | 420.000000 | EA3JAQ | `qsl4/2026-11-13 EA3JAQ.adi` | `qsl4/EA4IWX-2026-11-13.adi` |
+| 2026-11-13 | 09:07:00 | 70cm | EA4IWX | 430.200000 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl4/EA4IWX-2026-11-13.adi` |
+| 2026-11-13 | 08:57:00 | 40m | (sin `OPERATOR`) | 7.150000 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl4/2026-11-13 EA3JAQ.adi` |
+| 2026-11-13 | 09:07:00 | 70cm | (sin `OPERATOR`) | 430.200000 | EA4GHH | `qsl3/EA4GHH @ES-0849-20261113.adi` | `qsl4/2026-11-13 EA3JAQ.adi` |
+| 2026-11-14 | 16:06 | 40m | EA4HUK | 7.183 | EA3JAQ | `qsl2/EA3JAQ-20261114.adi` | `qsl4/ea4huk-pota-0850.adi` |
+| 2026-11-14 | 16:06 | 40m | EA4HUK | 7.195 | EA3JAQ | `qsl2/EA3JAQ-20261114.adi` | `qsl4/ea4huk-pota-0850.adi` |
+| 2026-11-15 | 16:19:00 | 70cm | (sin `OPERATOR`) | 420 | EA4HUK | `qsl7/ea4huk-dmr.adi` | `qsl7/EA3JAQ-20261115-en-dmr-15-nov-full.adi` |
+
+Los 13 espejos restantes tenían frecuencia/hora distinta en el otro log; se han
+mantenido esas diferencias a propósito. Por eso `audit_adi.py` avisa de 2 duplicados
+por su clave sin `FREQ`: `7.160` vs `7.150` (qsl4/EA3JAQ) y `7.183` vs `7.195`
+(qsl4/ea4huk-pota). Es esperado y aceptado.
+
+Totales tras esta actualización:
+
+- ADI raíz: 2.939 → **2.955** QSO (+16 espejos). QSO entre las 4 estaciones: 283,
+  con **0 unilaterales** y **0 duplicados exactos**; longitudes ADIF correctas.
+- `ACTIVIDADES/`: 32 ficheros, **3.303** QSO (regenerados con `./generar_adis.sh`).
+- Postales: **2.998** generadas y sincronizadas con Drive; `qsl_index.json` con
+  `total: 2998` y conteos `qsl1=553, qsl2=414, qsl3=616, qsl4=466, qsl5=840,
+  qsl6=43, qsl7=66`.
+- `graficos/TODOS.adi`: **2.949** QSO (31 `.adi` raíz menos los 6 registros demo),
+  0 `XYZ123` y 611 registros con `OPERATOR` completado. 27 gráficos, 27 miniaturas
+  y `estadisticas_adi.json` regenerados; hora pico 09:00 UTC con 829 QSO.

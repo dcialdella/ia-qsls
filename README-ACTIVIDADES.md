@@ -28,19 +28,19 @@ python3 qsl_generar_adis.py
 ## Archivos de entrada (estado actual)
 
 Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **31 `.adi`** con
-2.939 QSO en total: 25 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
+2.955 QSO en total: 25 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
 en esa cuenta:
 
 | Carpeta | `.adi` raíz | QSO | Formatos generados |
 |---|---|---|---|
 | `qsl1` | 5 | 553 | TOTA `EAR-1901` |
 | `qsl2` | 5 | 414 | TOTA `EAR-1902` + POTA `ES-0340` |
-| `qsl3` | 5 | 610 | POTA `ES-0849` |
-| `qsl4` | 5 | 457 | POTA `ES-0850` |
+| `qsl3` | 5 | 616 | POTA `ES-0849` |
+| `qsl4` | 5 | 466 | POTA `ES-0850` |
 | `qsl5` | 7 | 840 | LLOTA `LLES-0214` |
-| **Total** | **27** | **2.874** | **32 ficheros de salida, 3.288 QSO** |
+| **Total** | **27** | **2.889** | **32 ficheros de salida, 3.303 QSO** |
 
-`qsl6` no tiene `.adi` (postales de record); `qsl7` tiene 4 `.adi` (64 QSO, 3 reales +
+`qsl6` no tiene `.adi` (postales de record); `qsl7` tiene 4 `.adi` (66 QSO, 3 reales +
 1 demo) pero **no se procesa**: no está en `CONFIG`.
 
 Salidas reales (32 ficheros en total). Un ejemplo por carpeta:
@@ -53,8 +53,8 @@ qsl4/ACTIVIDADES/2026-11-13 EA3JAQ-pota.adi
 qsl5/ACTIVIDADES/ea4ghh-llota20261115-llota.adi
 ```
 
-> El total de QSO de salida (3.288) es mayor que el de entrada en `qsl1`–`qsl5`
-> (2.874) porque cada `.adi` genera un fichero por formato y, en `qsl2`, dos (TOTA y
+> El total de QSO de salida (3.303) es mayor que el de entrada en `qsl1`–`qsl5`
+> (2.889) porque cada `.adi` genera un fichero por formato y, en `qsl2`, dos (TOTA y
 > POTA) con el mismo contenido de QSO.
 
 ## Formatos por actividad
@@ -142,7 +142,7 @@ qsl2/
 │   └── 5 *-pota.adi
 ...
 qsl7/
-├── 4 .adi (65 QSO)               ← existen, pero NO se procesan (no están en CONFIG)
+├── 4 .adi (66 QSO)               ← existen, pero NO se procesan (no están en CONFIG)
 ```
 
 Cada `.adi` de entrada genera su propio conjunto de salidas (un `-tota.adi` en qsl1,

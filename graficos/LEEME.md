@@ -9,7 +9,7 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 
 ## Datos de entrada
 
-`graficos/TODOS.adi` — 2.933 QSO, todos los contactos de las cuatro estaciones
+`graficos/TODOS.adi` — 2.949 QSO, todos los contactos de las cuatro estaciones
 (EA4HUK, EA4GHH, EA4IWX, EA3JAQ) en qsl1–qsl7.
 
 - Origen: los 31 `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
@@ -35,7 +35,7 @@ estos contactos.
 
 Cifras del análisis: **1.109 indicativos únicos**, **33 entidades DXCC**,
 8 bandas, 6 modos, distancia media **805 km** y máxima **13.955 km**. Hora pico:
-**09:00 UTC** (826 QSO).
+**09:00 UTC** (829 QSO).
 
 ## Regenerar
 

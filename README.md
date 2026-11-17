@@ -65,13 +65,13 @@ postales generadas.
 ## 1. Estado actual del proyecto
 
 > **Estado actual: en producción, con los datos reales cargados.** Las actividades
-> `qsl1`–`qsl5` y `qsl7` tienen **31 `.adi` en total** (2.939 QSO de EA4HUK, EA4GHH,
-> EA4IWX y EA3JAQ), de los que se han generado **2.982 postales**, sincronizadas con
+> `qsl1`–`qsl5` y `qsl7` tienen **31 `.adi` en total** (2.955 QSO de EA4HUK, EA4GHH,
+> EA4IWX y EA3JAQ), de los que se han generado **2.998 postales**, sincronizadas con
 > Google Drive y publicadas en <https://dcialdella.github.io/ia-qsls/>. Los 6
 > `QSL-DEMO-EG9MM.adi` de relleno siguen en el repo, pero ya no son el dataset
 > publicado. El flujo diario está en §2.0.
 >
-> Las estadísticas del log completo (2.933 QSO, sin los 6 registros demo) tienen una
+> Las estadísticas del log completo (2.949 QSO, sin los 6 registros demo) tienen una
 > página independiente, <https://dcialdella.github.io/ia-qsls/graficos/>, con 27
 > gráficos y sus miniaturas. No modifica la web de descarga ni el índice.
 >
@@ -96,23 +96,23 @@ postales generadas.
   |---|---|---|---|
   | `qsl1` | 5 | 553 | 553 |
   | `qsl2` | 5 | 414 | 414 |
-  | `qsl3` | 5 | 610 | 610 |
-  | `qsl4` | 5 | 457 | 457 |
+  | `qsl3` | 5 | 616 | 616 |
+  | `qsl4` | 5 | 466 | 466 |
   | `qsl5` | 7 | 840 | 840 |
   | `qsl6` | **0 (no lleva `.adi`)** | — | 43 (record) |
-  | `qsl7` | 4 | 65 | 65 |
-  | **Total** | **31** | **2.939** | **2.982** |
+  | `qsl7` | 4 | 66 | 66 |
+  | **Total** | **31** | **2.955** | **2.998** |
 
   Los 6 `QSL-DEMO-EG9MM.adi` (`CALL` = `XYZ123`, `STATION_CALLSIGN` = `EG9MM`) siguen
   entre esos 31 ficheros como relleno histórico; sus 6 contactos están incluidos en el
-  total de 2.939 QSO y son los únicos que no corresponden a una estación real.
+  total de 2.955 QSO y son los únicos que no corresponden a una estación real.
   `qsl6` **no lleva ningún `.adi`** y no debe llevar ninguno: sus postcards de record se
   derivan de los QSO ya registrados en `qsl1`–`qsl5` (ver §3.b). Por eso el manifiesto
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
   `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
-- ✅ `qsl_index.json` coherente con lo publicado: `total: 2982`, 1.110 indicativos
-  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-15T20:38:31Z`; lo
-  publicó el commit `7faa24a` (§9).
+- ✅ `qsl_index.json` coherente con lo publicado: `total: 2998`, 1.110 indicativos
+  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-17T18:06:17Z`; lo
+  publicó la regeneración del 17/11 tras los 16 espejos (§9).
 - ✅ Los 6 `.adi` de ejemplo siguen aparcados en `TESTDATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`).
 - ✅ Los `.adi` reales ya están incorporados: se procesan los 31 de las carpetas de
@@ -273,22 +273,22 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
 
 ### 1.2 Derivado `ea4huk-eg9-todo.adi` (Escritorio, fuera del repo)
 
-`~/Desktop/ea4huk-eg9-todo.adi` reúne los **948 QSO propios de EA4HUK** de los 31
-`.adi` raíz (qsl1: 256, qsl2: 174, qsl3: 126, qsl4: 85, qsl5: 261, qsl7: 46;
+`~/Desktop/ea4huk-eg9-todo.adi` reúne los **954 QSO propios de EA4HUK** de los 31
+`.adi` raíz (qsl1: 256, qsl2: 174, qsl3: 130, qsl4: 87, qsl5: 261, qsl7: 46;
 qsl6 no tiene `.adi` raíz). Sustituye en alcance al anterior `ea4huk9.adi`
 (841 QSO, solo qsl1–qsl5). Es un agregado de trabajo, **no una entrada del
 generador**: no se copia a ninguna carpeta `qslN/`, no suma postales ni cambia
-`qsl_index.json` (2.982).
+`qsl_index.json` (2.998).
 
-Normalización aplicada a los 948 registros:
+Normalización aplicada a los 954 registros:
 
 | Campo | Valor final | Valor en los ADI raíz |
 |---|---|---|
 | `STATION_CALLSIGN` | `EA4HUK/9` | `EA4HUK` en todos |
-| `MY_GRIDSQUARE` | `IM85` | `IM85` (256), `IM85MH` (385), `IM85MG` (261), ausente (46) |
-| `CQZ` | `14` | ausente en los 948 |
-| `ITUZ` | `37` | ausente en los 948 |
-| `DXCC` | `32` | ausente en los 948 |
+| `MY_GRIDSQUARE` | `IM85` | `IM85` (256), `IM85MH` (391), `IM85MG` (261), ausente (46) |
+| `CQZ` | `14` | ausente en los 954 |
+| `ITUZ` | `37` | ausente en los 954 |
+| `DXCC` | `32` | ausente en los 954 |
 | `OPERATOR` | `EA4HUK` | sin cambios |
 
 El `/9` indica que la operación se hizo desde Melilla (distrito EA9); `CQZ=14` e
@@ -296,12 +296,17 @@ El `/9` indica que la operación se hizo desde Melilla (distrito EA9); `CQZ=14` 
 fija en todos los registros por decisión expresa, no se calcula del `CALL`.
 El resto de campos (`CALL`, `FREQ`, `BAND`, `MODE`, `DISTANCE`, `TIME_ON`…) se
 conserva tal cual.
-No se incluyen los 72 QSO en los que EA4HUK es el corresponsal de otro log:
+No se incluyen los 73 QSO en los que EA4HUK es el corresponsal de otro log:
 tienen `MY_GRIDSQUARE` de otra estación y no son QSO propios.
 
-Verificación: 948 `<EOR>`, un solo `<EOH>`, 0 longitudes declaradas incorrectas,
+Verificación: 954 `<EOR>`, un solo `<EOH>`, 0 longitudes declaradas incorrectas,
 0 duplicados por `CALL`+fecha+hora+banda+modo, fechas 20261113–20261115,
-902 SSB y 46 DIGITALVOICE.
+905 SSB, 3 FM y 46 DIGITALVOICE.
+
+El otro derivado del Escritorio, `~/Desktop/todos-contactos.csv`, se regenera
+desde los mismos 31 `.adi` raíz e incluye **todos** los QSO (2.955 filas más la
+cabecera, 13 columnas, CRLF), también los 6 registros demo `EG9MM`/`XYZ123`.
+No se versiona ni alimenta la web; es solo un volcado de trabajo.
 
 ### Cambios recientes (aplicados y verificados)
 
@@ -446,7 +451,7 @@ Verificación: 948 `<EOR>`, un solo `<EOH>`, 0 longitudes declaradas incorrectas
        - Demo de aquel momento: los `.adi` de relleno llevan `CALL` = `XYZ123`
          (`STATION_CALLSIGN` = `EG9MM`); entonces las 7 postcards publicadas eran
          `xyz123_*.png` y el índice web (`qsl_index.json`) listaba solo esas. Hoy el
-         dataset real tiene 2.982 postales (§1). Tras purgar nombres viejos en Drive,
+         dataset real tiene 2.998 postales (§1). Tras purgar nombres viejos en Drive,
          repetir `./run_all.sh` un minuto después si el HTML público tarda en
          propagar el borrado (ver §2.0 y §7).
 31. **v5.3: originante y destinatario en la postal** (2026-11-04):
@@ -482,10 +487,10 @@ ia-qsls/
 ├── qsl_generar_adis.py     <- Genera qslN/ACTIVIDADES/*.adi (TOTA/POTA/LLOTA)
 ├── drive_index.py         <- Genera qsl_index.json para la web (§7)
 ├── index.html             <- Página web de descarga (GitHub Pages)
-├── qsl_index.json         <- Índice web (total 2982, 1110 indicativos)
+├── qsl_index.json         <- Índice web (total 2998, 1110 indicativos)
 ├── graficos/              <- Página NUEVA de estadísticas (GitHub Pages)
 │   ├── index.html         <- Galería de 27 gráficos, con miniaturas
-│   ├── TODOS.adi          <- 2933 QSO de entrada (31 .adi raíz, sin 6 demo)
+│   ├── TODOS.adi          <- 2949 QSO de entrada (31 .adi raíz, sin 6 demo)
 │   ├── *.png              <- 27 gráficos a resolución completa
 │   ├── thumbs/*.png       <- 27 miniaturas de 720 px
 │   ├── estadisticas_adi.json
@@ -501,22 +506,22 @@ ia-qsls/
 ├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/  QSL-1.png + 5 .adi (553 QSO) + ACTIVIDADES/ + QSLS/ (553 PNG) + qsl_log.json
 ├── qsl2/  QSL-2.png + 5 .adi (414 QSO) + ACTIVIDADES/ + QSLS/ (414 PNG) + qsl_log.json
-├── qsl3/  QSL-3.png + 5 .adi (610 QSO) + ACTIVIDADES/ + QSLS/ (610 PNG) + qsl_log.json
-├── qsl4/  QSL-4.png + 5 .adi (457 QSO) + ACTIVIDADES/ + QSLS/ (457 PNG) + qsl_log.json
+├── qsl3/  QSL-3.png + 5 .adi (616 QSO) + ACTIVIDADES/ + QSLS/ (616 PNG) + qsl_log.json
+├── qsl4/  QSL-4.png + 5 .adi (466 QSO) + ACTIVIDADES/ + QSLS/ (466 PNG) + qsl_log.json
 ├── qsl5/  QSL-5.png + 7 .adi (840 QSO) + ACTIVIDADES/ + QSLS/ (840 PNG) + qsl_log.json
 ├── qsl6/  f6.png + (sin .adi) + QSLS/ (43 PNG de record, se regeneran siempre)
-└── qsl7/  f7.png + 4 .adi (65 QSO) + QSLS/ (65 PNG) + qsl_log.json
+└── qsl7/  f7.png + 4 .adi (66 QSO) + QSLS/ (66 PNG) + qsl_log.json
 ```
 
 Notes sobre esta estructura:
 
 - **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan: 31 en total
-  (5/5/5/5/7/0/4), con 2.939 QSO. Los 6 `QSL-DEMO-EG9MM.adi` de relleno conviven con los
+  (5/5/5/5/7/0/4), con 2.955 QSO. Los 6 `QSL-DEMO-EG9MM.adi` de relleno conviven con los
   reales; los 6 de `TESTDATA/` siguen aparcados ahí y no se tocan.
 - **`qsl1`–`qsl5` tienen además `ACTIVIDADES/`**, con los `.adi` generados por
   `./generar_adis.sh` (ver `README-ACTIVIDADES.md`). Se borran y regeneran en cada
   ejecución; no se versionan como entrada del generador de imágenes.
-- **`qslN/QSLS/` tiene los PNG generados** (2.982 en total). No se versionan: están en
+- **`qslN/QSLS/` tiene los PNG generados** (2.998 en total). No se versionan: están en
   `.gitignore`. La copia que se publica vive en Google Drive.
 - **`qslN/qsl_log.json` existe** en las 7 actividades (se crean solos al primer procesado
   real). También ignorado por `.gitignore`.
@@ -651,15 +656,15 @@ se resumen con `…`.
 Postales generadas por carpeta:
    qsl1   553 postales
    qsl2   414 postales
-   qsl3   610 postales
-   qsl4   457 postales
+   qsl3   616 postales
+   qsl4   466 postales
    qsl5   840 postales
    qsl6    43 postales
-   qsl7    65 postales
+   qsl7    66 postales
 ```
 
 > Ojo a la aritmética: el resumen dice **1 regenerado** (`qsl6`, que se rehace siempre)
-> y **31 sin cambios** (los 31 `.adi`), pero las postales totales son 2.982 porque
+> y **31 sin cambios** (los 31 `.adi`), pero las postales totales son 2.998 porque
 > `qsl6` aporta 43 record(s) propios. El manifiesto cuenta para `qsl6` las postales
 > producidas (43), no los `.adi` consumidos (0).
 >
@@ -1174,9 +1179,9 @@ omite por completo (no aparece en `activities` ni en `counts`, y se avisa por pa
 Drive no se puede leer, que se marca como fallida. Regla 1 de §0 sigue vigente en Drive:
 las carpetas existen siempre; lo que puede no publicarse es su contenido.
 
-Estado actual del repo: índice **completo**, con `total: 2982`, 1.110 `call` distintos
-(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-15T20:38:31Z`. Lo publicó el commit
-`7faa24a` tras regenerar las 2.982 postales. Si algún día saliera vacío (`total: 0`), la
+Estado actual del repo: índice **completo**, con `total: 2998`, 1.110 `call` distintos
+(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-17T18:06:17Z`. Lo publicó la
+regeneración del 17/11 tras los 16 espejos (§9). Si algún día saliera vacío (`total: 0`), la
 web lo mostraría sin errores visibles — ver §7 "Seguridad". **Nunca se publica un índice
 incompleto**: las salvaguardas de `drive_index.py` exigen que Drive y el manifiesto
 local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
@@ -1184,13 +1189,13 @@ local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
 ```json
 {
   "version": 2,
-  "generated_at": "2026-11-15T20:38:31Z",
+  "generated_at": "2026-11-17T18:06:17Z",
   "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
   "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
   "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"}},
-  "counts": {"qsl1": 553, "qsl2": 414, "qsl3": 610, "qsl4": 457,
-             "qsl5": 840, "qsl6": 43, "qsl7": 65},
-  "total": 2982,
+  "counts": {"qsl1": 553, "qsl2": 414, "qsl3": 616, "qsl4": 466,
+             "qsl5": 840, "qsl6": 43, "qsl7": 66},
+  "total": 2998,
   "entries": [
     {"call": "IV3LDZ", "act": "qsl2",
      "name": "iv3ldz_ea4huk_es-0340-20261113.png",
@@ -1213,9 +1218,9 @@ local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
   `drive.google.com/uc?export=download&id=<id>` para la descarga.
 - ✅ **Probado con 4000 entradas** (2026-10-06): se publicó un `qsl_index.json` simulado
   con `total: 4000` (commits `79c5617` → restaurado en `bf2bfde`) y la web funcionó
-  bien — carga, listado y rendimiento sin problemas. El índice real tiene 2.982 entradas.
+  bien — carga, listado y rendimiento sin problemas. El índice real tiene 2.998 entradas.
 - ✅ **Página nueva de gráficos** (commit `f7bb4c6`): <https://dcialdella.github.io/ia-qsls/graficos/>,
-  27 PNG generados desde `graficos/TODOS.adi` (2.933 QSO, sin los 6 registros demo).
+  27 PNG generados desde `graficos/TODOS.adi` (2.949 QSO, sin los 6 registros demo).
 
 ### Seguridad
 
@@ -1246,8 +1251,8 @@ local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
 ## 8. Tareas pendientes / próximos pasos
 
 Las primeras tareas del proyecto (prueba de humo, sincronización a Drive, verificación
-de la web) ya están **hechas**: las 2.982 postales están generadas, sincronizadas y
-publicadas a partir de los 31 `.adi` reales (2.939 QSO). La galería de gráficos también
+de la web) ya están **hechas**: las 2.998 postales están generadas, sincronizadas y
+publicadas a partir de los 31 `.adi` reales (2.955 QSO). La galería de gráficos también
 está publicada en su propia página (§7). Queda pendiente:
 
 1. ~~**Repaso visual de las postcards tras la v4.**~~ La v4 quitó la bandera de España de
@@ -1320,6 +1325,9 @@ está publicada en su propia página (§7). Queda pendiente:
   `country_map.json`, `FLAGS/`, el código y el README.
 - **Estado Git:** `main` en sync con `origin/main`. Commits recientes, del más nuevo al más
   antiguo:
+  - *(este commit)* — *"Completa los 16 QSO unilaterales y regenera postales, índice y gráficos"*
+    (16 espejos en 6 ADI raíz; 2.955 QSO, 2.998 postales, 3.303 derivados, `TODOS.adi`
+    con 2.949 QSO y derivados del Escritorio actualizados; detalle en `RELLENO-QSO.md`)
   - `f7bb4c6` — *"Página nueva de gráficos del log completo (2.933 QSO, 27 gráficos)"*
     (`graficos/index.html`, PNG y miniaturas; no toca `index.html` ni `qsl_index.json`)
   - `7faa24a` — *"Índice completo tras regenerar las 2.982 postales (2.939 QSO)"*
@@ -1337,14 +1345,14 @@ está publicada en su propia página (§7). Queda pendiente:
     la commit `bfdae81`.
 - **Punto de retorno guardado:** hay un tag **`inicio-fresco`** que congela el estado
   vacío (sin ADIs en `qslN/`, sin postcards, índice a 0). Ver §10. Nota: ese tag es ya
-  **histórico** — volver a él significaría tirar las 2.982 postcards actuales.
+  **histórico** — volver a él significaría tirar las 2.998 postcards actuales.
 ---
 
 ## 10. Punto de retorno: el tag `inicio-fresco`
 
 > ⚠️ **Este tag es histórico.** Congela el estado vacío del proyecto (sin `.adi` en
 > `qslN/`, sin postcards, índice a 0), que era el punto de partida antes de poblar las
-> actividades. **Volver a él descarta las 2.982 postcards actuales**, así que úsalo solo
+> actividades. **Volver a él descarta las 2.998 postcards actuales**, así que úsalo solo
 > si de verdad quieres dejar el proyecto en blanco.
 
 ```bash
@@ -1367,7 +1375,7 @@ Apunta al commit `bf02d44`:
 
 ### Cómo volver a él
 
-> Antes de nada, ten en cuenta que esto **tira las 2.982 postcards actuales**.
+> Antes de nada, ten en cuenta que esto **tira las 2.998 postcards actuales**.
 
 **Para trabajar desde ahí sin perder el `main` actual** (recomendado):
 
