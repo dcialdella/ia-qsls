@@ -151,7 +151,7 @@ Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruza
   disponible, sería la fuente para recuperarlo.
 - **Otro derivado fuera del repo (17/11):** `~/Desktop/ea4huk-eg9-todo.adi` reúne
   948 QSO propios de EA4HUK con `STATION_CALLSIGN=EA4HUK/9`, `MY_GRIDSQUARE=IM85`,
-  `CQZ=14` e `ITUZ=37` (detalle en `README.md` §1.2). Tampoco entra en los 2.939
+  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 2.939
   QSO ni en las 2.982 postales.
 - `ACTIVIDADES/`: 32 ficheros, **3.288** QSO (qsl2 se replica en `pota` y `tota`).
 - `audit_adi.py`: sin errores nuevos (0 sin FREQ, BAND canónica, TIME_ON de 4 caracteres,

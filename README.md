@@ -288,11 +288,14 @@ Normalización aplicada a los 948 registros:
 | `MY_GRIDSQUARE` | `IM85` | `IM85` (256), `IM85MH` (385), `IM85MG` (261), ausente (46) |
 | `CQZ` | `14` | ausente en los 948 |
 | `ITUZ` | `37` | ausente en los 948 |
+| `DXCC` | `32` | ausente en los 948 |
 | `OPERATOR` | `EA4HUK` | sin cambios |
 
 El `/9` indica que la operación se hizo desde Melilla (distrito EA9); `CQZ=14` e
-`ITUZ=37` son las zonas CQ e ITU de la propia estación. El resto de campos
-(`CALL`, `FREQ`, `BAND`, `MODE`, `DISTANCE`, `TIME_ON`…) se conserva tal cual.
+`ITUZ=37` son las zonas CQ e ITU de la propia estación y `DXCC=32` (España) se
+fija en todos los registros por decisión expresa, no se calcula del `CALL`.
+El resto de campos (`CALL`, `FREQ`, `BAND`, `MODE`, `DISTANCE`, `TIME_ON`…) se
+conserva tal cual.
 No se incluyen los 72 QSO en los que EA4HUK es el corresponsal de otro log:
 tienen `MY_GRIDSQUARE` de otra estación y no son QSO propios.
 
