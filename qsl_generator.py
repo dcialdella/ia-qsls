@@ -44,6 +44,11 @@ from PIL import Image, ImageDraw, ImageFont
 #       (es el caso de los exports de EA3JAQ, que solo traen este último campo).
 GENERATOR_VERSION = "5.5"
 
+# Las QSL de record (qsl6) no son un QSO: se derivan de los contactos comunes a
+# qsl1-qsl5. Se les asigna la fecha del último día de la expedición para que el
+# índice web las agrupe con el resto de ese día en vez de dejarlas "sin fecha".
+ACT6_RECORD_DATE = '2026-11-15'
+
 # Estaciones que pueden originar una QSL (campo OPERATOR del ADI, o su
 # sustituto STATION_CALLSIGN). El CALL de cada contacto es la destinataria.
 ALLOWED_OPERATORS = {'EA4HUK', 'EA4GHH', 'EA3JAQ', 'EA4IWX'}
@@ -981,7 +986,8 @@ def process_act6(base_dir, generator):
     """Actividad 6: genera una QSL de record en qsl6/QSLS/ para cada estación
     que contactó en TODAS las actividades (qsl1...qsl5).
 
-    Muestra: callsign, nombre y grid locator.
+    Muestra: callsign, nombre y grid locator. La fecha de cada record es
+    ACT6_RECORD_DATE (último día de la expedición), no la de un QSO concreto.
     """
     qsl6 = base_dir / "qsl6"
     output_dir = qsl6 / "QSLS"
@@ -1085,6 +1091,7 @@ def process_act6(base_dir, generator):
             'fondo': bg_path.name,
             'operadores': sorted(info.get('operators') or ()),
             'actividades': act_names,
+            'fecha': ACT6_RECORD_DATE,
             'generado_en': now_iso(),
         })
         if prev:

@@ -54,6 +54,9 @@ IMAGE_EXT_RE = re.compile(r'\.(?:png|jpe?g|webp)$', re.I)
 ACTIVITY_TITLES = {f"qsl{i}": f"Actividad {i}" for i in range(1, 8)}
 # Orden canónico de publicación.
 ACTIVITY_ORDER = [f"qsl{i}" for i in range(1, 8)]
+# Las QSL de record (qsl6) no son un QSO concreto: se les asigna siempre el
+# último día de la expedición, aunque no haya qsl_log.json local.
+ACT6_RECORD_DATE = '2026-11-15'
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 MANIFEST_NAME = "qsl_manifest.json"
@@ -418,9 +421,10 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
             key = ff['name'].lower()
             entries.append({'call': calln(ff['name'], known), 'act': act,
                             'name': ff['name'], 'id': ff['id'],
-                            'date': known_dates.get(key) or date_from_name(ff['name'])})
+                            'date': ACT6_RECORD_DATE if act == 'qsl6'
+                                    else (known_dates.get(key) or date_from_name(ff['name']))})
 
-    # Contadores por dia (clave ISO; '' = sin fecha, p.ej. los records de qsl6).
+    # Contadores por dia (clave ISO; '' = sin fecha, ya solo QSOs sin QSO_DATE).
     days = {}
     for e in entries:
         d = e.get('date') or ''
