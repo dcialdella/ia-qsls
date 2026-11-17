@@ -271,6 +271,35 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
 > ficheros de qsl1, no un cuarto. Si copias los cuatro a la misma actividad tendrás
 > contactos duplicados en la web.
 
+### 1.2 Derivado `ea4huk-eg9-todo.adi` (Escritorio, fuera del repo)
+
+`~/Desktop/ea4huk-eg9-todo.adi` reúne los **948 QSO propios de EA4HUK** de los 31
+`.adi` raíz (qsl1: 256, qsl2: 174, qsl3: 126, qsl4: 85, qsl5: 261, qsl7: 46;
+qsl6 no tiene `.adi` raíz). Sustituye en alcance al anterior `ea4huk9.adi`
+(841 QSO, solo qsl1–qsl5). Es un agregado de trabajo, **no una entrada del
+generador**: no se copia a ninguna carpeta `qslN/`, no suma postales ni cambia
+`qsl_index.json` (2.982).
+
+Normalización aplicada a los 948 registros:
+
+| Campo | Valor final | Valor en los ADI raíz |
+|---|---|---|
+| `STATION_CALLSIGN` | `EA4HUK/9` | `EA4HUK` en todos |
+| `MY_GRIDSQUARE` | `IM85` | `IM85` (256), `IM85MH` (385), `IM85MG` (261), ausente (46) |
+| `CQZ` | `14` | ausente en los 948 |
+| `ITUZ` | `37` | ausente en los 948 |
+| `OPERATOR` | `EA4HUK` | sin cambios |
+
+El `/9` indica que la operación se hizo desde Melilla (distrito EA9); `CQZ=14` e
+`ITUZ=37` son las zonas CQ e ITU de la propia estación. El resto de campos
+(`CALL`, `FREQ`, `BAND`, `MODE`, `DISTANCE`, `TIME_ON`…) se conserva tal cual.
+No se incluyen los 72 QSO en los que EA4HUK es el corresponsal de otro log:
+tienen `MY_GRIDSQUARE` de otra estación y no son QSO propios.
+
+Verificación: 948 `<EOR>`, un solo `<EOH>`, 0 longitudes declaradas incorrectas,
+0 duplicados por `CALL`+fecha+hora+banda+modo, fechas 20261113–20261115,
+902 SSB y 46 DIGITALVOICE.
+
 ### Cambios recientes (aplicados y verificados)
 
 1. **Caja de datos más alta (22%).** De 17% a 22% del alto (+5%) para que entre mejor el
