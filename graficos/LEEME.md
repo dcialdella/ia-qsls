@@ -9,14 +9,14 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 
 ## Datos de entrada
 
-`graficos/TODOS.adi` — 2.949 QSO, todos los contactos de las cuatro estaciones
+`graficos/TODOS.adi` — 3.009 QSO, todos los contactos de las cuatro estaciones
 (EA4HUK, EA4GHH, EA4IWX, EA3JAQ) en qsl1–qsl7.
 
-- Origen: los 31 `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
-  derivados y duplicarían registros).
+- Origen: los 36 `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
+  derivados y duplicarían registros), incluidos los 5 `CRUZADAS-ADICIONALES-*.adi`.
 - Excluidos los 6 registros de demostración `QSL-DEMO-EG9MM.adi`.
 - `STATION_CALLSIGN` normalizado (sin espacios finales) y `OPERATOR`
-  completado a partir de la estación en los 608 registros de EA3JAQ, que no
+  completado a partir de la estación en los 626 registros de EA3JAQ, que no
   traían el campo.
 - Cada QSO aparece tal como lo registró su estación: un contacto entre dos de
   nuestras estaciones está dos veces (una por cada log).
@@ -34,8 +34,8 @@ usa una tabla de lookups de QRZ.com escrita a mano para otro log, no datos de
 estos contactos.
 
 Cifras del análisis: **1.109 indicativos únicos**, **33 entidades DXCC**,
-8 bandas, 6 modos, distancia media **805 km** y máxima **13.955 km**. Hora pico:
-**09:00 UTC** (829 QSO).
+8 bandas, 6 modos, distancia media **802,6 km** y máxima **13.955 km**. Hora pico:
+**09:00 UTC** (841 QSO).
 
 ## Regenerar
 
