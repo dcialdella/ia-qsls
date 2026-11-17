@@ -15,7 +15,7 @@ python3 qsl_generar_adis.py
 ## Flujo
 
 1. **Limpia** la carpeta `ACTIVIDADES/` de cada QSL procesada (borra todo lo anterior).
-2. **Lee todos** los `.adi` de la carpeta `qslN/` (ahora hay varios: 31 en total; cada uno se procesa por separado).
+2. **Lee todos** los `.adi` de la carpeta `qslN/` (ahora hay varios: 36 en total entre qsl1–qsl7; cada uno se procesa por separado).
 3. **Valida** cada QSO:
    - `CALL` y `QSO_DATE` presentes.
    - `STATION_CALLSIGN` = `EG9MM` (única estación permitida en el log).
@@ -27,23 +27,24 @@ python3 qsl_generar_adis.py
 
 ## Archivos de entrada (estado actual)
 
-Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **31 `.adi`** con
-2.955 QSO en total: 25 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
-en esa cuenta:
+Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **36 `.adi`** con
+3.015 QSO en total: 30 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
+en esa cuenta. Cada una de qsl1–qsl5 incorpora además un `CRUZADAS-ADICIONALES-*.adi`
+de 12 QSO (detalle en `RELLENO-QSO.md`):
 
 | Carpeta | `.adi` raíz | QSO | Formatos generados |
 |---|---|---|---|
-| `qsl1` | 5 | 553 | TOTA `EAR-1901` |
-| `qsl2` | 5 | 414 | TOTA `EAR-1902` + POTA `ES-0340` |
-| `qsl3` | 5 | 616 | POTA `ES-0849` |
-| `qsl4` | 5 | 466 | POTA `ES-0850` |
-| `qsl5` | 7 | 840 | LLOTA `LLES-0214` |
-| **Total** | **27** | **2.889** | **32 ficheros de salida, 3.303 QSO** |
+| `qsl1` | 6 | 565 | TOTA `EAR-1901` |
+| `qsl2` | 6 | 426 | TOTA `EAR-1902` + POTA `ES-0340` |
+| `qsl3` | 6 | 628 | POTA `ES-0849` |
+| `qsl4` | 6 | 478 | POTA `ES-0850` |
+| `qsl5` | 8 | 852 | LLOTA `LLES-0214` |
+| **Total qsl1–qsl5** | **32** | **2.949** | **38 ficheros de salida, 3.375 QSO** |
 
 `qsl6` no tiene `.adi` (postales de record); `qsl7` tiene 4 `.adi` (66 QSO, 3 reales +
 1 demo) pero **no se procesa**: no está en `CONFIG`.
 
-Salidas reales (32 ficheros en total). Un ejemplo por carpeta:
+Salidas reales (38 ficheros en total). Un ejemplo por carpeta:
 
 ```
 qsl1/ACTIVIDADES/ea4huk-museo-tota.adi
@@ -53,8 +54,8 @@ qsl4/ACTIVIDADES/2026-11-13 EA3JAQ-pota.adi
 qsl5/ACTIVIDADES/ea4ghh-llota20261115-llota.adi
 ```
 
-> El total de QSO de salida (3.303) es mayor que el de entrada en `qsl1`–`qsl5`
-> (2.889) porque cada `.adi` genera un fichero por formato y, en `qsl2`, dos (TOTA y
+> El total de QSO de salida (3.375) es mayor que el de entrada en `qsl1`–`qsl5`
+> (2.949) porque cada `.adi` genera un fichero por formato y, en `qsl2`, dos (TOTA y
 > POTA) con el mismo contenido de QSO.
 
 ## Formatos por actividad
@@ -103,7 +104,7 @@ No se genera `MY_TOTA_REF`; el `QSLMSG` es solo para TOTA.
   `ADIF export for EA4IWX/9: POTA ES-0340`. En los 6 ficheros demo sigue saliendo
   `ADIF export for EG9MM: ...`.
 - Si la estación u operador no encajan con lo esperado, se añade además la línea
-  `REVISAR EL FORMATO DE OPERADOR y STATION` (aparece en 26 de los 32 ficheros actuales;
+  `REVISAR EL FORMATO DE OPERADOR y STATION` (aparece en 32 de los 38 ficheros actuales;
   en los 6 demo no aparece). Es un aviso, no un error: los ficheros se generan igual.
 
 ## Formatos de entrada soportados
@@ -130,16 +131,16 @@ Notas:
 
 ```
 qsl1/
-├── 5 .adi (553 QSO)              ← entradas, entre ellos el demo EG9MM
+├── 6 .adi (565 QSO)              ← entradas, entre ellos el demo EG9MM y CRUZADAS-ADICIONALES
 ├── ACTIVIDADES/
-│   └── 5 *-tota.adi              ← salidas
+│   └── 6 *-tota.adi              ← salidas
 ├── QSL-1.png                     ← fondo único de la actividad
 └── QSLS/
 qsl2/
-├── 5 .adi (414 QSO)
+├── 6 .adi (426 QSO)
 ├── ACTIVIDADES/
-│   ├── 5 *-tota.adi
-│   └── 5 *-pota.adi
+│   ├── 6 *-tota.adi
+│   └── 6 *-pota.adi
 ...
 qsl7/
 ├── 4 .adi (66 QSO)               ← existen, pero NO se procesan (no están en CONFIG)
@@ -155,12 +156,14 @@ qsl1/
 ├── ea4iwx-poi1-20261115.adi      (128 QSO)
 ├── EA3JAQ-...-full.adi           (118 QSO)
 ├── QSL-DEMO-EG9MM.adi            (1 QSO)
+├── CRUZADAS-ADICIONALES-EAR-1901.adi (12 QSO)
 └── ACTIVIDADES/
     ├── ea4huk-museo-tota.adi
     ├── Museo-ea4ghh-2026-11-14-tota.adi
     ├── ea4iwx-poi1-20261115-tota.adi
     ├── EA3JAQ-...-full-tota.adi
-    └── QSL-DEMO-EG9MM-tota.adi
+    ├── QSL-DEMO-EG9MM-tota.adi
+    └── CRUZADAS-ADICIONALES-EAR-1901-tota.adi
 ```
 
 ## Configuración

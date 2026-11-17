@@ -142,19 +142,22 @@ Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruza
 
 - ADI raíz (15/11): 2.743 → **2.939** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos,
   +120 cruces del trío). La cuenta cierra: 2.743 + 16 − 1 + 61 + 120 = 2.939.
-  El 17/11 se añadieron 16 espejos más (sección final), dejando el total en **2.955**.
+  El 17/11 se añadieron 16 espejos más (sección final), dejando el total en **2.955**,
+  y después 5 `CRUZADAS-ADICIONALES-*.adi` de 12 QSO cada uno (sección siguiente),
+  hasta **3.015**.
 - **Bloque aparte (12 QSO en 40/60/80 m, 2026‑11‑15 13:00):** doce contactos en
   7.100 / 5.350 / 3.700 MHz se añadieron al derivado del Escritorio `DME.adi` (que
-  contenía 2.678 QSO). **No están en los 31 `.adi` raíz ni en la web**: por eso no
-  entran en el total de 2.955 ni en las 2.998 postales publicadas. `DME.adi` ya no
+  contenía 2.678 QSO). **No están en los 36 `.adi` raíz ni en la web**: por eso no
+  entran en el total de 3.015 ni en las 3.058 postales publicadas. `DME.adi` ya no
   estaba en el Escritorio en la última comprobación (17/11), así que este bloque solo
   consta en la documentación; si el backup `DME-backup-20261115.zip` sigue
-  disponible, sería la fuente para recuperarlo.
+  disponible, sería la fuente para recuperarlo. (Los `CRUZADAS-ADICIONALES-*.adi`
+  que sí están en la web son contactos distintos: todos en 10 m, ver sección final.)
 - **Otro derivado fuera del repo (17/11):** `~/Desktop/ea4huk-eg9-todo.adi` reúne
   954 QSO propios de EA4HUK con `STATION_CALLSIGN=EA4HUK/9`, `MY_GRIDSQUARE=IM85`,
-  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 2.955
-  QSO ni en las 2.998 postales.
-- `ACTIVIDADES/`: 32 ficheros, **3.303** QSO (qsl2 se replica en `pota` y `tota`).
+  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 3.015
+  QSO ni en las 3.058 postales.
+- `ACTIVIDADES/`: 38 ficheros, **3.375** QSO (qsl2 se replica en `pota` y `tota`).
 - `audit_adi.py`: 2 avisos de duplicado por una clave que no incluye `FREQ`
   (7.160 vs 7.150 y 7.183 vs 7.195). Son consecuencia esperada de los espejos del
   17/11: mismo `CALL`/fecha/hora/banda/modo pero frecuencias distintas en el otro log.
@@ -208,16 +211,52 @@ por su clave sin `FREQ`: `7.160` vs `7.150` (qsl4/EA3JAQ) y `7.183` vs `7.195`
 
 Totales tras esta actualización:
 
-- ADI raíz: 2.939 → **2.955** QSO (+16 espejos). QSO entre las 4 estaciones: 283,
-  con **0 unilaterales** y **0 duplicados exactos**; longitudes ADIF correctas.
-- `ACTIVIDADES/`: 32 ficheros, **3.303** QSO (regenerados con `./generar_adis.sh`).
-- Postales: **2.998** generadas y sincronizadas con Drive; `qsl_index.json` con
-  `total: 2998` y conteos `qsl1=553, qsl2=414, qsl3=616, qsl4=466, qsl5=840,
+- ADI raíz: 2.939 → **2.955** QSO (+16 espejos); después **3.015** al añadir los
+  5 `CRUZADAS-ADICIONALES-*.adi` (+60). QSO entre las 4 estaciones: 283 + 60,
+  con **0 duplicados exactos**; longitudes ADIF correctas.
+- `ACTIVIDADES/`: 38 ficheros, **3.375** QSO (regenerados con `./generar_adis.sh`).
+- Postales: **3.058** generadas y sincronizadas con Drive; `qsl_index.json` con
+  `total: 3058` y conteos `qsl1=565, qsl2=426, qsl3=628, qsl4=478, qsl5=852,
   qsl6=43, qsl7=66`.
-- `graficos/TODOS.adi`: **2.949** QSO (31 `.adi` raíz menos los 6 registros demo),
-  0 `XYZ123` y 611 registros con `OPERATOR` completado. 27 gráficos, 27 miniaturas
-  y `estadisticas_adi.json` regenerados; hora pico 09:00 UTC con 829 QSO.
+- `graficos/TODOS.adi`: **3.009** QSO (36 `.adi` raíz menos los 6 registros demo),
+  0 `XYZ123` y 3.009 registros con `OPERATOR` completado. 27 gráficos, 27 miniaturas
+  y `estadisticas_adi.json` regenerados; hora pico 09:00 UTC con 841 QSO.
+
+### Actualización 17/11 (tarde): 5 ADI de cruces adicionales
+
+Se versionaron cinco ficheros `qslN/CRUZADAS-ADICIONALES-<referencia>.adi`, uno por
+actividad de qsl1 a qsl5, con **12 QSO cada uno (60 en total)**, todos en 10 m
+(28.340 / 28.500 / 28.576 MHz) y fechas 13–15/11. Cabecera
+`PROGRAMID=CrossAdds`, `CREATED_TIMESTAMP=20261117 180000`, con la referencia de
+la actividad en `QSLMSG` (algunos añaden `Custom DME 52001`). No son el bloque
+DME de 40/60/80 m descrito arriba: ese sigue fuera del repo.
+
+| Actividad | Fichero | Referencia |
+|---|---|---|
+| `qsl1` | `CRUZADAS-ADICIONALES-EAR-1901.adi` | `EAR-1901` |
+| `qsl2` | `CRUZADAS-ADICIONALES-ES-0340.adi` | `ES-0340` |
+| `qsl3` | `CRUZADAS-ADICIONALES-ES-0849.adi` | `ES-0849` |
+| `qsl4` | `CRUZADAS-ADICIONALES-ES-0850.adi` | `ES-0850` |
+| `qsl5` | `CRUZADAS-ADICIONALES-LLES-0214.adi` | `LLES-0214` |
+
+Alimentan el generador de postales y el índice web: explican el paso de 2.955 a
+3.015 QSO y de 2.998 a 3.058 postales, y los conteos por actividad 565/426/628/
+478/852 (antes 553/414/616/466/840). Regenerados también los derivados de
+`ACTIVIDADES/` y `graficos/TODOS.adi`.
 
 Cuadros de EA4GHH por día (día, hora, banda, operador, frecuencia, POI, nombre
 del `.adi` de origen y corresponsal): `~/Desktop/cuadros_ea4ghh.md`. Cubren los
 118 QSO entre EA4GHH y el resto del trío: 58 el 13/11, 40 el 14/11 y 20 el 15/11.
+
+### Verificación de cruces por actividad
+
+Revisados los 32 `.adi` raíz de qsl1–qsl5 (2.949 QSO, excluidos `ACTIVIDADES/`,
+`TESTDATA/` y los 6 registros `XYZ123`). En **las 5 actividades**, cada una de las
+4 estaciones (`EA4HUK`, `EA3JAQ`, `EA4GHH`, `EA4IWX`) tiene **al menos un QSO con
+cada una de las otras 3**: 12/12 pares dirigidos presentes en cada actividad,
+ningún par faltante. La estación propia se toma de `OPERATOR` y, si no está, de
+`STATION_CALLSIGN` (normalizando sufijos como `EA4IWX/9`). El recuento se verificó
+con dos parsers independientes. Matriz detallada de QSO por par en `README.md`
+(§ "Cobertura de cruces entre las 4 estaciones"). Solo se observaron dos pares
+duplicados en qsl4 por `CALL`+fecha+hora+banda+modo con frecuencias distintas,
+heredados de los espejos; no cambian la conclusión.
