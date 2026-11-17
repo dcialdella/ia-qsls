@@ -16,8 +16,9 @@
 #                                 con los .adi actuales)
 #    ./generar.sh --folder-id <ID>
 #                              -> indexa otra carpeta de Google Drive
-#    ./generar.sh --index      -> regenera qsl_index.json (indice web)
+#    ./generar.sh --index      -> regenera qsl_index.json desde qslN/QSLS (local)
 #    ./generar.sh --index-only -> solo regenera qsl_index.json
+#    ./generar.sh --drive-index -> indexa leyendo Google Drive en vez del origen local
 #    ./generar.sh --auto       -> genera + sincroniza Drive + actualiza índice web + commit + push a GitHub
 #
 #  El script es autocontenido:
@@ -64,6 +65,7 @@ INDEX_ONLY=false
 AUTO_PUSH=false
 KEEP_EMPTY_DRIVE=false
 FORCE_INDEX=false
+LOCAL_INDEX=true
 FOLDER_ID=""
 INDEX_ARGS=()
 while [ $# -gt 0 ]; do
@@ -81,12 +83,14 @@ while [ $# -gt 0 ]; do
     # vaciado actividades a proposito): drive_index.py se niega a escribir un
     # indice con menos entradas que el anterior si el manifiesto no lo explica.
     --force-index) FORCE_INDEX=true ;;
+    --drive-index) LOCAL_INDEX=false ;;
     *) echo "Argumento desconocido: $1" >&2; exit 1 ;;
   esac
   shift
 done
 [ -n "$FOLDER_ID" ] && INDEX_ARGS+=("--folder-id" "$FOLDER_ID")
 [ "$FORCE_INDEX" = true ] && INDEX_ARGS+=("--force")
+[ "$LOCAL_INDEX" = true ] && INDEX_ARGS+=("--local")
 
 echo "============================================================"
 echo "  GENERADOR QSL — setup automático"

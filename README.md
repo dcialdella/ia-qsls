@@ -56,9 +56,11 @@ postales generadas.
    2. `git add -A && git commit && git push`.
    3. Verificar en <https://dcialdella.github.io/ia-qsls/qsl_index.json> que
       `total` y `counts` reflejan lo generado (Pages tarda ~1 min).
-   Ojo: `drive_index.py` lee la nube, no el disco local; si se indexa antes de que
-   Drive suba los ficheros, el JSON sale sin las postcards nuevas (no necesariamente
-   con `total: 0`). Se arregla repitiendo `./run_all.sh` al minuto.
+   El índice se construye **desde el origen local** `qslN/QSLS/` (las carpetas que
+   luego se rsyncan a Drive), sin consultar el HTML público de Drive; por eso ya no
+   hay que esperar a que la nube suba los PNG. Los `id` de descarga se reutilizan
+   del `qsl_index.json` anterior. Para volver al modo antiguo de scraping de Drive:
+   `./generar.sh --drive-index` (o `python3 drive_index.py` sin `--local`).
 
 ---
 

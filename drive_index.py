@@ -15,6 +15,9 @@ normal, una actividad con mas de 50 postcards se indexaba a medias.
 Tambien acepta un manifiesto local (qsl_manifest.json) para descartar las
 actividades que ya no tienen ningun .adi, de modo que la web no ofrezca
 postcards de actividades vaciadas. Sin manifiesto, se comporta como antes.
+
+Con --local no se accede a Drive: se indexan las carpetas qslN/QSLS (el origen
+que luego se copia a Drive) y se reutilizan los ids del indice anterior.
 """
 import argparse
 import json
@@ -154,6 +157,41 @@ def list_files(folder_id):
     if files:
         return files
     return parse_files(fetch(FOLDER_URL.format(id=folder_id)))
+
+
+def load_drive_ids(existing):
+    """Mapa (actividad, nombre PNG) -> id de Drive según el índice anterior."""
+    ids = {}
+    for e in (existing or {}).get('entries', []):
+        if e.get('act') and e.get('name') and e.get('id'):
+            ids[(e['act'], str(e['name']).lower())] = e['id']
+    return ids
+
+
+def list_local_files(base, drive_ids=None):
+    """Lista los PNG de qslN/QSLS, la carpeta origen que luego se copia a Drive.
+
+    Se reutiliza el id de Drive del índice anterior para cada nombre de archivo:
+    así se puede generar el índice sin red y los enlaces de descarga siguen
+    apuntando al mismo fichero de Drive.
+    """
+    ids = drive_ids or {}
+    result = {}
+    for act in ACTIVITY_ORDER:
+        d = Path(base) / act / 'QSLS'
+        files = []
+        if d.is_dir():
+            for f in sorted(d.iterdir()):
+                if not f.is_file() or f.suffix.lower() not in IMAGE_SUFFIXES:
+                    continue
+                files.append({'name': f.name,
+                              'id': ids.get((act, f.name.lower()), ''),
+                              'size': f.stat().st_size})
+            missing = sum(1 for x in files if not x['id'])
+            if missing:
+                print(f"· {act}: {missing} PNG sin id de Drive en el índice anterior")
+        result[act] = files
+    return result
 
 
 def fsize(fid):
@@ -382,14 +420,26 @@ def check_regression(prev, idx, manifest, local):
     return errors, notes
 
 
-def build_index(folder_id, manifest=None, base=None, generator_version=None):
-    """Construye el diccionario del indice leyendo Drive.
+def build_index(folder_id, manifest=None, base=None, generator_version=None,
+                local=False, existing=None):
+    """Construye el diccionario del indice.
+
+    Por defecto lee Drive. Con `local=True` usa las carpetas `qslN/QSLS` de
+    `base` (el origen que luego se rsynca a Drive) y solo consulta el índice
+    anterior para reutilizar los ids de descarga: no hace ninguna petición de red.
 
     Si `manifest` no es None, las actividades con 0 .adi se omiten por completo
     (no se publica su id ni sus ficheros), aunque en Drive sigan estando.
     """
-    html = fetch(FOLDER_URL.format(id=folder_id))
-    folders = parse_folders(html)
+    if local:
+        acts_prev = (existing or {}).get('activities') or {}
+        folders = [(act, (acts_prev.get(act) or {}).get('id', ''))
+                   for act in ACTIVITY_ORDER]
+        local_files = list_local_files(base, load_drive_ids(existing))
+    else:
+        html = fetch(FOLDER_URL.format(id=folder_id))
+        folders = parse_folders(html)
+        local_files = None
 
     empty, failed = set(), []
     if manifest is not None:
@@ -407,7 +457,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
             print(f"· {act}: sin .adi (manifiesto) -> no se publica")
             continue
         try:
-            fl = list_files(fid)
+            fl = local_files.get(act, []) if local else list_files(fid)
         except FetchError as ex:
             # Falla una actividad: se avisa y se sigue con las demas, pero la
             # actividad se marca como fallida para no publicar un indice que
@@ -419,10 +469,13 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
         acts[act] = {'id': fid, 'title': ACTIVITY_TITLES[act]}
         for ff in fl:
             key = ff['name'].lower()
-            entries.append({'call': calln(ff['name'], known), 'act': act,
-                            'name': ff['name'], 'id': ff['id'],
-                            'date': ACT6_RECORD_DATE if act == 'qsl6'
-                                    else (known_dates.get(key) or date_from_name(ff['name']))})
+            entry = {'call': calln(ff['name'], known), 'act': act,
+                     'name': ff['name'], 'id': ff['id'],
+                     'date': ACT6_RECORD_DATE if act == 'qsl6'
+                             else (known_dates.get(key) or date_from_name(ff['name']))}
+            if local:
+                entry['size'] = ff.get('size', 0)
+            entries.append(entry)
 
     # Contadores por dia (clave ISO; '' = sin fecha, ya solo QSOs sin QSO_DATE).
     days = {}
@@ -436,7 +489,7 @@ def build_index(folder_id, manifest=None, base=None, generator_version=None):
         e['size'] = fsize(e['id'])
         return e
 
-    if entries:
+    if entries and not local:
         with ThreadPoolExecutor(max_workers=SIZE_WORKERS) as pool:
             entries = list(pool.map(with_size, entries))
 
@@ -479,29 +532,34 @@ def main():
     ap.add_argument('--manifest', default=str(SCRIPT_DIR / MANIFEST_NAME),
                     help=f'Manifiesto de actividades activas (por defecto {MANIFEST_NAME}; '
                          'si no existe, se indexa todo lo que haya en Drive).')
+    ap.add_argument('--local', action='store_true',
+                    help='Indexa qslN/QSLS en local (sin acceder a Drive). '
+                         'Reutiliza los ids del índice anterior para las descargas.')
     ap.add_argument('--force', action='store_true',
                     help='Escribe el indice aunque pierda entradas o actividades '
                          'respecto al que ya hay en disco.')
     args = ap.parse_args()
 
     out_path = Path(args.out)
+    prev = read_existing(out_path)
     manifest = load_manifest(args.manifest)
     if manifest is None:
         print(f"AVISO: sin manifiesto válido en {args.manifest}; "
-              f"se publica todo lo que haya en Drive.")
+              f"se publica todo lo que haya en el origen local.")
 
     # Extraer versión del generador del manifiesto
     generator_version = manifest.get('generador') if manifest else None
 
     try:
-        idx, failed, _empty = build_index(args.folder_id, manifest, base=SCRIPT_DIR, generator_version=generator_version)
+        idx, failed, _empty = build_index(args.folder_id, manifest, base=SCRIPT_DIR,
+                                          generator_version=generator_version,
+                                          local=args.local, existing=prev)
     except FetchError as ex:
         print(f"ERROR: no se pudo leer la carpeta de Drive: {ex}", file=sys.stderr)
         print("       Revisa el --folder-id y la conexión, y reintenta.", file=sys.stderr)
         return 2
 
     # --- Salvaguardas: nunca sobrescribir un indice bueno por uno peor ---
-    prev = read_existing(out_path)
     if not args.force and prev:
         prev_acts = set(prev.get('activities') or {})
         new_acts = set(idx['activities'])
