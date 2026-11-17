@@ -217,3 +217,7 @@ Totales tras esta actualización:
 - `graficos/TODOS.adi`: **2.949** QSO (31 `.adi` raíz menos los 6 registros demo),
   0 `XYZ123` y 611 registros con `OPERATOR` completado. 27 gráficos, 27 miniaturas
   y `estadisticas_adi.json` regenerados; hora pico 09:00 UTC con 829 QSO.
+
+Cuadros de EA4GHH por día (día, hora, banda, operador, frecuencia, POI, nombre
+del `.adi` de origen y corresponsal): `~/Desktop/cuadros_ea4ghh.md`. Cubren los
+118 QSO entre EA4GHH y el resto del trío: 58 el 13/11, 40 el 14/11 y 20 el 15/11.
