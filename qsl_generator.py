@@ -40,11 +40,21 @@ from PIL import Image, ImageDraw, ImageFont
 # v5.3: se muestra la estación originante (OPERATOR, una de las 4 válidas) al
 #       principio de la línea 2 como "De EA4HUK"; el CALL sigue siendo la
 #       estación destinataria.
-GENERATOR_VERSION = "5.4"
+# v5.5: si el ADI no trae OPERATOR se usa STATION_CALLSIGN como originante
+#       (es el caso de los exports de EA3JAQ, que solo traen este último campo).
+GENERATOR_VERSION = "5.5"
 
-# Estaciones que pueden originar una QSL (campo OPERATOR del ADI). El CALL de
-# cada contacto es, en cambio, la estación destinataria.
+# Estaciones que pueden originar una QSL (campo OPERATOR del ADI, o su
+# sustituto STATION_CALLSIGN). El CALL de cada contacto es la destinataria.
 ALLOWED_OPERATORS = {'EA4HUK', 'EA4GHH', 'EA3JAQ', 'EA4IWX'}
+
+
+def originating_station(qso):
+    """Estación originante: OPERATOR, o STATION_CALLSIGN si no hay OPERATOR."""
+    value = (qso.get('OPERATOR') or '').strip()
+    if not value:
+        value = (qso.get('STATION_CALLSIGN') or '').strip()
+    return value.upper()
 
 # ---------- Geometría de las cajas de datos ----------
 # Proporciones respecto al alto/ancho de la postal (1200x800).
@@ -498,9 +508,9 @@ class QSLGenerator:
         call = qso.get('CALL', 'N/A')
         band = qso.get('BAND', '') or self.band_from_freq(qso.get('FREQ', ''))
         mode = qso.get('MODE', '')
-        # OPERATOR es la estación que estableció el contacto (originante); el
-        # CALL es la estación destinataria. Ambos se muestran en la postal.
-        operator = (qso.get('OPERATOR') or '').strip().upper()
+        # OPERATOR (o STATION_CALLSIGN si falta) es la estación originante;
+        # el CALL es la destinataria. Ambos se muestran en la postal.
+        operator = originating_station(qso)
         # El nombre es solo el del contacto (campo NAME).
         name = qso.get('NAME', '')
         qth = qso.get('QTH', '')
@@ -893,14 +903,15 @@ def process_folder(folder, generator, backgrounds):
 
     for adi_file in adi_files:
         qsos = ADIFParser.parse(str(adi_file))
-        operadores = {(q.get('OPERATOR') or '').strip().upper() for q in qsos}
+        operadores = {originating_station(q) for q in qsos}
         operadores.discard('')
         if not operadores:
-            print(f"   ⚠️  {adi_file.name}: sin OPERATOR; la postal no mostrará originante")
+            print(f"   ⚠️  {adi_file.name}: sin OPERATOR ni STATION_CALLSIGN; "
+                  f"la postal no mostrará originante")
         else:
             invalidos = sorted(operadores - ALLOWED_OPERATORS)
             if invalidos:
-                print(f"   ⚠️  {adi_file.name}: OPERATOR fuera de la lista válida: "
+                print(f"   ⚠️  {adi_file.name}: originante fuera de la lista válida: "
                       f"{', '.join(invalidos)}")
         file_hash = sha256_file(adi_file)
         entry = log.get(adi_file.name)
@@ -1027,7 +1038,7 @@ def process_act6(base_dir, generator):
                     info_estacion[call]['name'] = (qso.get('NAME') or '').strip()
                 if not info_estacion[call]['grid']:
                     info_estacion[call]['grid'] = (qso.get('GRIDSQUARE') or '').strip()
-                operator = (qso.get('OPERATOR') or '').strip().upper()
+                operator = originating_station(qso)
                 if operator:
                     info_estacion[call]['operators'].add(operator)
         por_actividad[act] = calls

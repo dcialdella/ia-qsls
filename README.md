@@ -8,8 +8,8 @@ postales generadas.
 > **Resumen:** lee archivos de contactos en formato ADI, deriva el país de cada estación
 > desde el prefijo del callsign (y dibuja su bandera **delante del callsign**), y genera
 > una postal QSL por contacto con los datos (**bandera, callsign destinatario, nombre,
-> QTH**, fecha, banda/modo, grid) más la **estación originante** (`OPERATOR`, una de
-> `EA4HUK`/`EA4GHH`/`EA3JAQ`/`EA4IWX`) al inicio de la línea 2, y las casillas
+> QTH**, fecha, banda/modo, grid) más la **estación originante** (`OPERATOR`, o
+> `STATION_CALLSIGN` si el ADI no trae `OPERATOR`) al inicio de la línea 2, y las casillas
 > de las 6 actividades (con la QSL6 de "record" para quien completó las 5). Funciona en
 > modo incremental (solo regenera lo que cambió).
 
@@ -475,6 +475,13 @@ No se versiona ni alimenta la web; es solo un volcado de trabajo.
          la próxima ejecución regenera sus postales automáticamente.
        - **`GENERATOR_VERSION = "5.3"`**: fuerza la regeneración incremental de todas
          las postales con solo correr `./run_all.sh`.
+32. **v5.5: fallback del originante** (2026-11-17):
+       - Los exports de **EA3JAQ** no traen `OPERATOR`, solo `STATION_CALLSIGN=EA3JAQ`,
+         así que su línea 2 salía sin `De …`. Nueva helper `originating_station(qso)`:
+         usa `OPERATOR` y, si falta, `STATION_CALLSIGN`.
+       - Se aplica en `compose()` (postales normales), en los avisos de `process_folder()`
+         y en la recogida de operadores de `process_act6()` (QSL6).
+       - **`GENERATOR_VERSION = "5.5"`**: fuerza la regeneración de todas las postales.
 
 ### Estructura actual en disco
 
@@ -954,8 +961,8 @@ archivo; si renombras un ADI se tratará como nuevo (se regeneran sus postales).
 
 Tipo | Tamaño caja | Contenido | Casillas
 ---|---|---|---
-**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre•QTH (si el ADI los trae); 2ª línea: **`De OPERATOR`** + fecha+UTC, banda/modo, grid | "ACT" + 6 casillas con números; tilde en la suya
-**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre; 2ª línea: **`De OPERATOR`** + "Todas las referencias conseguidas" + locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
+**Normal** (`compose`) | 22% alto × 55% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre•QTH (si el ADI los trae); 2ª línea: **`De OPERATOR`** (o `De STATION_CALLSIGN` si falta) + fecha+UTC, banda/modo, grid | "ACT" + 6 casillas con números; tilde en la suya
+**Record act6** (`compose_act6`) | 20% alto × 62% ancho, inf. izquierda | **bandera del CALL + callsign destinatario** (dorado) + nombre; 2ª línea: **`De OPERATOR`** (o `De STATION_CALLSIGN` si falta) + "Todas las referencias conseguidas" + locator | "ACT" + 6 casillas; tildes QSL1..QSL5 y bandera de España en QSL6
 **DMR qsl7** (`compose`, activity=7) | 22% alto × 55% ancho | igual que la normal | NO muestra casillas: texto "DMR Confirmated"
 
 - Tamaño: `WIDTH=1200` × `HEIGHT=800` (proporción 3:2). Se puede cambiar en la clase.
