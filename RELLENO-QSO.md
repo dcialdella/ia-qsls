@@ -1,4 +1,4 @@
-# Relleno de QSO EA4HUK ↔ {EA3JAQ, EA4GHH, EA4IWX} en 20/40/70/2 m
+# Relleno de QSO EA4HUK ↔ {EA3JAQ, EA4GHH, EA4IWX} en 20/40/60/70/80 m y 2 m
 
 Fecha: 2026-11-15 · Estado: aplicado a los ADI raíz y a `ACTIVIDADES/`
 
@@ -6,7 +6,9 @@ Fecha: 2026-11-15 · Estado: aplicado a los ADI raíz y a `ACTIVIDADES/`
 
 Cada log propio de EA4HUK debe contener contactos con EA3JAQ, EA4GHH y EA4IWX
 en las cuatro bandas de trabajo (20 m, 40 m, 70 cm y 2 m). Antes de este relleno
-faltaban 16 QSO repartidos en los cinco logs.
+faltaban 16 QSO repartidos en los cinco logs. El título incluye además 60 m y 80 m
+por el bloque de 12 QSO del 2026‑11‑15 que se documenta en «Totales» y que solo
+estuvo en el derivado `DME.adi`, no en los ADI raíz.
 
 **Aviso**: estos 16 contactos **no existen en ningún log de origen** (se revisaron
 también los ADI de EA3JAQ, EA4GHH y EA4IWX). Se han creado clonando el registro
@@ -139,7 +141,14 @@ Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruza
 ## Totales
 
 - ADI raíz: 2.743 → **2.939** QSO (+16 relleno, −1 duplicado EAFNT, +61 espejos,
-  +120 cruces del trío).
+  +120 cruces del trío). La cuenta cierra: 2.743 + 16 − 1 + 61 + 120 = 2.939.
+- **Bloque aparte (12 QSO en 40/60/80 m, 2026‑11‑15 13:00):** doce contactos en
+  7.100 / 5.350 / 3.700 MHz se añadieron al derivado del Escritorio `DME.adi` (que
+  contenía 2.678 QSO). **No están en los 31 `.adi` raíz ni en la web**: por eso no
+  entran en el total de 2.939 ni en las 2.982 postales publicadas. `DME.adi` ya no
+  estaba en el Escritorio en la última comprobación (17/11), así que este bloque solo
+  consta en la documentación; si el backup `DME-backup-20261115.zip` sigue
+  disponible, sería la fuente para recuperarlo.
 - `ACTIVIDADES/`: 32 ficheros, **3.288** QSO (qsl2 se replica en `pota` y `tota`).
 - `audit_adi.py`: sin errores nuevos (0 sin FREQ, BAND canónica, TIME_ON de 4 caracteres,
   sin duplicados internos en los cinco logs).

@@ -1,15 +1,18 @@
 # Gráficos del log completo
 
+Publicados en <https://dcialdella.github.io/ia-qsls/graficos/> (página nueva, sin
+modificar la web de descarga de postales ni `qsl_index.json`).
+
 Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 (`analizar_adi_grafico.py` y `analizar_por_operador.py`) a partir de
-`TODOS.adi`.
+`graficos/TODOS.adi`.
 
 ## Datos de entrada
 
-`TODOS.adi` — 2.933 QSO, todos los contactos de las cuatro estaciones
+`graficos/TODOS.adi` — 2.933 QSO, todos los contactos de las cuatro estaciones
 (EA4HUK, EA4GHH, EA4IWX, EA3JAQ) en qsl1–qsl7.
 
-- Origen: los `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
+- Origen: los 31 `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
   derivados y duplicarían registros).
 - Excluidos los 6 registros de demostración `QSL-DEMO-EG9MM.adi`.
 - `STATION_CALLSIGN` normalizado (sin espacios finales) y `OPERATOR`
@@ -20,13 +23,19 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 
 ## Contenido
 
-- 18 gráficos generales: `grafico_*.png`
+- 17 gráficos generales: `grafico_*.png`
 - 10 gráficos por operador: `operador_*.png`
-- `estadisticas_adi.json`: cifras que alimentan los gráficos
+- 27 miniaturas de 720 px en `graficos/thumbs/*.png`, usadas por la galería; al
+  pulsar una imagen se abre su versión completa.
+- `estadisticas_adi.json`: cifras que alimentan los gráficos.
 
 No se incluye `grafico_qrz_lookups.png`: en el proyecto original ese gráfico
 usa una tabla de lookups de QRZ.com escrita a mano para otro log, no datos de
 estos contactos.
+
+Cifras del análisis: **1.109 indicativos únicos**, **33 entidades DXCC**,
+8 bandas, 6 modos, distancia media **805 km** y máxima **13.955 km**. Hora pico:
+**09:00 UTC** (826 QSO).
 
 ## Regenerar
 

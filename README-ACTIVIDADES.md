@@ -15,7 +15,7 @@ python3 qsl_generar_adis.py
 ## Flujo
 
 1. **Limpia** la carpeta `ACTIVIDADES/` de cada QSL procesada (borra todo lo anterior).
-2. **Lee todos** los `.adi` de la carpeta `qslN/` (en el futuro puede haber varios; cada uno se procesa por separado).
+2. **Lee todos** los `.adi` de la carpeta `qslN/` (ahora hay varios: 31 en total; cada uno se procesa por separado).
 3. **Valida** cada QSO:
    - `CALL` y `QSO_DATE` presentes.
    - `STATION_CALLSIGN` = `EG9MM` (única estación permitida en el log).
@@ -27,22 +27,35 @@ python3 qsl_generar_adis.py
 
 ## Archivos de entrada (estado actual)
 
-Cada carpeta `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contiene un único input:
+Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **31 `.adi`** con
+2.939 QSO en total: 25 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
+en esa cuenta:
+
+| Carpeta | `.adi` raíz | QSO | Formatos generados |
+|---|---|---|---|
+| `qsl1` | 5 | 553 | TOTA `EAR-1901` |
+| `qsl2` | 5 | 414 | TOTA `EAR-1902` + POTA `ES-0340` |
+| `qsl3` | 5 | 610 | POTA `ES-0849` |
+| `qsl4` | 5 | 457 | POTA `ES-0850` |
+| `qsl5` | 7 | 840 | LLOTA `LLES-0214` |
+| **Total** | **27** | **2.874** | **32 ficheros de salida, 3.288 QSO** |
+
+`qsl6` no tiene `.adi` (postales de record); `qsl7` tiene 4 `.adi` (64 QSO, 3 reales +
+1 demo) pero **no se procesa**: no está en `CONFIG`.
+
+Salidas reales (32 ficheros en total). Un ejemplo por carpeta:
 
 ```
-QSL-DEMO-EG9MM.adi   ← 1 solo QSO, CALL = XYZ123, STATION_CALLSIGN = EG9MM, OPERATOR = EA4HUK
+qsl1/ACTIVIDADES/ea4huk-museo-tota.adi
+qsl2/ACTIVIDADES/EA4HUK@ES-0340-20261113-pota.adi
+qsl3/ACTIVIDADES/EA3JAQ-20261114-pota.adi
+qsl4/ACTIVIDADES/2026-11-13 EA3JAQ-pota.adi
+qsl5/ACTIVIDADES/ea4ghh-llota20261115-llota.adi
 ```
 
-Salidas (ejemplo con el input actual):
-
-```
-qsl1/ACTIVIDADES/QSL-DEMO-EG9MM-tota.adi
-qsl2/ACTIVIDADES/QSL-DEMO-EG9MM-tota.adi
-qsl2/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
-qsl3/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
-qsl4/ACTIVIDADES/QSL-DEMO-EG9MM-pota.adi
-qsl5/ACTIVIDADES/QSL-DEMO-EG9MM-llota.adi
-```
+> El total de QSO de salida (3.288) es mayor que el de entrada en `qsl1`–`qsl5`
+> (2.874) porque cada `.adi` genera un fichero por formato y, en `qsl2`, dos (TOTA y
+> POTA) con el mismo contenido de QSO.
 
 ## Formatos por actividad
 
@@ -85,8 +98,13 @@ No se genera `MY_TOTA_REF`; el `QSLMSG` es solo para TOTA.
 
 - Se **quitan** los campos de actividad existentes del input (`MY_SIG`, `MY_SIG_INFO`, `MY_POTA_REF`, `MY_TOTA_REF`, `MY_LLOTA_REF`, `QSLMSG`) y se **agregan** los del formato destino.
 - Se limpian las líneas en blanco resultantes.
-- La primera línea de la cabecera se reemplaza por:
-  `ADIF export for EG9MM: <FORMATO> <REFERENCIA>`
+- La primera línea de la cabecera se reemplaza por
+  `ADIF export for <STATION_CALLSIGN>: <FORMATO> <REFERENCIA>`, por ejemplo
+  `ADIF export for EA4IWX/9: POTA ES-0340`. En los 6 ficheros demo sigue saliendo
+  `ADIF export for EG9MM: ...`.
+- Si la estación u operador no encajan con lo esperado, se añade además la línea
+  `REVISAR EL FORMATO DE OPERADOR y STATION` (aparece en 26 de los 32 ficheros actuales;
+  en los 6 demo no aparece). Es un aviso, no un error: los ficheros se generan igual.
 
 ## Formatos de entrada soportados
 
@@ -112,30 +130,37 @@ Notas:
 
 ```
 qsl1/
-├── QSL-DEMO-EG9MM.adi            ← entrada (1 QSO, EG9MM)
+├── 5 .adi (553 QSO)              ← entradas, entre ellos el demo EG9MM
 ├── ACTIVIDADES/
-│   └── QSL-DEMO-EG9MM-tota.adi   ← salida
+│   └── 5 *-tota.adi              ← salidas
 ├── QSL-1.png                     ← fondo único de la actividad
 └── QSLS/
 qsl2/
-├── QSL-DEMO-EG9MM.adi
+├── 5 .adi (414 QSO)
 ├── ACTIVIDADES/
-│   ├── QSL-DEMO-EG9MM-tota.adi
-│   └── QSL-DEMO-EG9MM-pota.adi
+│   ├── 5 *-tota.adi
+│   └── 5 *-pota.adi
 ...
 qsl7/
-├── QSL-DEMO-EG9MM.adi            ← existe, pero NO se procesa
+├── 4 .adi (65 QSO)               ← existen, pero NO se procesan (no están en CONFIG)
 ```
 
-Si en el futuro hay varios `.adi` en una carpeta, cada uno genera sus salidas:
+Cada `.adi` de entrada genera su propio conjunto de salidas (un `-tota.adi` en qsl1,
+`-tota.adi` y `-pota.adi` en qsl2, etc.):
 
 ```
 qsl1/
-├── QSL-DEMO-EG9MM.adi
-├── OTRO-LOG.adi
+├── ea4huk-museo.adi              (256 QSO)
+├── Museo-ea4ghh-2026-11-14.adi   (50 QSO)
+├── ea4iwx-poi1-20261115.adi      (128 QSO)
+├── EA3JAQ-...-full.adi           (118 QSO)
+├── QSL-DEMO-EG9MM.adi            (1 QSO)
 └── ACTIVIDADES/
-    ├── QSL-DEMO-EG9MM-tota.adi
-    └── OTRO-LOG-tota.adi
+    ├── ea4huk-museo-tota.adi
+    ├── Museo-ea4ghh-2026-11-14-tota.adi
+    ├── ea4iwx-poi1-20261115-tota.adi
+    ├── EA3JAQ-...-full-tota.adi
+    └── QSL-DEMO-EG9MM-tota.adi
 ```
 
 ## Configuración
