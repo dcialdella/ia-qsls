@@ -51,8 +51,8 @@ postales generadas.
    y subir el código.** El sitio lee `qsl_index.json` desde GitHub Pages, así que
    sin push la web no ve las postcards nuevas. La forma normal de hacerlo es
    **`./run_all.sh`** (ver §2.0), que ya encadena los tres pasos:
-   1. `./generar.sh --index` (o `--from-scratch` y luego `--index-only` si hay que
-      esperar a que Drive suba los PNG a la nube).
+   1. `./generar.sh --index` (o `--from-scratch` y luego `--index-only`; ambas leen
+      `qslN/QSLS/`, así que no hay que esperar a que Drive suba los PNG).
    2. `git add -A && git commit && git push`.
    3. Verificar en <https://dcialdella.github.io/ia-qsls/qsl_index.json> que
       `total` y `counts` reflejan lo generado (Pages tarda ~1 min).
@@ -72,7 +72,9 @@ postales generadas.
 > han generado **3.058 postales**, sincronizadas con
 > Google Drive y publicadas en <https://dcialdella.github.io/ia-qsls/>. Los 6
 > `QSL-DEMO-EG9MM.adi` de relleno siguen en el repo, pero ya no son el dataset
-> publicado. El flujo diario está en §2.0.
+> publicado. El flujo diario está en §2.0. La carpeta `ADICIONALES/` guarda 9 `.adi`
+> derivados para que las estaciones carguen sus QSO con EA4HUK; **no** cuenta como
+> entrada del generador ni de los gráficos.
 >
 > Las estadísticas del log completo (3.009 QSO, sin los 6 registros demo) tienen una
 > página independiente, <https://dcialdella.github.io/ia-qsls/graficos/>, con 27
@@ -106,6 +108,9 @@ postales generadas.
   | `qsl7` | 4 | 66 | 66 |
   | **Total** | **36** | **3.015** | **3.058** |
 
+  Los 9 `.adi` de `ADICIONALES/` son derivados de los 5 `CRUZADAS-ADICIONALES`;
+  no se cuentan aquí ni se procesan.
+
   Los 6 `QSL-DEMO-EG9MM.adi` (`CALL` = `XYZ123`, `STATION_CALLSIGN` = `EG9MM`) siguen
   entre esos 36 ficheros como relleno histórico; sus 6 contactos están incluidos en el
   total de 3.015 QSO y son los únicos que no corresponden a una estación real.
@@ -114,8 +119,8 @@ postales generadas.
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
   `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
 - ✅ `qsl_index.json` coherente con lo publicado: `total: 3058`, 1.110 indicativos
-  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-17T19:00:03Z`; lo
-  publicó la regeneración del 17/11 tras los 5 `CRUZADAS-ADICIONALES-*.adi` (§9).
+  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-17T20:37:14Z`; lo
+  publicaron la fecha asignada a `qsl6` (`1ba3646`) y el índice local (`eb4e552`) (§9).
 - ✅ Los 6 `.adi` de ejemplo siguen aparcados en `TESTDATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`).
 - ✅ Los `.adi` reales ya están incorporados: se procesan los 36 de las carpetas de
@@ -347,7 +352,8 @@ No se versiona ni alimenta la web; es solo un volcado de trabajo.
      todas las banderas de `country_map.json` (ver §5).
 9. **Regeneración total de QSL6 en cada ejecución:** `process_act6` borra TODAS las
    postales de `qsl6/QSLS/` al empezar y las regenera siempre con la información actual
-   (nombres, grids, banderas, versión del generador). No es incremental.
+   (nombres, grids, banderas, versión del generador) y con la fecha fija `2026-11-15`
+   (`ACT6_RECORD_DATE`, también forzada por `drive_index.py`). No es incremental.
 10. **Poda de postales huérfanas:** tras procesar, se eliminan de `qslN/QSLS/` los PNG que
     ya no referencia ningún ADI del log (al borrar contactos o ADIs).
 11. **Índice por primera letra** en `country_code_for_call` (~20× más rápido en lotes de
@@ -489,10 +495,17 @@ No se versiona ni alimenta la web; es solo un volcado de trabajo.
         - Un `CRUZADAS-ADICIONALES-<referencia>.adi` por actividad (qsl1–qsl5), con
           12 QSO en 10 m cada uno: **+60 QSO** y +60 postales.
         - El índice pasa a `total: 3058` (conteos 565/426/628/478/852/43/66) y el
-          `generated_at` a `2026-11-17T19:00:03Z`. Detalle en `RELLENO-QSO.md`.
+          `generated_at` a `2026-11-17T20:37:14Z`. Detalle en `RELLENO-QSO.md`.
         - Verificación de cruces: en las 5 actividades cada una de las 4 estaciones
           (`EA4HUK`, `EA3JAQ`, `EA4GHH`, `EA4IWX`) tiene al menos un QSO con cada una
           de las otras 3; no falta ningún par (§9).
+ 34. **Fecha de las QSL de record** (2026-11-17, commit `1ba3646`): las 43 postales de
+     `qsl6` llevan `2026-11-15`; desaparece del índice el grupo `""` (sin fecha).
+ 35. **Índice generado en local** (2026-11-17, commit `eb4e552`): `drive_index.py --local`
+     lee `qslN/QSLS/` sin acceder a Drive; `generar.sh` lo usa por defecto.
+ 36. **Nueve ADI derivados** (2026-11-17, commit `8ab2b1f`): `ADICIONALES/` reúne
+     3 estaciones × TOTA/LLOTA/POTA con 15 QSO contra EA4HUK; no son entrada del
+     generador ni de los gráficos.
 
 ### Estructura actual en disco
 
@@ -516,6 +529,7 @@ ia-qsls/
 ├── qsl_manifest.json      <- nº de fuentes por actividad (generado, ignorado por git)
 ├── country_map.json       <- Prefijos de indicativo -> ISO2 (845, longest-match)
 ├── FLAGS/                 <- Banderas oficiales (PNG ~80x53, flagcdn). 253 países
+├── ADICIONALES/          <- 9 .adi derivados (3 estaciones × TOTA/LLOTA/POTA; NO se procesan)
 ├── TESTDATA/             <- 6 .adi de muestra de formato (NO se procesan aquí)
 ├── .gitignore             <- Excluye venv/, __pycache__, qsl*/QSLS/, qsl*/qsl_log.json
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
@@ -536,7 +550,8 @@ Notes sobre esta estructura:
 - **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan: 36 en total
   (6/6/6/6/8/0/4), con 3.015 QSO. Los 6 `QSL-DEMO-EG9MM.adi` de relleno y los 5
   `CRUZADAS-ADICIONALES-*.adi` conviven con los reales; los 6 de `TESTDATA/` siguen
-  aparcados ahí y no se tocan.
+  aparcados ahí y no se tocan. Los 9 `.adi` de `ADICIONALES/` viven fuera de `qslN/`
+  y **no** son entrada del generador: son derivados de esos 5 cruces adicionales.
 - **`qsl1`–`qsl5` tienen además `ACTIVIDADES/`**, con los `.adi` generados por
   `./generar_adis.sh` (ver `README-ACTIVIDADES.md`). Se borran y regeneran en cada
   ejecución; no se versionan como entrada del generador de imágenes.
@@ -571,14 +586,14 @@ es detalle o casos avanzados:
    ```
 
    Y ya está. `run_all.sh` es una envoltura de `generar.sh --auto` que encadena
-   **todo** el proceso en este orden — genera, sube a Drive, **regenera el índice web
-   (`qsl_index.json`) y lo pushea a GitHub** en cada corrida:
+   **todo** el proceso en este orden — genera, sincroniza Drive, **regenera el índice
+   web (`qsl_index.json`) desde `qslN/QSLS/` y lo pushea a GitHub** en cada corrida:
 
    | Paso | Qué hace |
    |---|---|
    | 1 | Detecta los `.adi` nuevos o modificados y genera sus PNG en `qslN/QSLS/` (incremental; `qsl6` se regenera siempre) |
    | 2 | Sincroniza los PNG con Google Drive (`rsync --update --delete`) |
-   | 3 | Regenera `qsl_index.json` leyendo la carpeta pública de Drive |
+   | 3 | Regenera `qsl_index.json` leyendo `qslN/QSLS/` (sin red; `--drive-index` para el modo antiguo) |
    | 4 | `git add -A` + `git commit` + `git push` (los `.adi` nuevos también se suben) |
    | 5 | GitHub Pages publica el sitio en ~1 min |
 
@@ -588,17 +603,10 @@ es detalle o casos avanzados:
 3. **Verificar** en <https://dcialdella.github.io/ia-qsls/> que el indicativo
    buscado aparece.
 
-> **Importante — el retardo de Drive:** el paso 3 indexa lo que hay **en la nube**,
-> y Google Drive sube los ficheros de forma asíncrona. Si corres `./run_all.sh` en
-> el mismo momento en que copias el `.adi`, las postcards nuevas todavía no están
-> en Drive y **no aparecerán en la web** hasta la siguiente pasada.
->
-> **Solución: repetir `./run_all.sh` un minuto después.** Reindexa y pushea
-> siempre (la marca de tiempo `generated_at` cambia en cada corrida), así que la
-> segunda pasada recoge lo que la primera se dejó por subir. Lo mismo aplica a
-> **borrados/renombrados**: si acabás de purgar postcards viejas, el HTML público
-> de Drive puede tardar en reflejarlo y el primer índice puede quedar con entradas
-> muertas; la segunda pasada lo deja limpio.
+> **El índice ya no depende de la nube:** el paso 3 lee las carpetas locales
+> `qslN/QSLS/`, así que las postcards nuevas (y los borrados) se reflejan en la
+> primera pasada, sin esperar a que Drive suba nada. Solo el modo heredado
+> `--drive-index` sigue sujeto al retardo del HTML público de Drive.
 
 > **`qsl6` no recibe `.adi`.** Es la actividad de *record* y se alimenta sola de las
 > estaciones que contactaron en `qsl1`–`qsl5`. Por eso el flujo diario usa las
@@ -619,10 +627,11 @@ sirve para casos puntuales (regenerar todo, probar sin tocar Drive, etc.).
 ./generar.sh --from-scratch     # borra QSLS/*.png y qsl_log.json y regenera TODO
 ./generar.sh --from-scratch --no-sync-drive  # regenera todo, sin copiar a Drive
 ./generar.sh --clean            # alias de --from-scratch
-./generar.sh --index            # además regenera qsl_index.json (índice web, ver §7)
-./generar.sh --index-only       # solo regenera qsl_index.json (no toca las postcards)
+./generar.sh --index            # además regenera qsl_index.json desde qslN/QSLS (§7)
+./generar.sh --index-only       # solo regenera qsl_index.json (desde qslN/QSLS)
+./generar.sh --drive-index      # modo antiguo: indexa leyendo el HTML público de Drive
 ./generar.sh --keep-empty-drive # NO vacía en Drive las actividades sin .adi (por defecto SÍ)
-./generar.sh --folder-id <ID>   # indexa otra carpeta de Google Drive
+./generar.sh --folder-id <ID>   # carpeta de Drive (solo con --drive-index)
 ./generar.sh --folder-id=<ID>   # misma cosa, forma con =
 ./generar.sh --force-index      # indexa aunque el recorte no cuadre con el manifiesto (§7)
 ```
@@ -846,10 +855,11 @@ procesaría dos veces.
    TODAS.
 3. Para cada una genera `qsl6/QSLS/{call}_act6.png` con `compose_act6` sobre el fondo
    de qsl6 (f6.png). Muestra callsign (dorado), bandera + nombre, locator y las 5
-   casillas QSL1–QSL5 tildadas + bandera de España en la casilla 6.
+   casillas QSL1–QSL5 tildadas + bandera de España en la casilla 6. El log
+   `qsl6/qsl_log.json` guarda `fecha: 2026-11-15` para cada postal (`ACT6_RECORD_DATE`).
 4. **No es incremental:** antes de generar se borran TODAS las postales de `qsl6/QSLS/`
    para que cada ejecución refleje la información actual. `qsl6/qsl_log.json` guarda la
-   firma (sha256) del conjunto solo con fines informativos.
+   firma (sha256) del conjunto (informativa) y la fecha fija de cada postal.
 
 ### Procesado incremental (clave)
 Cada carpeta tiene `qsl_log.json` con, por archivo ADI:
@@ -1047,7 +1057,7 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `QSLGenerator.rounded_rect(draw, xy, r, fill)` | Rectángulo redondeado |
 | `QSLGenerator.draw_activity_checkboxes(draw, box, checked, …)` | Fila "ACT" + 6 casillas con número/tilde/bandera |
 | `QSLGenerator.prepare_background(path)` | Abre el fondo y lo devuelve ya escalado a "cover" y en RGBA, cacheado por ruta (`cover_fit(bg, self.WIDTH, self.HEIGHT)`; no recibe tamaño como argumento) |
-| `QSLGenerator.fmt_date(qso)` / `fmt_time(qso)` | Formatean fecha (`----` si falta) y hora (`''` si falta; el rótulo `--:--` lo pone `compose`, no `fmt_time`) |
+| `QSLGenerator.fmt_date(qso)` / `fmt_time(qso)` | Formatean fecha (`----` si falta) y hora (`''` si falta; el rótulo `--:--` lo pone `compose`, no `fmt_time`). En `qsl6` la fecha nunca falta: se fuerza a `2026-11-15` |
 | `QSLGenerator.band_from_freq(freq)` | Banda desde la frecuencia, vía `BAND_RANGES` (`qsl_generator.py:72`) |
 | `QSLGenerator._load_country_map()` | Carga country_map.json indexado por 1ª letra |
 | `QSLGenerator.country_code_for_call(call)` | ISO2 desde prefijo (longest-match, ignora placeholders) |
@@ -1067,8 +1077,9 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `process_folder(folder, gen, bgs)` | Lógica incremental por carpeta (usa `bgs[0]` y `fondo_hash`) |
 | `process_act6(base_dir, gen)` | Limpia QSL6/QSLS + detecta estaciones en las 5 actividades + genera QSL de record |
 | `main()` | Orquesta las 7 carpetas (qsl6 especial) y escribe `qsl_manifest.json` |
-| `drive_index.py` → `fetch/split_blocks/parse_folders/parse_files/fsize/calln/main` | **Scraping del HTML público** de la carpeta de Drive con `urllib` (sin API, sin credenciales) y escribe `qsl_index.json` con los *file ids* |
-| `drive_index.py` → `load_known_calls/read_existing/load_manifest/build_index` | `load_known_calls` lee los indicativos ya conocidos de los índices previos; `read_existing` carga el JSON en disco; `load_manifest` lee `qsl_manifest.json`; `build_index` scrapingea, aplica las **salvaguardas** (nunca escribir un índice vacío ni un recorte no justificado) y solo entonces escribe |
+| `drive_index.py` → `fetch/split_blocks/parse_folders/parse_files/fsize/calln/main` | Modo heredado `--drive-index`: **scraping del HTML público** de Drive con `urllib` (sin API, sin credenciales) para obtener los *file ids* |
+| `drive_index.py` → `list_local_files/load_drive_ids/load_local_meta/local_png_counts/check_regression` | Vía normal `--local`: lista los PNG de `qslN/QSLS/`, reutiliza los ids del índice anterior, lee indicativos/fechas de los logs y valida el resultado antes de escribir |
+| `drive_index.py` → `load_known_calls/read_existing/load_manifest/build_index` | `load_known_calls` lee los indicativos ya conocidos de índices previos; `read_existing` carga el JSON en disco; `load_manifest` lee `qsl_manifest.json`; `build_index` aplica las **salvaguardas** (nunca índice vacío ni recorte no justificado) y solo entonces escribe |
 
 ---
 
@@ -1109,10 +1120,11 @@ porque nunca se muestran más postcards que las de un indicativo.
 
 > **Por qué hace falta un índice:** los enlaces de descarga de Drive siempre llevan
 > el *file id* (`.../uc?export=download&id=<ID>`), nunca el nombre del archivo.
-> `drive_index.py` recorre la carpeta **pública** de Drive, hace *scraping* del HTML con
-> `urllib` (**sin API v3, sin credenciales y sin dependencias extra** — la `venv` solo
-> tiene Pillow) y escribe `qsl_index.json` con nombre + id de cada PNG. Ese JSON se sube
-> a git y es lo que la página descarga con `fetch`.
+> `drive_index.py`, tal como lo llama `generar.sh`, recorre `qslN/QSLS/` (**sin red, sin
+> API, sin credenciales y sin dependencias extra** — la `venv` solo tiene Pillow), reutiliza
+> los *file ids* del índice anterior y escribe `qsl_index.json` con nombre + id de cada PNG.
+> Ese JSON se sube a git y es lo que la página descarga con `fetch`. El modo heredado
+> `--drive-index` sí hace *scraping* del HTML público de Drive.
 
 > Histórico: antes se usaba la API v3 con una cuenta de servicio y `drive_creds.json`.
 > Ese enfoque se abandonó por el scraping del HTML público (más simple, cero secretos que
@@ -1120,21 +1132,22 @@ porque nunca se muestran más postcards que las de un indicativo.
 
 ### Carpeta de origen
 
-`My Drive/QSL/QSLs` → <https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy>
+La fuente por defecto es el **origen local** `qslN/QSLS/` (las carpetas que luego se
+rsyncan a Drive). No hace falta red para indexar.
 
-- ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy`, hardcodeado en la constante
-  `DEFAULT_FOLDER_ID` de `drive_index.py`. Se puede cambiar sin editar código:
-  `./generar.sh --folder-id <ID>` (o `python3 drive_index.py --folder-id <ID>`).
+- `My Drive/QSL/QSLs` → <https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy>
+  es el **destino** de la sincronización. Solo se lee si se pide `--drive-index`.
+- ID de la carpeta: `1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy`, hardcodeado en `DEFAULT_FOLDER_ID`
+  de `drive_index.py`. Se puede cambiar con `./generar.sh --drive-index --folder-id <ID>`.
 - Contiene `qsl1`…`qsl7`. Dentro de cada una, los PNG se llaman
   `{indicativo}_{nombre_adi}.png`, así que **el prefijo del nombre es el indicativo**.
-- Acceso: *Cualquier persona con el enlace* → Lector. **Ya está hecho** (verificado:
-  la carpeta responde 200 sin iniciar sesión). Es un requisito indispensable: sin enlace
-  público el scraping devuelve 0 ficheros.
+- Para el modo `--drive-index` el enlace público (*Cualquier persona con el enlace* →
+  Lector, ya verificado) sigue siendo imprescindible: sin él el scraping devuelve 0 ficheros.
 
 ### Puesta en marcha
 
 No hay nada que preparar: **no hacen falta credenciales, ni cuenta de servicio, ni
-dependencias**. Solo la carpeta de Drive compartida por enlace (ya está) y:
+dependencias, ni acceso a Google Drive**. Con las carpetas `qslN/QSLS/` en local basta:
 
 ```bash
 ./generar.sh --index-only              # ejecuta drive_index.py y escribe qsl_index.json
@@ -1145,18 +1158,20 @@ dependencias**. Solo la carpeta de Drive compartida por enlace (ya está) y:
 
 | Flag | Efecto |
 |---|---|
-| `--folder-id <ID>` | Indexa otra carpeta de Drive (por defecto `DEFAULT_FOLDER_ID`) |
+| `--local` | Indexa `qslN/QSLS/` sin red (lo usa `generar.sh` por defecto) |
+| `--drive-index` | Modo heredado: scraping del HTML público de Drive |
+| `--folder-id <ID>` | Otra carpeta de Drive (solo con `--drive-index`) |
 | `--out <ruta>` | Escribe el índice donde quieras (por defecto `qsl_index.json` en la raíz) |
 | `--manifest <ruta>` | Usa otro manifiesto (por defecto `qsl_manifest.json`) |
 | `--force` | Escribe el índice aunque la salvaguarda lo pidiera bloquear |
 
-`generar.sh` propaga `--folder-id` y añade `--force` cuando le pasas `--force-index`
-(`FORCE_INDEX=true` → `INDEX_ARGS+=("--force")`, `generar.sh:89`), así que desde el
-flujo diario no hace falta tocar código.
+`generar.sh` pasa `--local` por defecto, propaga `--folder-id` y añade `--force` cuando
+le pasas `--force-index` (`FORCE_INDEX=true` → `INDEX_ARGS+=("--force")`,
+`generar.sh:91-93`), así que desde el flujo diario no hace falta tocar código.
 
 > **Por qué existe `--force`.** Al vaciar actividades **a propósito** (o al sustituirlas
 > por datos de prueba), la salvaguarda ve un recorte grande del que el manifiesto no da
-> cuenta y se niega a escribir, por si lo que pasó fue un fallo de parseo de Drive:
+> cuenta y se niega a escribir, por si las postcards locales se borraron por error:
 >
 > ```
 > ERROR: el nuevo indice tiene 7 entradas y el anterior 28, y solo 0 son de
@@ -1166,7 +1181,8 @@ flujo diario no hace falta tocar código.
 >
 > Si has revisado que el recorte es real, `--force-index` es lo correcto:
 > `./generar.sh --index-only --force-index`. Si no lo es, **no lo uses** — el JSON bueno
-> en disco sigue intacto y el problema está en el HTML de Drive.
+> en disco sigue intacto. Con `--local`, comprueba los PNG de `qslN/QSLS/`; con
+> `--drive-index`, revisa el HTML de Drive.
 
 Después, sube el índice y activa GitHub Pages (Settings → Pages → *Deploy from a branch*
 → `main` / raíz). La página queda en **https://dcialdella.github.io/ia-qsls/** y la
@@ -1183,10 +1199,9 @@ Después, sube el índice y activa GitHub Pages (Settings → Pages → *Deploy 
 
 Lo normal es `./run_all.sh` (§2.0). Los flags de abajo sirven para casos puntuales.
 
-> **Ojo con el retardo de Drive:** Drive for Desktop sube los PNG de forma
-> asíncrona. Si generas postcards nuevas y sincronizas en el mismo momento, el
-> índice se construirá antes de que existan en la nube: repite `--index-only`
-> (o `./run_all.sh`) un minuto después.
+> **El índice no espera a la nube:** se construye desde `qslN/QSLS/`, así que las
+> postcards nuevas y los borrados se reflejan en la misma corrida. El retardo de
+> Drive solo afecta al modo heredado `--drive-index`.
 
 ### Formato de `qsl_index.json`
 
@@ -1194,27 +1209,30 @@ Lo normal es `./run_all.sh` (§2.0). Los flags de abajo sirven para casos puntua
 ("Actividad 1"… "Actividad 7") mientras la actividad esté publicada. La excepción son las
 que el propio indexado decide dejar fuera: una actividad con **0 en el manifiesto** se
 omite por completo (no aparece en `activities` ni en `counts`, y se avisa por pantalla con
-`· qslN: sin .adi (manifiesto) -> no se publica`), y también una actividad cuyo HTML de
-Drive no se puede leer, que se marca como fallida. Regla 1 de §0 sigue vigente en Drive:
-las carpetas existen siempre; lo que puede no publicarse es su contenido.
+`· qslN: sin .adi (manifiesto) -> no se publica`). En modo `--drive-index`, además,
+una actividad cuyo HTML no se puede leer se marca como fallida. Las carpetas existen
+siempre; lo que puede no publicarse es su contenido.
 
 Estado actual del repo: índice **completo**, con `total: 3058`, 1.110 `call` distintos
-(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-17T19:00:03Z`. Lo publicó la
-regeneración del 17/11 tras los 5 `CRUZADAS-ADICIONALES-*.adi` (§9). Si algún día saliera vacío (`total: 0`), la
-web lo mostraría sin errores visibles — ver §7 "Seguridad". **Nunca se publica un índice
-incompleto**: las salvaguardas de `drive_index.py` exigen que Drive y el manifiesto
-local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
+(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-17T20:37:14Z`. Lo publicaron la
+fecha asignada a `qsl6` (`1ba3646`) y la regeneración del índice local (`eb4e552`) (§9).
+Si algún día saliera vacío (`total: 0`), la web lo mostraría sin errores visibles — ver
+§7 "Seguridad". **Nunca se publica un índice incompleto**: las salvaguardas de
+`drive_index.py` exigen que los PNG locales y el manifiesto cuadren antes de escribir
+el JSON (§7 "Puesta en marcha").
 
 ```json
 {
   "version": 2,
-  "generated_at": "2026-11-17T19:00:03Z",
+  "generated_at": "2026-11-17T20:37:14Z",
   "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
   "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
   "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"}},
   "counts": {"qsl1": 565, "qsl2": 426, "qsl3": 628, "qsl4": 478,
              "qsl5": 852, "qsl6": 43, "qsl7": 66},
   "total": 3058,
+  "days": {"2026-11-15": 966, "2026-11-14": 965,
+           "2026-11-13": 1121, "2026-10-06": 6},
   "entries": [
     {"call": "IV3LDZ", "act": "qsl2",
      "name": "iv3ldz_ea4huk_es-0340-20261113.png",
@@ -1225,14 +1243,18 @@ local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
 
 - La `version` del índice es **2**. La 1 ya traía las 7 `activities`; el salto refleja
   el formato de `entries` que consume hoy la web.
+- `days` cuenta las postales por fecha: `2026-11-15: 966`, `2026-11-14: 965`,
+  `2026-11-13: 1121`, `2026-10-06: 6`. Ya no existe la clave `""` (sin fecha):
+  las 43 QSL de record de `qsl6` llevan `2026-11-15`.
 - El ejemplo abrevia `activities` a una sola clave, pero el archivo real trae **las 7**
-  con su `id` y su `title`, salvo las que se omiten por manifiesto vacío o por fallo de
-  fetch (ver arriba).
+  con su `id` y su `title`, salvo las que se omiten por manifiesto vacío (o por fallo
+  de fetch en modo `--drive-index`, ver arriba).
 - `call` se toma de `qsl_log.json` (fuente principal, indicativo sin transformar); solo
   si el log no existe se deduce del nombre del PNG (`{call}_{stem}.png`). Así los
   indicativos con `/` no se confunden con guiones bajos del nombre del `.adi`.
-- `entries` **no lleva `modified`**: el scraping del HTML no lo expone. El tamaño (`size`)
-  sí se lee, vía la redirección `uc?export=download`.
+- `entries` **no lleva `modified`**: ninguna de las dos fuentes lo expone. El tamaño
+  (`size`) se lee con `stat()` en modo `--local`; con `--drive-index`, vía la
+  redirección `uc?export=download`.
 - La web usa `lh3.googleusercontent.com/d/<id>` para las miniaturas y
   `drive.google.com/uc?export=download&id=<id>` para la descarga.
 - ✅ **Probado con 4000 entradas** (2026-10-06): se publicó un `qsl_index.json` simulado
@@ -1240,28 +1262,31 @@ local cuadren antes de escribir el JSON (§7 "Puesta en marcha").
   bien — carga, listado y rendimiento sin problemas. El índice real tiene 3.058 entradas.
 - ✅ **Página nueva de gráficos** (commit `f7bb4c6`): <https://dcialdella.github.io/ia-qsls/graficos/>,
   27 PNG generados desde `graficos/TODOS.adi` (3.009 QSO, sin los 6 registros demo).
+  La regeneración del 17/11 produjo 27 imágenes idénticas a las ya publicadas.
 
 ### Seguridad
 
 - **No hay secretos que gestionar.** `drive_index.py` no usa la API de Drive ni credenciales:
-  solo lee el HTML de la carpeta pública. `drive_creds.json` ya no hace falta para nada
-  (las entradas que lo ignoran en `.gitignore` son una precaución inofensiva).
+  en modo `--local` ni siquiera accede a la red, y con `--drive-index` solo lee el HTML
+  de la carpeta pública. `drive_creds.json` ya no hace falta para nada (las entradas que
+  lo ignoran en `.gitignore` son una precaución inofensiva).
 - La web es estática: no habla con Drive en ningún momento, solo carga `qsl_index.json`
   desde GitHub Pages.
 - Con la carpeta pública, cualquiera que conozca el enlace puede ver todos los PNG.
   Es coherente con que las QSL son públicas, pero tenlo en cuenta si añades
   datos personales (nombre/QTH) que no quieras exponer.
-- Corolario de usar HTML público: si algún día Drive deja de renderizar esos `<a>` en su
+- Solo en modo `--drive-index`: si algún día Drive deja de renderizar esos `<a>` en su
   HTML, el parseo devolvería 0 ficheros. `drive_index.py` **se niega a escribir** un índice
   con 0 entradas, o con menos entradas que el anterior sin que el manifiesto justifique la
-  pérdida, y avisa por stderr: el JSON bueno en disco no se pisa. Si ves ese error, lo
-  de arriba a mirar es el HTML de Drive, no las postcards.
+  pérdida, y avisa por stderr: el JSON bueno en disco no se pisa. Si ves ese error, mira
+  primero los PNG locales (`--local`); el HTML de Drive es la segunda opción.
 - La web no inserta el `id` de Drive sin más: `index.html` lo valida contra
   `/^[A-Za-z0-9_-]{10,64}$/` y lo mete en las URLs con `encodeURIComponent`, y escapa
   `name`, `call` y `act` con `escapeHtml`. Una entrada con un id inesperado se descarta en
   vez de inyectarse en un atributo.
-- Los tamaños del índice se piden con peticiones **HEAD** en paralelo (8 a la vez), no con
-  GET: a ~1,4 s por fichero en serie, 5000 postcards serían unas 2 horas. Drive puede
+- En modo `--drive-index` los tamaños se piden con peticiones **HEAD** en paralelo (8 a la
+  vez), no con GET: a ~1,4 s por fichero en serie, 5000 postcards serían unas 2 horas.
+  En modo `--local` son `stat()` de los PNG, sin red. Drive puede
   responder con una página HTML de intersticio en lugar de la imagen; se detecta
   comprobando el `Content-Type` y se guarda tamaño `0`.
 
@@ -1296,10 +1321,9 @@ está publicada en su propia página (§7). Queda pendiente:
    Mitigación barata y de bajo riesgo: validar el JSON al leerlo y, si no parsea, **abortar
    con un aviso** en vez de devolver `{}`. Así un log dañado se ve y se repara a mano,
    en lugar de que el sistema reinvente la verdad.
-3. **Cavar con el retardo de Drive en el flujo diario.** De momento la solución es
-   repetir `./run_all.sh` al minuto. Si molesta, se podría hacer que `run_all.sh`
-   reintentara el indexado automáticamente hasta que `total` coincida con el número de
-   PNG locales.
+3. ~~**Cavar con el retardo de Drive en el flujo diario.**~~ — **resuelto** (`eb4e552`):
+   el índice se genera desde `qslN/QSLS/` sin red, así que ya no hace falta repetir
+   `./run_all.sh` al minuto ni reintentar el indexado.
 4. ~~**Limpieza de `update_adi_dates.py`.**~~ — **hecho**: el ayudante de una sola vez
    (ya aplicado; volver a ejecutarlo desplazaría las horas de todos los `.adi`) se eliminó
    del repo; queda en el historial de git.
@@ -1361,7 +1385,8 @@ frecuencias distintas; no afectan a la cobertura. Detalle en `RELLENO-QSO.md`.
 - **Filesystem case-insensitive:** por eso se evitan los globs que mezclan mayúsculas.
 - No hay tests automáticos; la verificación es ejecutar el script + revisar los PNG.
 - **`./run_all.sh` es la forma recomendada de ejecutar** (§2.0): genera, sincroniza con
-  Drive, reindexa la web y pushea. `generar.sh` directamente sirve para casos puntuales
+  Drive, reindexa la web desde `qslN/QSLS/` (sin acceder a Drive) y pushea. `generar.sh`
+  directamente sirve para casos puntuales
   (regenerar todo con `--from-scratch`, probar con `--no-sync-drive`, etc.).
 - **Git/GitHub:** el proyecto está en `git` (rama `main`) con remote `origin` →
   https://github.com/dcialdella/ia-qsls.git. `qsl*/QSLS/` y los `qsl_log.json` están
@@ -1370,9 +1395,16 @@ frecuencias distintas; no afectan a la cobertura. Detalle en `RELLENO-QSO.md`.
   `country_map.json`, `FLAGS/`, el código y el README.
 - **Estado Git:** `main` en sync con `origin/main`. Commits recientes, del más nuevo al más
   antiguo:
-  - *(este commit)* — *"Actualiza documentación a 3.058 postales y verifica cruces QSL1–5"*
-    (cifras de los 4 `.md` alineadas con `d0adfcf`; verificación de las 4 estaciones
-    en las 5 actividades; detalle en `RELLENO-QSO.md`)
+  - *(este commit)* — *"Actualiza toda la documentación"*
+    (fecha de `qsl6`, índice local, carpeta `ADICIONALES/` y gráficos; detalle en los 4 `.md`)
+  - `8ab2b1f` — *"Añade 9 ADI de contactos adicionales con EA4HUK por estación y actividad"*
+    (3 estaciones × TOTA/LLOTA/POTA, 15 QSO; entradas en `ADICIONALES/`, no del generador)
+  - `eb4e552` — *"Genera el índice web desde qslN/QSLS sin acceder a Drive"*
+    (`--local` por defecto en `generar.sh`; `--drive-index` conserva el scraping)
+  - `1ba3646` — *"Asigna 2026-11-15 a las 43 QSL de record (qsl6) y refresca TODOS.adi"*
+    (`ACT6_RECORD_DATE`; desaparece del índice el grupo `""` sin fecha)
+  - `35bc195` — *"Actualiza documentación a 3058 postales y verifica cruces QSL1-5"*
+    (cifras alineadas con `d0adfcf`; verificación de las 4 estaciones en las 5 actividades)
   - `465ddc1` — *"Actualiza LEEME de gráficos a 3009 QSO y 36 ADI"*
   - `d0adfcf` — *"Actualiza derivados de EA3JAQ y el índice a 3058 postales"*
     (5 `CRUZADAS-ADICIONALES-*.adi` de 12 QSO = +60; 3.015 QSO raíz, 3.058 postales)

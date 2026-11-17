@@ -1,6 +1,6 @@
 # Relleno de QSO EA4HUK ↔ {EA3JAQ, EA4GHH, EA4IWX} en 20/40/60/70/80 m y 2 m
 
-Fecha: 2026-11-15 · Estado: aplicado a los ADI raíz y a `ACTIVIDADES/`
+Fecha: 2026-11-15 · Estado: aplicado a los ADI raíz, a `ACTIVIDADES/` y a `ADICIONALES/`
 
 ## Motivo
 
@@ -243,6 +243,15 @@ Alimentan el generador de postales y el índice web: explican el paso de 2.955 a
 3.015 QSO y de 2.998 a 3.058 postales, y los conteos por actividad 565/426/628/
 478/852 (antes 553/414/616/466/840). Regenerados también los derivados de
 `ACTIVIDADES/` y `graficos/TODOS.adi`.
+
+### Actualización 17/11 (noche): 9 ADI derivados en `ADICIONALES/`
+
+De los 5 `CRUZADAS-ADICIONALES` se extrajeron los QSO de cada estación con EA4HUK y
+se versionaron 9 ficheros `ADICIONALES/<estacion>_<TOTA|LLOTA|POTA>.adi` (3 estaciones
+× 3 actividades, **15 QSO** en total: 1 TOTA `EAR-1901`, 1 LLOTA `LLES-0214` y 3 POTA
+`ES-0340`/`ES-0849`/`ES-0850` por estación). Cabecera
+`CREATED_TIMESTAMP=20261117 210656 UTC`. Son derivados para que cada estación cargue
+sus QSO en su propio log: **no** son entrada del generador de postales ni de los gráficos.
 
 Cuadros de EA4GHH por día (día, hora, banda, operador, frecuencia, POI, nombre
 del `.adi` de origen y corresponsal): `~/Desktop/cuadros_ea4ghh.md`. Cubren los

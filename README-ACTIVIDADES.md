@@ -30,7 +30,8 @@ python3 qsl_generar_adis.py
 Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **36 `.adi`** con
 3.015 QSO en total: 30 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
 en esa cuenta. Cada una de qsl1–qsl5 incorpora además un `CRUZADAS-ADICIONALES-*.adi`
-de 12 QSO (detalle en `RELLENO-QSO.md`):
+de 12 QSO (detalle en `RELLENO-QSO.md`). La carpeta `ADICIONALES/`, con 9 `.adi`
+derivados de esos cruces, **no se procesa**: no está en `CONFIG`.
 
 | Carpeta | `.adi` raíz | QSO | Formatos generados |
 |---|---|---|---|

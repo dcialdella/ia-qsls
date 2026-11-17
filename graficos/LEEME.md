@@ -12,7 +12,7 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 `graficos/TODOS.adi` — 3.009 QSO, todos los contactos de las cuatro estaciones
 (EA4HUK, EA4GHH, EA4IWX, EA3JAQ) en qsl1–qsl7.
 
-- Origen: los 36 `.adi` raíz de cada POI (no la carpeta `ACTIVIDADES`, que son
+- Origen: los 36 `.adi` raíz de cada POI (ni `ACTIVIDADES/` ni `ADICIONALES/`, que son
   derivados y duplicarían registros), incluidos los 5 `CRUZADAS-ADICIONALES-*.adi`.
 - Excluidos los 6 registros de demostración `QSL-DEMO-EG9MM.adi`.
 - `STATION_CALLSIGN` normalizado (sin espacios finales) y `OPERATOR`
@@ -28,6 +28,7 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 - 27 miniaturas de 720 px en `graficos/thumbs/*.png`, usadas por la galería; al
   pulsar una imagen se abre su versión completa.
 - `estadisticas_adi.json`: cifras que alimentan los gráficos.
+- La regeneración del 17/11 produjo 27 imágenes idénticas a las ya publicadas.
 
 No se incluye `grafico_qrz_lookups.png`: en el proyecto original ese gráfico
 usa una tabla de lookups de QRZ.com escrita a mano para otro log, no datos de
