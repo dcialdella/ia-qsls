@@ -125,11 +125,14 @@ postales generadas.
   (el generador solo lee `qslN/*.adi`).
 - ✅ Los `.adi` reales ya están incorporados: se procesan los 36 de las carpetas de
   actividad. `QSL-DEMO-EG9MM.adi` es relleno, no un sustituto de los datos reales (§1.1).
-- ℹ️ **`qsl80/` es una actividad nueva e independiente** (QSO en 80 m): 1 `.adi`
-  (`QSL80m.adi`, 15 contactos) y fondo `QSL-80.png`, copia de `qsl2/QSL-2.png`.
-  `qsl_generator.py` la procesa igual que qsl1–qsl7 y produce 15 postales en
-  `qsl80/QSLS/`. **Es solo local**: todavía no está en `qsl_index.json` ni se
-  sincroniza a Drive, porque sus entradas no tienen ID de Drive asignado.
+- ℹ️ **`qsl80/` es una actividad nueva e independiente** (QSO en 80 m desde Melilla):
+  1 `.adi` (`QSL80m.adi`, 18 contactos) y fondo `QSL-80.png`, copia de
+  `qsl1/QSL-1.png`. El originante de todas las postales es `EG9MM` (campo
+  `OPERATOR`/`STATION_CALLSIGN`), incluidos los tres contactos locales
+  (`EA4HUK`, `EA4IWX`, `EA3JAQ`, grid `IM85mh`, a ~100 m). `qsl_generator.py` la
+  procesa igual que qsl1–qsl7 y produce 18 postales en `qsl80/QSLS/`.
+  **Es solo local**: todavía no está en `qsl_index.json` ni se sincroniza a Drive,
+  porque sus entradas no tienen ID de Drive asignado.
 - ✅ **Proceso de ADI por actividad:** `./generar_adis.sh` genera en `qslN/ACTIVIDADES/`
   un `.adi` por actividad (TOTA/POTA/LLOTA) para subirlos a sus webs. Documentado en
   `README-ACTIVIDADES.md`. Solo procesa `qsl1`–`qsl5`.
@@ -548,7 +551,7 @@ ia-qsls/
 ├── qsl5/  QSL-5.png + 8 .adi (852 QSO) + ACTIVIDADES/ + QSLS/ (852 PNG) + qsl_log.json
 ├── qsl6/  f6.png + (sin .adi) + QSLS/ (43 PNG de record, se regeneran siempre)
 ├── qsl7/  f7.png + 4 .adi (66 QSO) + QSLS/ (66 PNG) + qsl_log.json
-└── qsl80/ QSL-80.png + 1 .adi (15 QSO) + QSLS/ (15 PNG) + qsl_log.json  [solo local]
+└── qsl80/ QSL-80.png + 1 .adi (18 QSO) + QSLS/ (18 PNG) + qsl_log.json  [solo local]
 ```
 
 Notes sobre esta estructura:

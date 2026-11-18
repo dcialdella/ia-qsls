@@ -51,7 +51,8 @@ ACT6_RECORD_DATE = '2026-11-15'
 
 # Estaciones que pueden originar una QSL (campo OPERATOR del ADI, o su
 # sustituto STATION_CALLSIGN). El CALL de cada contacto es la destinataria.
-ALLOWED_OPERATORS = {'EA4HUK', 'EA4GHH', 'EA3JAQ', 'EA4IWX'}
+# EG9MM es el indicativo especial de la actividad qsl80 (QSO en 80 m).
+ALLOWED_OPERATORS = {'EA4HUK', 'EA4GHH', 'EA3JAQ', 'EA4IWX', 'EG9MM'}
 
 
 def originating_station(qso):
