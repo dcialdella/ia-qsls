@@ -89,9 +89,9 @@ postales generadas.
 - ✅ Script funcional e **incremental** en `qsl_generator.py` (`GENERATOR_VERSION = "5.5"`)
 - ✅ Entorno virtual `venv/` con Pillow instalado
 - ✅ **Proceso diario en un comando:** `./run_all.sh` (ver §2.0)
-- ✅ Las 7 carpetas con **un único** fondo cada una: qsl1 (`QSL-1.png`), qsl2 (`QSL-2.png`),
+- ✅ Las 8 carpetas con **un único** fondo cada una: qsl1 (`QSL-1.png`), qsl2 (`QSL-2.png`),
   qsl3 (`QSL-3.png`), qsl4 (`QSL-4.png`), qsl5 (`QSL-5.png`), qsl6 (`f6.png`),
-  qsl7 (`f7.png`). El nombre **no** importa: el generador usa el único PNG de la raíz de
+  qsl7 (`f7.png`), qsl80 (`QSL-80.png`). El nombre **no** importa: el generador usa el único PNG de la raíz de
   cada carpeta y se queja si hay más de uno. Todos 1200×800 px; qsl1–qsl5 son PNG reales
   (2026-11-04) y qsl6–qsl7 JPEG con extensión `.png` (2026-10-12); detalle en
   §5 "Fondos actuales".
@@ -125,6 +125,11 @@ postales generadas.
   (el generador solo lee `qslN/*.adi`).
 - ✅ Los `.adi` reales ya están incorporados: se procesan los 36 de las carpetas de
   actividad. `QSL-DEMO-EG9MM.adi` es relleno, no un sustituto de los datos reales (§1.1).
+- ℹ️ **`qsl80/` es una actividad nueva e independiente** (QSO en 80 m): 1 `.adi`
+  (`QSL80m.adi`, 15 contactos) y fondo `QSL-80.png`, copia de `qsl2/QSL-2.png`.
+  `qsl_generator.py` la procesa igual que qsl1–qsl7 y produce 15 postales en
+  `qsl80/QSLS/`. **Es solo local**: todavía no está en `qsl_index.json` ni se
+  sincroniza a Drive, porque sus entradas no tienen ID de Drive asignado.
 - ✅ **Proceso de ADI por actividad:** `./generar_adis.sh` genera en `qslN/ACTIVIDADES/`
   un `.adi` por actividad (TOTA/POTA/LLOTA) para subirlos a sus webs. Documentado en
   `README-ACTIVIDADES.md`. Solo procesa `qsl1`–`qsl5`.
@@ -542,7 +547,8 @@ ia-qsls/
 ├── qsl4/  QSL-4.png + 6 .adi (478 QSO) + ACTIVIDADES/ + QSLS/ (478 PNG) + qsl_log.json
 ├── qsl5/  QSL-5.png + 8 .adi (852 QSO) + ACTIVIDADES/ + QSLS/ (852 PNG) + qsl_log.json
 ├── qsl6/  f6.png + (sin .adi) + QSLS/ (43 PNG de record, se regeneran siempre)
-└── qsl7/  f7.png + 4 .adi (66 QSO) + QSLS/ (66 PNG) + qsl_log.json
+├── qsl7/  f7.png + 4 .adi (66 QSO) + QSLS/ (66 PNG) + qsl_log.json
+└── qsl80/ QSL-80.png + 1 .adi (15 QSO) + QSLS/ (15 PNG) + qsl_log.json  [solo local]
 ```
 
 Notes sobre esta estructura:

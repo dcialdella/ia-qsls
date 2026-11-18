@@ -10,7 +10,7 @@ Lógica inteligente:
   - Los PNG ya generados no se repiten.
 
 Estructura:
-  qsl1-qsl7/          -> cada carpeta = una actividad
+  qsl1-qsl7/, qsl80/  -> cada carpeta = una actividad
     *.adi             -> archivo ADIF con los contactos
     *.png (fondo)     -> imagen de fondo para las postales
     QSLS/             -> postales generadas
@@ -1137,7 +1137,9 @@ def main():
     # que realmente produce, no lo que consume.
     act6_produced = None
 
-    for i in range(1, 8):
+    # qsl80 es una actividad independiente (QSOs en 80 m), con su propio fondo
+    # y sus propios .adi. Se procesa como cualquier otra, después de qsl1-qsl7.
+    for i in [*range(1, 8), 80]:
         folder = base_dir / f"qsl{i}"
         adi_counts[f"qsl{i}"] = len(find_adi_files(folder)) if folder.exists() else 0
         if not folder.exists():

@@ -162,7 +162,7 @@ fi
 if [ "$INDEX_ONLY" = false ]; then
   echo
   echo "Postales generadas por carpeta:"
-  for d in "$SCRIPT_DIR"/qsl[1-7]; do
+  for d in "$SCRIPT_DIR"/qsl[1-7] "$SCRIPT_DIR"/qsl80; do
     [ -d "$d" ] || continue
     printf "   %-6s %s postales\n" "$(basename "$d")" "$(count_png "$d/QSLS")"
   done
