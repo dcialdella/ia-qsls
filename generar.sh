@@ -174,7 +174,7 @@ if [ "$SYNC_DRIVE" = true ]; then
   STEP="sincronización con Google Drive"
   echo
   echo "→ sincronizando con Google Drive ($GDRIVE_BASE) ..."
-  for d in "$SCRIPT_DIR"/qsl[1-7]; do
+  for d in "$SCRIPT_DIR"/qsl[1-7] "$SCRIPT_DIR"/qsl80; do
     [ -d "$d/QSLS" ] || continue
     folder_name=$(basename "$d")
     dest="$GDRIVE_BASE/$folder_name"

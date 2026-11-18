@@ -53,10 +53,12 @@ EMBED_ENTRY_RE = re.compile(
     r'<div class="flip-entry-title">(.*?)</div>', re.DOTALL)
 IMAGE_EXT_RE = re.compile(r'\.(?:png|jpe?g|webp)$', re.I)
 
-# Las 7 actividades reales del proyecto. Un qsl8 en Drive no se publica.
-ACTIVITY_TITLES = {f"qsl{i}": f"Actividad {i}" for i in range(1, 8)}
+# Las 7 actividades de la expedición más qsl80 (QSO en 80 m desde Melilla).
+# Un qsl8 en Drive no se publica.
+ACTIVITY_TITLES = {**{f"qsl{i}": f"Actividad {i}" for i in range(1, 8)},
+                   'qsl80': '80m'}
 # Orden canónico de publicación.
-ACTIVITY_ORDER = [f"qsl{i}" for i in range(1, 8)]
+ACTIVITY_ORDER = [f"qsl{i}" for i in range(1, 8)] + ['qsl80']
 # Las QSL de record (qsl6) no son un QSO concreto: se les asigna siempre el
 # último día de la expedición, aunque no haya qsl_log.json local.
 ACT6_RECORD_DATE = '2026-11-15'

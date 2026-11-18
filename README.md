@@ -68,8 +68,9 @@ postales generadas.
 
 > **Estado actual: en producción, con los datos reales cargados.** Las actividades
 > `qsl1`–`qsl5` y `qsl7` tienen **36 `.adi` en total** (3.015 QSO de EA4HUK, EA4GHH,
-> EA4IWX y EA3JAQ, incluidos 60 de los 5 `CRUZADAS-ADICIONALES-*.adi`), de los que se
-> han generado **3.058 postales**, sincronizadas con
+> EA4IWX y EA3JAQ, incluidos 60 de los 5 `CRUZADAS-ADICIONALES-*.adi`). `qsl80` añade
+> 1 `.adi` con 18 QSO desde Melilla (originante `EG9MM`). En total se han generado
+> **3.076 postales**, sincronizadas con
 > Google Drive y publicadas en <https://dcialdella.github.io/ia-qsls/>. Los 6
 > `QSL-DEMO-EG9MM.adi` de relleno siguen en el repo, pero ya no son el dataset
 > publicado. El flujo diario está en §2.0. La carpeta `ADICIONALES/` guarda 9 `.adi`
@@ -95,7 +96,7 @@ postales generadas.
   cada carpeta y se queja si hay más de uno. Todos 1200×800 px; qsl1–qsl5 son PNG reales
   (2026-11-04) y qsl6–qsl7 JPEG con extensión `.png` (2026-10-12); detalle en
   §5 "Fondos actuales".
-- ✅ **Datos reales cargados** en las actividades (36 `.adi` raíz):
+- ✅ **Datos reales cargados** en las actividades (37 `.adi` raíz):
 
   | Actividad | `.adi` | Contactos | Postales en `QSLS/` |
   |---|---|---|---|
@@ -106,7 +107,8 @@ postales generadas.
   | `qsl5` | 8 | 852 | 852 |
   | `qsl6` | **0 (no lleva `.adi`)** | — | 43 (record) |
   | `qsl7` | 4 | 66 | 66 |
-  | **Total** | **36** | **3.015** | **3.058** |
+  | `qsl80` | 1 | 18 | 18 |
+  | **Total** | **37** | **3.033** | **3.076** |
 
   Los 9 `.adi` de `ADICIONALES/` son derivados de los 5 `CRUZADAS-ADICIONALES`;
   no se cuentan aquí ni se procesan.
@@ -118,21 +120,23 @@ postales generadas.
   derivan de los QSO ya registrados en `qsl1`–`qsl5` (ver §3.b). Por eso el manifiesto
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
   `.adi` daría 0 y la web excluiría la actividad entera aunque sus PNG existieran.
-- ✅ `qsl_index.json` coherente con lo publicado: `total: 3058`, 1.110 indicativos
-  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-17T20:37:14Z`; lo
-  publicaron la fecha asignada a `qsl6` (`1ba3646`) y el índice local (`eb4e552`) (§9).
+- ✅ `qsl_index.json` coherente con lo publicado: `total: 3076`, 1.110 indicativos
+  distintos (1.109 sin contar `XYZ123`), `generated_at: 2026-11-18T07:57:08Z`;
+  incluye `qsl80: 18` con los IDs reales de Drive.
 - ✅ Los 6 `.adi` de ejemplo siguen aparcados en `TESTDATA/` y **no se procesan**
   (el generador solo lee `qslN/*.adi`).
-- ✅ Los `.adi` reales ya están incorporados: se procesan los 36 de las carpetas de
-  actividad. `QSL-DEMO-EG9MM.adi` es relleno, no un sustituto de los datos reales (§1.1).
+- ✅ Los `.adi` reales ya están incorporados: se procesan los 37 de las carpetas de
+  actividad (36 de qsl1–qsl7 y 1 de qsl80). `QSL-DEMO-EG9MM.adi` es relleno, no un
+  sustituto de los datos reales (§1.1).
 - ℹ️ **`qsl80/` es una actividad nueva e independiente** (QSO en 80 m desde Melilla):
   1 `.adi` (`QSL80m.adi`, 18 contactos) y fondo `QSL-80.png`, copia de
   `qsl1/QSL-1.png`. El originante de todas las postales es `EG9MM` (campo
   `OPERATOR`/`STATION_CALLSIGN`), incluidos los tres contactos locales
   (`EA4HUK`, `EA4IWX`, `EA3JAQ`, grid `IM85mh`, a ~100 m). `qsl_generator.py` la
   procesa igual que qsl1–qsl7 y produce 18 postales en `qsl80/QSLS/`.
-  **Es solo local**: todavía no está en `qsl_index.json` ni se sincroniza a Drive,
-  porque sus entradas no tienen ID de Drive asignado.
+  Sus PNG están rsyncados a `…/QSL/QSLs/qsl80/` en Google Drive local y publicados
+  en `qsl_index.json` con sus IDs reales, así que se descargan como los demás desde
+  <https://dcialdella.github.io/ia-qsls/>.
 - ✅ **Proceso de ADI por actividad:** `./generar_adis.sh` genera en `qslN/ACTIVIDADES/`
   un `.adi` por actividad (TOTA/POTA/LLOTA) para subirlos a sus webs. Documentado en
   `README-ACTIVIDADES.md`. Solo procesa `qsl1`–`qsl5`.
@@ -294,7 +298,7 @@ Ojo con los nombres que llevan **espacio** (`TESTDATA/probe copy.adi`): entrecom
 qsl6 no tiene `.adi` raíz). Sustituye en alcance al anterior `ea4huk9.adi`
 (841 QSO, solo qsl1–qsl5). Es un agregado de trabajo, **no una entrada del
 generador**: no se copia a ninguna carpeta `qslN/`, no suma postales ni cambia
-`qsl_index.json` (3.058).
+`qsl_index.json` (3.076).
 
 Normalización aplicada a los 954 registros:
 
@@ -526,7 +530,7 @@ ia-qsls/
 ├── qsl_generar_adis.py     <- Genera qslN/ACTIVIDADES/*.adi (TOTA/POTA/LLOTA)
 ├── drive_index.py         <- Genera qsl_index.json para la web (§7)
 ├── index.html             <- Página web de descarga (GitHub Pages)
-├── qsl_index.json         <- Índice web (total 3058, 1110 indicativos)
+├── qsl_index.json         <- Índice web (total 3076, 1110 indicativos)
 ├── graficos/              <- Página NUEVA de estadísticas (GitHub Pages)
 │   ├── index.html         <- Galería de 27 gráficos, con miniaturas
 │   ├── TODOS.adi          <- 3009 QSO de entrada (36 .adi raíz, sin 6 demo)
@@ -551,7 +555,7 @@ ia-qsls/
 ├── qsl5/  QSL-5.png + 8 .adi (852 QSO) + ACTIVIDADES/ + QSLS/ (852 PNG) + qsl_log.json
 ├── qsl6/  f6.png + (sin .adi) + QSLS/ (43 PNG de record, se regeneran siempre)
 ├── qsl7/  f7.png + 4 .adi (66 QSO) + QSLS/ (66 PNG) + qsl_log.json
-└── qsl80/ QSL-80.png + 1 .adi (18 QSO) + QSLS/ (18 PNG) + qsl_log.json  [solo local]
+└── qsl80/ QSL-80.png + 1 .adi (18 QSO) + QSLS/ (18 PNG) + qsl_log.json  [en Drive y web]
 ```
 
 Notes sobre esta estructura:
@@ -564,7 +568,7 @@ Notes sobre esta estructura:
 - **`qsl1`–`qsl5` tienen además `ACTIVIDADES/`**, con los `.adi` generados por
   `./generar_adis.sh` (ver `README-ACTIVIDADES.md`). Se borran y regeneran en cada
   ejecución; no se versionan como entrada del generador de imágenes.
-- **`qslN/QSLS/` tiene los PNG generados** (3.058 en total). No se versionan: están en
+- **`qslN/QSLS/` tiene los PNG generados** (3.076 en total). No se versionan: están en
   `.gitignore`. La copia que se publica vive en Google Drive.
 - **`qslN/qsl_log.json` existe** en las 7 actividades (se crean solos al primer procesado
   real). También ignorado por `.gitignore`.
@@ -1222,9 +1226,9 @@ omite por completo (no aparece en `activities` ni en `counts`, y se avisa por pa
 una actividad cuyo HTML no se puede leer se marca como fallida. Las carpetas existen
 siempre; lo que puede no publicarse es su contenido.
 
-Estado actual del repo: índice **completo**, con `total: 3058`, 1.110 `call` distintos
-(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-17T20:37:14Z`. Lo publicaron la
-fecha asignada a `qsl6` (`1ba3646`) y la regeneración del índice local (`eb4e552`) (§9).
+Estado actual del repo: índice **completo**, con `total: 3076`, 1.110 `call` distintos
+(1.109 sin contar `XYZ123`) y `generated_at: 2026-11-18T07:57:08Z`. Incluye la actividad
+`qsl80` (18 postales) con los IDs reales de su carpeta de Drive.
 Si algún día saliera vacío (`total: 0`), la web lo mostraría sin errores visibles — ver
 §7 "Seguridad". **Nunca se publica un índice incompleto**: las salvaguardas de
 `drive_index.py` exigen que los PNG locales y el manifiesto cuadren antes de escribir
@@ -1233,15 +1237,16 @@ el JSON (§7 "Puesta en marcha").
 ```json
 {
   "version": 2,
-  "generated_at": "2026-11-17T20:37:14Z",
+  "generated_at": "2026-11-18T07:57:08Z",
   "folder_id": "1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
   "folder_url": "https://drive.google.com/drive/folders/1bknLSlpI2qJnQfAod7N1GujfJ4p1gTAy",
-  "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"}},
+  "activities": {"qsl1": {"id": "1XyZ...", "title": "Actividad 1"},
+                 "qsl80": {"id": "14-Xhy3OBC9Yn1gGrFSHbU9MnFQr7kv10", "title": "80m"}},
   "counts": {"qsl1": 565, "qsl2": 426, "qsl3": 628, "qsl4": 478,
-             "qsl5": 852, "qsl6": 43, "qsl7": 66},
-  "total": 3058,
+             "qsl5": 852, "qsl6": 43, "qsl7": 66, "qsl80": 18},
+  "total": 3076,
   "days": {"2026-11-15": 966, "2026-11-14": 965,
-           "2026-11-13": 1121, "2026-10-06": 6},
+           "2026-11-13": 1139, "2026-10-06": 6},
   "entries": [
     {"call": "IV3LDZ", "act": "qsl2",
      "name": "iv3ldz_ea4huk_es-0340-20261113.png",
@@ -1304,8 +1309,8 @@ el JSON (§7 "Puesta en marcha").
 ## 8. Tareas pendientes / próximos pasos
 
 Las primeras tareas del proyecto (prueba de humo, sincronización a Drive, verificación
-de la web) ya están **hechas**: las 3.058 postales están generadas, sincronizadas y
-publicadas a partir de los 36 `.adi` reales (3.015 QSO). La galería de gráficos también
+de la web) ya están **hechas**: las 3.076 postales están generadas, sincronizadas y
+publicadas a partir de los 37 `.adi` reales (3.033 QSO). La galería de gráficos también
 está publicada en su propia página (§7). Queda pendiente:
 
 1. ~~**Repaso visual de las postcards tras la v4.**~~ La v4 quitó la bandera de España de
