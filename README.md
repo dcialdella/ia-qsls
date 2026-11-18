@@ -80,7 +80,9 @@ propias postales generadas.
 > `QSL-DEMO-EG9MM.adi` de relleno siguen en el repo, pero ya no son el dataset
 > publicado. El flujo diario está en §2.0. La carpeta `ADICIONALES/` guarda 9 `.adi`
 > derivados para que las estaciones carguen sus QSO con EA4HUK; **no** cuenta como
-> entrada del generador ni de los gráficos.
+> entrada del generador ni de los gráficos. De ahí salen también los ADI de subida
+> por referencia (un fichero por QSO/referencia) que se guardan en el Escritorio;
+> el procedimiento está en `README-ACTIVIDADES.md` § "ADI de subida por referencia".
 >
 > Las estadísticas del log completo (3.009 QSO, sin los 6 registros demo) tienen una
 > página independiente, <https://dcialdella.github.io/ia-qsls/graficos/>, con 27
@@ -524,6 +526,10 @@ No se versiona ni alimenta la web; es solo un volcado de trabajo.
  36. **Nueve ADI derivados** (2026-11-17, commit `8ab2b1f`): `ADICIONALES/` reúne
      3 estaciones × TOTA/LLOTA/POTA con 15 QSO contra EA4HUK; no son entrada del
      generador ni de los gráficos.
+ 37. **ADI de subida por referencia para EA4IWX** (2026-11-18): 5 ficheros de un
+     solo QSO en `~/Desktop/ADICIONALES_EA4IWX/` (3 POTA + 1 LLOTA + 1 TOTA),
+     derivados de `ADICIONALES/` con `MY_SIG_INFO` como clave; el `EAR-1902` citado
+     en un `QSLMSG` no genera fichero. Procedimiento en `README-ACTIVIDADES.md`.
 
 ### Estructura actual en disco
 
@@ -571,6 +577,8 @@ Notes sobre esta estructura:
   `CRUZADAS-ADICIONALES-*.adi` conviven con los reales; los 6 de `TESTDATA/` siguen
   aparcados ahí y no se tocan. Los 9 `.adi` de `ADICIONALES/` viven fuera de `qslN/`
   y **no** son entrada del generador: son derivados de esos 5 cruces adicionales.
+  Tampoco están en el repo los ADI de subida por referencia (5 de EA4IWX), que se
+  guardan en `~/Desktop/ADICIONALES_EA4IWX/` (ver `README-ACTIVIDADES.md`).
 - **`qsl1`–`qsl5` tienen además `ACTIVIDADES/`**, con los `.adi` generados por
   `./generar_adis.sh` (ver `README-ACTIVIDADES.md`). Se borran y regeneran en cada
   ejecución; no se versionan como entrada del generador de imágenes.

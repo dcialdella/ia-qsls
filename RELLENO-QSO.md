@@ -278,6 +278,25 @@ Cuadros de EA4GHH por día (día, hora, banda, operador, frecuencia, POI, nombre
 del `.adi` de origen y corresponsal): `~/Desktop/cuadros_ea4ghh.md`. Cubren los
 118 QSO entre EA4GHH y el resto del trío: 58 el 13/11, 40 el 14/11 y 20 el 15/11.
 
+### Actualización 18/11: ADI de subida por referencia para EA4IWX
+
+De los 5 QSO de `ADICIONALES/EA4IWX_*.adi` se generaron **5 ficheros de un solo
+QSO** en `~/Desktop/ADICIONALES_EA4IWX/`, uno por referencia de `MY_SIG_INFO`:
+
+| Fichero | Actividad | Referencia |
+|---|---|---|
+| `EA4IWX_POTA_ES-0340.adi` | POTA | `ES-0340` |
+| `EA4IWX_POTA_ES-0849.adi` | POTA | `ES-0849` |
+| `EA4IWX_POTA_ES-0850.adi` | POTA | `ES-0850` |
+| `EA4IWX_LLOTA_LLES-0214.adi` | LLOTA | `LLES-0214` |
+| `EA4IWX_TOTA_EAR-1901.adi` | TOTA | `EAR-1901` |
+
+El `TOTA EAR-1902` citado en el `QSLMSG` del QSO de `ES-0340` **no** produce
+fichero: no figura en `MY_SIG_INFO`. Son derivados para cargar en las webs de
+actividad; **no** entran en el generador de postales ni en los gráficos. La regla
+reutilizable, el tratamiento de campos y la verificación están en
+`README-ACTIVIDADES.md` § "ADI de subida por referencia".
+
 ### Verificación de cruces por actividad
 
 Revisados los 32 `.adi` raíz de qsl1–qsl5 (2.949 QSO, excluidos `ACTIVIDADES/`,

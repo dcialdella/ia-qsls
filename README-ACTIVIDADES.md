@@ -207,3 +207,53 @@ REVIEW_LINE = "REVISAR EL FORMATO DE OPERADOR y STATION"
 ```
 
 Si algún QSO no cumple, el archivo se genera igualmente pero con `REVISAR EL FORMATO DE OPERADOR y STATION` arriba de todo (dentro de la cabecera ADIF, antes de `<EOH>`).
+
+## ADI de subida por referencia (`ADICIONALES_<ESTACION>/`, fuera del repo)
+
+Además de los derivados `ACTIVIDADES/`, cada estación necesita **un ADI por
+referencia** para cargar sus QSO en la web correspondiente (POTA, LLOTA, TOTA).
+Estos ficheros **no los genera `qsl_generar_adis.py`**: se construyen desde
+`ADICIONALES/<estacion>_<TOTA|LLOTA|POTA>.adi` y se guardan en el Escritorio,
+en `~/Desktop/ADICIONALES_<ESTACION>/`. Caso ya resuelto: **EA4IWX, 18/11/2026**,
+5 ficheros en `~/Desktop/ADICIONALES_EA4IWX/`.
+
+### Regla
+
+Se parte de los QSO de `ADICIONALES/<estacion>_*.adi`. **Cada QSO con un valor en
+`MY_SIG_INFO` produce un fichero**, con nombre `<ESTACION>_<SIG>_<SIG_INFO>.adi`
+(p. ej. `EA4IWX_POTA_ES-0340.adi`). No se agrupan referencias distintas en un
+mismo fichero aunque sean de la misma actividad.
+
+- Un `QSLMSG` que **mencione** otra referencia (p. ej. el `... & TOTA EAR-1902`
+  del QSO de `ES-0340`) **no genera fichero**: solo cuenta `MY_SIG_INFO`. Por eso
+  fueron 5 ficheros y no 6.
+- Se conservan todos los campos originales del QSO (`CALL`, `QSO_DATE`, `FREQ`,
+  `STATION_CALLSIGN`, `OPERATOR`, grids…); solo se reescriben los campos de
+  actividad.
+- Campos de actividad, recalculando las longitudes ADIF:
+  - **POTA / LLOTA**: `MY_SIG`, `MY_SIG_INFO` y `MY_<SIG>_REF` con la referencia.
+  - **TOTA**: `QSLMSG: TOTA <ref>`, `MY_SIG` y `MY_SIG_INFO`; **sin** `MY_TOTA_REF`.
+- La cabecera se escribe limpia (`ADIF_VER`, `PROGRAMID`, `CREATED_TIMESTAMP` con
+  `YYYYMMDD HHMMSS`, sin sufijo `UTC`). **No** se propagan las cabeceras heredadas
+  de `ADICIONALES/`: traían `<PROGRAMID:12>ADIF Merge` (10 caracteres reales) y
+  `<CREATED_TIMESTAMP:15>20261117 210656 UTC` (19 caracteres), longitudes inválidas.
+- La reescritura es exactamente la de `qsl_generar_adis.py::generate()`; reutilizar
+  esa función es más seguro que volver a implementarla.
+
+### Procedimiento
+
+1. Leer `ADICIONALES/<estacion>_*.adi` con `qsl_generar_adis.split_records()`.
+2. Tomar `MY_SIG` y `MY_SIG_INFO` de cada QSO con `get_field()`.
+3. Llamar a `generate(base, sig.lower(), sig, info, [rec])`: devuelve el registro
+   con `<EOR>` y los campos de actividad ya reescritos.
+4. Escribir la cabecera limpia + el registro en
+   `~/Desktop/ADICIONALES_<ESTACION>/<ESTACION>_<SIG>_<INFO>.adi`.
+
+### Verificación
+
+- Un fichero por QSO y **1 QSO por fichero** (`grep -c '<EOR>'`).
+- Longitudes ADIF correctas: para cada `<CAMPO:n>valor`, los *n* caracteres
+  siguientes son exactamente el valor. Comprobarlo con un script, no a ojo.
+- Ningún fichero menciona `EAR-1902` (referencia citada solo en un `QSLMSG`).
+- Referencias cubiertas en el caso EA4IWX: `ES-0340`, `ES-0849`, `ES-0850`,
+  `LLES-0214`, `EAR-1901`.
