@@ -1,9 +1,9 @@
 # GENERADOR DE POSTALES QSL desde archivos ADI
 
 Genera imágenes tipo postal (QSL cards) sobreponiendo los datos de contactos de radio
-sobre una foto/imagen de fondo. Cada carpeta `qsl1`–`qsl7` representa una actividad
-independiente con su propia imagen de fondo, sus propios archivos ADI, y sus propias
-postales generadas.
+sobre una foto/imagen de fondo. Cada carpeta `qsl1`–`qsl7` y `qsl80` representa una
+actividad independiente con su propia imagen de fondo, sus propios archivos ADI, y sus
+propias postales generadas.
 
 > **Resumen:** lee archivos de contactos en formato ADI, deriva el país de cada estación
 > desde el prefijo del callsign (y dibuja su bandera **delante del callsign**), y genera
@@ -21,7 +21,7 @@ postales generadas.
 > **Objetivo final:** el usuario ejecuta `./run_all.sh`, y para cada carpeta qslN con
 > archivos `.adi` + una imagen de fondo, se generan tantas postales como contactos haya,
 > guardadas en `qslN/QSLS/`. Por defecto (siempre, a menos que se use `--no-sync-drive`)
-> las postales se copian automáticamente a la carpeta `QSL/QSLs/qsl1`–`qsl7` de Google
+> las postales se copian automáticamente a la carpeta `QSL/QSLs/qsl1`–`qsl7` y `qsl80` de Google
 > Drive (app de escritorio sincronizada con la cuenta eg9mm), que las sube a la nube.
 > Después, `run_all.sh` regenera el índice web y pushea a GitHub, de modo que las
 > postcards nuevas quedan descargables en <https://dcialdella.github.io/ia-qsls/>.
@@ -33,20 +33,21 @@ postales generadas.
 
 ## 0. Reglas invariables (no romper)
 
-1. **Las carpetas `qsl1`–`qsl7` de Google Drive NO se borran nunca.** Deben **existir
-   siempre**, aunque estén **vacías**. Si desaparecen, hay que volver a crearlas
-   (el índice web y los enlaces de descarga dependen de que existan los 7 `id`).
+1. **Las carpetas `qsl1`–`qsl7` y `qsl80` de Google Drive NO se borran nunca.** Deben
+   **existir siempre**, aunque estén **vacías**. Si desaparecen, hay que volver a
+   crearlas (el índice web y los enlaces de descarga dependen de que existan los 8 `id`).
 2. **Los archivos `.adi` son parte del proyecto: se versionan en Git y se suben al
    repo.** No contienen información sensible (datos públicos de radioaficionado:
    indicativo, nombre, grid locator, banda/modo). Van en la carpeta de su actividad
    (`qslN/*.adi`) y los de prueba en `TESTDATA/`. No deben borrarse ni excluirse
-   del control de versiones. *Hoy hay 36 `.adi` en las carpetas de actividad —6 en
-   `qsl1`–`qsl4`, 8 en `qsl5` y 4 en `qsl7`, entre ellos 6 de demostración y 5 de cruces adicionales— y 6 de
-   ejemplo en `TESTDATA/` (§1). `qsl6/` no lleva ninguno (§1).*
+   del control de versiones. *Hoy hay 37 `.adi` en las carpetas de actividad —6 en
+   `qsl1`–`qsl4`, 8 en `qsl5`, 4 en `qsl7` y 1 en `qsl80`, entre ellos 6 de demostración
+   y 5 de cruces adicionales— y 6 de ejemplo en `TESTDATA/` (§1). `qsl6/` no lleva
+   ninguno (§1).*
 3. **En `qslN/QSLS/` no se versiona ningún PNG.** Es salida generada y está en
    `.gitignore` (`qsl*/QSLS/`).
-4. **La raíz de Drive `QSLs` solo contiene las 7 carpetas `qsl1`–`qsl7`**, ningún
-   archivo suelto en la raíz.
+4. **La raíz de Drive `QSLs` solo contiene las 8 carpetas `qsl1`–`qsl7` y `qsl80`**,
+   ningún archivo suelto en la raíz.
 5. **Tras cada generación de imágenes (parcial o total) hay que regenerar el índice
    y subir el código.** El sitio lee `qsl_index.json` desde GitHub Pages, así que
    sin push la web no ve las postcards nuevas. La forma normal de hacerlo es
@@ -59,7 +60,11 @@ postales generadas.
    El índice se construye **desde el origen local** `qslN/QSLS/` (las carpetas que
    luego se rsyncan a Drive), sin consultar el HTML público de Drive; por eso ya no
    hay que esperar a que la nube suba los PNG. Los `id` de descarga se reutilizan
-   del `qsl_index.json` anterior. Para volver al modo antiguo de scraping de Drive:
+   del `qsl_index.json` anterior. **Si se añade una actividad nueva** (como `qsl80`),
+   hay que darle un `id` de carpeta y un `id` de Drive por PNG la primera vez; se
+   obtienen de la vista pública de Drive y se guardan en el índice. A partir de ahí,
+   el modo `--local` ya los reutiliza sin red. Para volver al modo antiguo de
+   scraping de Drive:
    `./generar.sh --drive-index` (o `python3 drive_index.py` sin `--local`).
 
 ---
@@ -114,8 +119,8 @@ postales generadas.
   no se cuentan aquí ni se procesan.
 
   Los 6 `QSL-DEMO-EG9MM.adi` (`CALL` = `XYZ123`, `STATION_CALLSIGN` = `EG9MM`) siguen
-  entre esos 36 ficheros como relleno histórico; sus 6 contactos están incluidos en el
-  total de 3.015 QSO y son los únicos que no corresponden a una estación real.
+  entre esos 37 ficheros como relleno histórico; sus 6 contactos están incluidos en el
+  total de 3.033 QSO y son los únicos que no corresponden a una estación real.
   `qsl6` **no lleva ningún `.adi`** y no debe llevar ninguno: sus postcards de record se
   derivan de los QSO ya registrados en `qsl1`–`qsl5` (ver §3.b). Por eso el manifiesto
   cuenta para `qsl6` las postcards que produce, no los `.adi` que consume; si contara los
@@ -380,7 +385,8 @@ No se versiona ni alimenta la web; es solo un volcado de trabajo.
     19), así que la regla que se establecía aquí está hoy vacía: si algún día vuelve a
     aparecer un `.adi.TEST`, es inactivo a propósito y no se renombra a `.adi` sin consultar.
 16. **Sincronización con Google Drive por defecto.** `generar.sh` copia las postales
-     de cada `qslN/QSLS/` a `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
+     de cada `qslN/QSLS/` (incluida `qsl80`) a
+     `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My
      Drive/QSL/QSLs/qslN` (mismas carpetas en minúsculas, creadas automáticamente). La
      sincronización ocurre **siempre**, salvo flag `--no-sync-drive`. La carpeta de Drive
      es un **espejo exacto** de la local: `rsync -a --update --delete` copia lo
@@ -560,8 +566,8 @@ ia-qsls/
 
 Notes sobre esta estructura:
 
-- **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan: 36 en total
-  (6/6/6/6/8/0/4), con 3.015 QSO. Los 6 `QSL-DEMO-EG9MM.adi` de relleno y los 5
+- **Cada `qslN/` tiene sus `.adi` de trabajo**, que son los que se procesan: 37 en total
+  (6/6/6/6/8/0/4/1), con 3.033 QSO. Los 6 `QSL-DEMO-EG9MM.adi` de relleno y los 5
   `CRUZADAS-ADICIONALES-*.adi` conviven con los reales; los 6 de `TESTDATA/` siguen
   aparcados ahí y no se tocan. Los 9 `.adi` de `ADICIONALES/` viven fuera de `qslN/`
   y **no** son entrada del generador: son derivados de esos 5 cruces adicionales.
@@ -570,15 +576,15 @@ Notes sobre esta estructura:
   ejecución; no se versionan como entrada del generador de imágenes.
 - **`qslN/QSLS/` tiene los PNG generados** (3.076 en total). No se versionan: están en
   `.gitignore`. La copia que se publica vive en Google Drive.
-- **`qslN/qsl_log.json` existe** en las 7 actividades (se crean solos al primer procesado
+- **`qslN/qsl_log.json` existe** en las 8 actividades (se crean solos al primer procesado
   real). También ignorado por `.gitignore`.
 - **`qsl6/` no tiene ni `.adi` ni processing propio:** `main()` salta a `process_act6()`
   para `i == 6` y nunca busca ADIs. La actividad de record se alimenta de `qsl1`–`qsl5`.
   Su PNG sí se regenera en cada pasada, porque depende de qué estaciones hayan contactado.
 - **`qsl6/qsl6.txt` y `qsl7/qsl7.txt` ya no existen** (las notas de actividad se
   eliminaron al vaciar el árbol; la regla de la QSL6 se documenta en §3.b).
-- Las carpetas `qsl1`–`qsl7` de **Google Drive** existen y están pobladas (regla 1 de §0:
-  nunca se borran).
+- Las carpetas `qsl1`–`qsl7` y `qsl80` de **Google Drive** existen y están pobladas
+  (regla 1 de §0: nunca se borran).
 
 ---
 
@@ -689,9 +695,9 @@ se resumen con `…`.
    🏆 43 estación/es contactaron en las 5 actividades
    ⚡ act6: 43 record(s) -> …
 ============================================================
-  RESUMEN: 0 procesados, 1 regenerados, 36 sin cambios
+  RESUMEN: 1 procesados, 43 regenerados, 36 sin cambios
   Log por carpeta: qslN/qsl_log.json
-  Manifiesto: qsl_manifest.json (qsl1=6, qsl2=6, qsl3=6, qsl4=6, qsl5=8, qsl6=43, qsl7=4)
+  Manifiesto: qsl_manifest.json (qsl1=6, qsl2=6, qsl3=6, qsl4=6, qsl5=8, qsl6=43, qsl7=4, qsl80=1)
 ============================================================
 
 Postales generadas por carpeta:
@@ -702,15 +708,17 @@ Postales generadas por carpeta:
    qsl5   852 postales
    qsl6    43 postales
    qsl7    66 postales
+   qsl80   18 postales
 ```
 
-> Ojo a la aritmética: el resumen dice **1 regenerado** (`qsl6`, que se rehace siempre)
-> y **36 sin cambios** (los 36 `.adi`), pero las postales totales son 3.058 porque
-> `qsl6` aporta 43 record(s) propios. El manifiesto cuenta para `qsl6` las postales
-> producidas (43), no los `.adi` consumidos (0).
+> Ojo a la aritmética: el resumen dice **1 procesado** (`qsl80`, ADI nuevo) y **43
+> regenerados** (`qsl6`, que se rehace siempre), con **36 sin cambios** (los 36 `.adi`
+> de qsl1–qsl7), pero las postales totales son 3.076 porque `qsl6` aporta 43 records
+> propios. El manifiesto cuenta para `qsl6` las postales producidas (43), no los `.adi`
+> consumidos (0).
 >
 > El rótulo por carpeta es `   %-6s %s postales` (`generar.sh:163`): dice "postales"
-> también para qsl6 y qsl7, que son postales de record y de DMR.
+> también para qsl6 (record), qsl7 (DMR) y qsl80 (80 m).
 
 > Ojo: las líneas `Log por carpeta` y `Manifiesto` se imprimen siempre. Los ficheros se
 > escriben al procesar un `.adi` real; `qsl6` se procesa siempre, aunque no tenga `.adi`
@@ -778,7 +786,8 @@ sincronizada por la app de Google Drive:
 ├── qsl1/   <- qsl1/QSLS/*.png
 ├── qsl2/   <- qsl2/QSLS/*.png
 ├── …
-└── qsl7/   <- qsl7/QSLS/*.png
+├── qsl7/   <- qsl7/QSLS/*.png
+└── qsl80/  <- qsl80/QSLS/*.png
 ```
 
 - Cada carpeta local `qslN` se copia a su carpeta `qslN` (mismo nombre, en minúsculas)
@@ -787,10 +796,12 @@ sincronizada por la app de Google Drive:
   `rsync -a --update --delete`, que copia lo nuevo/modificado **y borra** en Drive los
   PNGs que ya no existen localmente (postales huérfanas eliminadas).
 - Después la **app de escritorio de Google Drive** detecta los archivos y los sube a la
-  nube automáticamente (no hace falta nada más).
-- Preprequisito: tener la app "Google Drive" de escritorio instalada y con la cuenta de
-  **eg9mm.mail@gmail.com**; la ruta del CloudStorage debe existir (la carpeta `QSL/QSLs`
-  con las subcarpetas qsl1–qsl7 se crea sola la primera vez que se sincroniza).
+  nube automáticamente (no hace falta nada más). Si la app no está corriendo, hay que
+  abrirla: mientras no lo esté, los PNG quedan solo en local y la carpeta nueva no
+  recibe su `id` de Drive.
+- Preprequisito: tener la app "Google Drive" de escritorio instalada, **corriendo** y con
+  la cuenta de **eg9mm.mail@gmail.com**; la ruta del CloudStorage debe existir (la carpeta
+  `QSL/QSLs` con las subcarpetas qsl1–qsl7 y qsl80 se crea sola la primera vez).
 - Para generar **sin** sincronizar Drive: `./generar.sh --no-sync-drive`.
 - Para **no vaciar** en Drive una actividad que ya no tiene `.adi`: `--keep-empty-drive`.
 - Si un `rsync` falla a mitad, el script **aborta en ese instante** (`generar.sh:195-198`)
@@ -1089,7 +1100,7 @@ Tipo | Tamaño caja | Contenido | Casillas
 | `unique_filenames(qsos, adi_stem)` | Nombres `{call}_{stem}.png` únicos |
 | `process_folder(folder, gen, bgs)` | Lógica incremental por carpeta (usa `bgs[0]` y `fondo_hash`) |
 | `process_act6(base_dir, gen)` | Limpia QSL6/QSLS + detecta estaciones en las 5 actividades + genera QSL de record |
-| `main()` | Orquesta las 7 carpetas (qsl6 especial) y escribe `qsl_manifest.json` |
+| `main()` | Orquesta las 8 carpetas (qsl1–qsl7 y qsl80; qsl6 especial) y escribe `qsl_manifest.json` |
 | `drive_index.py` → `fetch/split_blocks/parse_folders/parse_files/fsize/calln/main` | Modo heredado `--drive-index`: **scraping del HTML público** de Drive con `urllib` (sin API, sin credenciales) para obtener los *file ids* |
 | `drive_index.py` → `list_local_files/load_drive_ids/load_local_meta/local_png_counts/check_regression` | Vía normal `--local`: lista los PNG de `qslN/QSLS/`, reutiliza los ids del índice anterior, lee indicativos/fechas de los logs y valida el resultado antes de escribir |
 | `drive_index.py` → `load_known_calls/read_existing/load_manifest/build_index` | `load_known_calls` lee los indicativos ya conocidos de índices previos; `read_existing` carga el JSON en disco; `load_manifest` lee `qsl_manifest.json`; `build_index` aplica las **salvaguardas** (nunca índice vacío ni recorte no justificado) y solo entonces escribe |
@@ -1218,8 +1229,9 @@ Lo normal es `./run_all.sh` (§2.0). Los flags de abajo sirven para casos puntua
 
 ### Formato de `qsl_index.json`
 
-`folder_id` se rellena siempre, y `activities` trae las 7 con su `id` y su `title`
-("Actividad 1"… "Actividad 7") mientras la actividad esté publicada. La excepción son las
+`folder_id` se rellena siempre, y `activities` trae las 8 con su `id` y su `title`
+("Actividad 1"… "Actividad 7" y "80m" para qsl80) mientras la actividad esté publicada.
+La excepción son las
 que el propio indexado decide dejar fuera: una actividad con **0 en el manifiesto** se
 omite por completo (no aparece en `activities` ni en `counts`, y se avisa por pantalla con
 `· qslN: sin .adi (manifiesto) -> no se publica`). En modo `--drive-index`, además,
@@ -1258,9 +1270,9 @@ el JSON (§7 "Puesta en marcha").
 - La `version` del índice es **2**. La 1 ya traía las 7 `activities`; el salto refleja
   el formato de `entries` que consume hoy la web.
 - `days` cuenta las postales por fecha: `2026-11-15: 966`, `2026-11-14: 965`,
-  `2026-11-13: 1121`, `2026-10-06: 6`. Ya no existe la clave `""` (sin fecha):
-  las 43 QSL de record de `qsl6` llevan `2026-11-15`.
-- El ejemplo abrevia `activities` a una sola clave, pero el archivo real trae **las 7**
+  `2026-11-13: 1139`, `2026-10-06: 6`. Ya no existe la clave `""` (sin fecha):
+  las 43 QSL de record de `qsl6` llevan `2026-11-15`; las 18 de `qsl80`, `2026-11-13`.
+- El ejemplo abrevia `activities` a una sola clave, pero el archivo real trae **las 8**
   con su `id` y su `title`, salvo las que se omiten por manifiesto vacío (o por fallo
   de fetch en modo `--drive-index`, ver arriba).
 - `call` se toma de `qsl_log.json` (fuente principal, indicativo sin transformar); solo
@@ -1273,7 +1285,7 @@ el JSON (§7 "Puesta en marcha").
   `drive.google.com/uc?export=download&id=<id>` para la descarga.
 - ✅ **Probado con 4000 entradas** (2026-10-06): se publicó un `qsl_index.json` simulado
   con `total: 4000` (commits `79c5617` → restaurado en `bf2bfde`) y la web funcionó
-  bien — carga, listado y rendimiento sin problemas. El índice real tiene 3.058 entradas.
+  bien — carga, listado y rendimiento sin problemas. El índice real tiene 3.076 entradas.
 - ✅ **Página nueva de gráficos** (commit `f7bb4c6`): <https://dcialdella.github.io/ia-qsls/graficos/>,
   27 PNG generados desde `graficos/TODOS.adi` (3.009 QSO, sin los 6 registros demo).
   La regeneración del 17/11 produjo 27 imágenes idénticas a las ya publicadas.
@@ -1501,7 +1513,7 @@ git clean -fdX qsl1 qsl2 qsl3 qsl4 qsl5 qsl6 qsl7   # borra QSLS/*.png y qsl_log
 - **Los PNG generados y los `qsl_log.json`**: están en `.gitignore`, así que no entran en
   ningún commit ni en el tag. Para eso está el `git clean -fdX` de arriba. (En el momento
   de crear el tag no había ninguno, así que el tag sí reproduce el estado completo.)
-- **Google Drive**: la carpeta `QSL/QSLs` con sus 7 subcarpetas vive fuera de git. Hay que
-  comprobarla a mano. Recuerda la regla 1 de §0: **las 7 carpetas nunca se borran**, aunque
+- **Google Drive**: la carpeta `QSL/QSLs` con sus 8 subcarpetas vive fuera de git. Hay que
+  comprobarla a mano. Recuerda la regla 1 de §0: **las 8 carpetas nunca se borran**, aunque
   estén vacías. Para vaciarlas, borra los PNG de `qslN/QSLS/` y ejecuta
   `./generar.sh` (el `rsync --delete` los refleja en Drive) o bórralos allí a mano.

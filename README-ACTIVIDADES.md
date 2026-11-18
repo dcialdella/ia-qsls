@@ -2,7 +2,7 @@
 
 Proceso que lee los archivos ADI de las carpetas `qsl1`–`qsl5` y genera, en la subcarpeta `ACTIVIDADES/` de cada una, un archivo por cada actividad configurada, con el formato específico que necesita cada una para su subida a las webs correspondientes.
 
-**Alcance:** solo `qsl1`–`qsl5`. Las carpetas `qsl6` y `qsl7` **no se procesan** (no están en `CONFIG` y no se les borra ni crea nada).
+**Alcance:** solo `qsl1`–`qsl5`. Las carpetas `qsl6`, `qsl7` y `qsl80` **no se procesan** (no están en `CONFIG` y no se les borra ni crea nada en `ACTIVIDADES/`). `qsl80` es una actividad postal independiente: `qsl_generator.py` y `generar.sh` la tratan igual que qsl1–qsl7, pero no es un derivado de este proceso.
 
 ## Script
 
@@ -15,7 +15,7 @@ python3 qsl_generar_adis.py
 ## Flujo
 
 1. **Limpia** la carpeta `ACTIVIDADES/` de cada QSL procesada (borra todo lo anterior).
-2. **Lee todos** los `.adi` de la carpeta `qslN/` (ahora hay varios: 36 en total entre qsl1–qsl7; cada uno se procesa por separado).
+2. **Lee todos** los `.adi` de la carpeta `qslN/` de qsl1–qsl5 (32 en total; en el repo hay 37 `.adi` raíz contando qsl6/qsl7/qsl80, que no se procesan aquí; cada uno se procesa por separado).
 3. **Valida** cada QSO:
    - `CALL` y `QSO_DATE` presentes.
    - `STATION_CALLSIGN` = `EG9MM` (única estación permitida en el log).
@@ -27,11 +27,10 @@ python3 qsl_generar_adis.py
 
 ## Archivos de entrada (estado actual)
 
-Las carpetas `qsl1`–`qsl5` (y `qsl7`, que no se procesa) contienen **36 `.adi`** con
-3.015 QSO en total: 30 reales y 6 de demostración (`QSL-DEMO-EG9MM.adi`), incluidos
-en esa cuenta. Cada una de qsl1–qsl5 incorpora además un `CRUZADAS-ADICIONALES-*.adi`
-de 12 QSO (detalle en `RELLENO-QSO.md`). La carpeta `ADICIONALES/`, con 9 `.adi`
-derivados de esos cruces, **no se procesa**: no está en `CONFIG`.
+Las carpetas `qsl1`–`qsl5` contienen **32 `.adi`** con **2.949 QSO** en total.
+Cada una incorpora además un `CRUZADAS-ADICIONALES-*.adi` de 12 QSO (detalle en
+`RELLENO-QSO.md`). La carpeta `ADICIONALES/`, con 9 `.adi` derivados de esos
+cruces, **no se procesa**: no está en `CONFIG`.
 
 | Carpeta | `.adi` raíz | QSO | Formatos generados |
 |---|---|---|---|
@@ -43,7 +42,14 @@ derivados de esos cruces, **no se procesa**: no está en `CONFIG`.
 | **Total qsl1–qsl5** | **32** | **2.949** | **38 ficheros de salida, 3.375 QSO** |
 
 `qsl6` no tiene `.adi` (postales de record); `qsl7` tiene 4 `.adi` (66 QSO, 3 reales +
-1 demo) pero **no se procesa**: no está en `CONFIG`.
+1 demo) y `qsl80` 1 `.adi` (`QSL80m.adi`, 18 QSO en 80 m desde Melilla), pero
+**ninguno se procesa aquí**: no están en `CONFIG` y no generan `ACTIVIDADES/`.
+`qsl80` es una actividad postal independiente (fondo `QSL-80.png`, copia de
+`qsl1/QSL-1.png`; originante `EG9MM` en todas las postales): sus 18 PNG se publican
+en la web como los de qsl1–qsl7, pero **no es un derivado de este proceso**.
+En todo el repo hay **37 `.adi` raíz** (30 reales + 6 demo en qsl1–qsl7, más el de
+qsl80) y **3.033 QSO**; las cifras de la tabla de arriba son solo el alcance de
+`CONFIG`.
 
 Salidas reales (38 ficheros en total). Un ejemplo por carpeta:
 
@@ -145,6 +151,10 @@ qsl2/
 ...
 qsl7/
 ├── 4 .adi (66 QSO)               ← existen, pero NO se procesan (no están en CONFIG)
+qsl80/
+├── 1 .adi (18 QSO)               ← actividad postal independiente, NO derivada (no está en CONFIG)
+├── QSL-80.png                    ← copia de qsl1/QSL-1.png
+└── QSLS/                         ← 18 PNG publicados en la web
 ```
 
 Cada `.adi` de entrada genera su propio conjunto de salidas (un `-tota.adi` en qsl1,
@@ -169,7 +179,7 @@ qsl1/
 
 ## Configuración
 
-La configuración de formatos por QSL está en el diccionario `CONFIG` al inicio de `qsl_generar_adis.py` (las claves determinan qué carpetas se procesan; `qsl6`/`qsl7` no están):
+La configuración de formatos por QSL está en el diccionario `CONFIG` al inicio de `qsl_generar_adis.py` (las claves determinan qué carpetas se procesan; `qsl6`/`qsl7`/`qsl80` no están):
 
 ```python
 CONFIG = {

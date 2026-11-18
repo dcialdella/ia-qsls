@@ -15,6 +15,11 @@ Generados con los scripts de `~/Downloads/adif-graficando-cositas`
 - Origen: los 36 `.adi` raíz de cada POI (ni `ACTIVIDADES/` ni `ADICIONALES/`, que son
   derivados y duplicarían registros), incluidos los 5 `CRUZADAS-ADICIONALES-*.adi`.
 - Excluidos los 6 registros de demostración `QSL-DEMO-EG9MM.adi`.
+- **Tampoco entra `qsl80/`: es una actividad de postal, no una estadística nueva.**
+  Sus 18 QSO en 80 m desde Melilla se solapan con los ya registrados en qsl1–qsl7
+  (15 del ADI original y 3 contactos locales del 13/11). Por eso los gráficos
+  siguen generándose solo con los 36 `.adi` de qsl1–qsl7 (3.009 QSO tras quitar
+  los 6 demo), aunque el repo tenga ya 37 `.adi` raíz y 3.033 QSO en total.
 - `STATION_CALLSIGN` normalizado (sin espacios finales) y `OPERATOR`
   completado a partir de la estación en los 626 registros de EA3JAQ, que no
   traían el campo.

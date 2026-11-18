@@ -2,6 +2,27 @@
 
 Fecha: 2026-11-15 · Estado: aplicado a los ADI raíz, a `ACTIVIDADES/` y a `ADICIONALES/`
 
+## Estado actual (18/11)
+
+- ADI raíz: **37** en total (32 en qsl1–qsl5, 4 en qsl7 y 1 en `qsl80/`; qsl6 no
+  tiene) y **3.033 QSO** (3.015 + 18 de qsl80).
+- Conteos por actividad: `qsl1`=565, `qsl2`=426, `qsl3`=628, `qsl4`=478,
+  `qsl5`=852, `qsl6`=43, `qsl7`=66, `qsl80`=18.
+- Postales: **3.076** generadas y sincronizadas con Drive; `qsl_index.json` con
+  `total: 3076`, `generated_at: 2026-11-18T07:57:08Z`, 1.110 indicativos distintos
+  y días `2026-11-13: 1139`, `2026-11-14: 965`, `2026-11-15: 966`, `2026-10-06: 6`.
+- `qsl80/`: actividad postal independiente con `QSL80m.adi` (18 QSO en 80 m desde
+  Melilla: 15 del ADI original y 3 locales EA4HUK, EA4IWX y EA3JAQ el 13/11 a las
+  19:18, grid IM85mh a ~100 m). Originante `EG9MM` en todas las postales y fondo
+  `QSL-80.png` (copia de `qsl1/QSL-1.png`). `qsl_generator.py` y `generar.sh` la
+  procesan y publican como a qsl1–qsl7: 18 PNG en `qsl80/QSLS/`, rsyncados a
+  `~/Library/CloudStorage/GoogleDrive-eg9mm.mail@gmail.com/My Drive/QSL/QSLs/qsl80/`
+  (folder ID `14-Xhy3OBC9Yn1gGrFSHbU9MnFQr7kv10`) y descargables desde
+  <https://dcialdella.github.io/ia-qsls/>. `drive_index.py` la titula «80m».
+  `qsl_generar_adis.py`/`generar_adis.sh` siguen procesando solo qsl1–qsl5: qsl80
+  no es un derivado, no entra en `ACTIVIDADES/` ni en los gráficos.
+- Las secciones fechadas más abajo conservan las cifras de su momento.
+
 ## Motivo
 
 Cada log propio de EA4HUK debe contener contactos con EA3JAQ, EA4GHH y EA4IWX
@@ -147,16 +168,16 @@ Script: `/private/var/folders/pg/zbqnb64s3c14fk26wvx_6mzw0000gn/T/opencode/cruza
   hasta **3.015**.
 - **Bloque aparte (12 QSO en 40/60/80 m, 2026‑11‑15 13:00):** doce contactos en
   7.100 / 5.350 / 3.700 MHz se añadieron al derivado del Escritorio `DME.adi` (que
-  contenía 2.678 QSO). **No están en los 36 `.adi` raíz ni en la web**: por eso no
-  entran en el total de 3.015 ni en las 3.058 postales publicadas. `DME.adi` ya no
+  contenía 2.678 QSO). **No están en los 37 `.adi` raíz ni en la web**: por eso no
+  entran en el total de 3.033 ni en las 3.076 postales publicadas. `DME.adi` ya no
   estaba en el Escritorio en la última comprobación (17/11), así que este bloque solo
   consta en la documentación; si el backup `DME-backup-20261115.zip` sigue
   disponible, sería la fuente para recuperarlo. (Los `CRUZADAS-ADICIONALES-*.adi`
   que sí están en la web son contactos distintos: todos en 10 m, ver sección final.)
 - **Otro derivado fuera del repo (17/11):** `~/Desktop/ea4huk-eg9-todo.adi` reúne
   954 QSO propios de EA4HUK con `STATION_CALLSIGN=EA4HUK/9`, `MY_GRIDSQUARE=IM85`,
-  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 3.015
-  QSO ni en las 3.058 postales.
+  `CQZ=14`, `ITUZ=37` y `DXCC=32` (detalle en `README.md` §1.2). Tampoco entra en los 3.033
+  QSO ni en las 3.076 postales.
 - `ACTIVIDADES/`: 38 ficheros, **3.375** QSO (qsl2 se replica en `pota` y `tota`).
 - `audit_adi.py`: 2 avisos de duplicado por una clave que no incluye `FREQ`
   (7.160 vs 7.150 y 7.183 vs 7.195). Son consecuencia esperada de los espejos del
