@@ -559,6 +559,7 @@ ia-qsls/
 ├── venv/                  <- Entorno virtual (Pillow), creado automáticamente
 ├── README.md
 ├── README-ACTIVIDADES.md  <- Documentación del proceso de ADI por actividad
+├── EMAILS-QRZ.md           <- Emails de QRZ de la lista de indicativos + método de consulta
 ├── LICENSE                <- Todos los derechos reservados
 ├── qsl1/  QSL-1.png + 6 .adi (565 QSO) + ACTIVIDADES/ + QSLS/ (565 PNG) + qsl_log.json
 ├── qsl2/  QSL-2.png + 6 .adi (426 QSO) + ACTIVIDADES/ + QSLS/ (426 PNG) + qsl_log.json
